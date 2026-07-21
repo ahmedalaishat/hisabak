@@ -6,6 +6,8 @@ All notable changes to Hisabak are documented here. Format based on
 
 ## [Unreleased]
 
+## [1.9.0] — 2026-07-21
+
 ### Changed
 - **Simpler on-device storage** — the app-level SQLCipher database encryption has been removed;
   your data stays in app-private storage protected by Android's built-in file-based encryption
