@@ -1,14 +1,13 @@
 package com.hisabak.core.data.local
 
 import com.hisabak.feature.category.domain.CategoryType
-import com.hisabak.testutil.TestClock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class StarterDataTest {
 
-    private val starters = StarterData(TestClock())
+    private val starters = StarterData()
 
     @Test
     fun `covers every category type so any transaction can be recorded on first run`() {

@@ -28,7 +28,7 @@ class IngestSmsUseCaseTest {
     private val processor = SmsTransactionProcessor(
         detector = RegexSmsTemplateDetector(listOf("Purchase of AED {amount} at {brand} done")),
         parser = TemplateSmsParser(Currency.AED, ZoneOffset.UTC),
-        findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo, clock),
+        findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo),
         transactionRepository = transactionRepo,
         smsRepository = smsRepo,
         clock = clock,

@@ -21,8 +21,8 @@ val categoryModule = module {
     single<CategoryLimitRepository> { RoomCategoryLimitRepository(dao = get(), currency = get()) }
 
     factory { ObserveCategoriesUseCase(get()) }
-    factory { CreateCategoryUseCase(get(), get()) }
-    factory { UpdateCategoryUseCase(get(), get()) }
+    factory { CreateCategoryUseCase(get()) }
+    factory { UpdateCategoryUseCase(get()) }
     factory { DeleteCategoryUseCase(get()) }
     factory { ObserveCategoryLimitsUseCase(get()) }
     factory { SetCategoryLimitUseCase(repository = get(), clock = get()) }

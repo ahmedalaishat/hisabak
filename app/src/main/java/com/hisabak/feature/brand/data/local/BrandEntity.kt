@@ -22,9 +22,4 @@ data class BrandEntity(
     @PrimaryKey val id: String,
     val name: String,
     val categoryId: String?,
-    val updatedAtMillis: Long,
-    val isDirty: Boolean,
-    val deletedAtMillis: Long?,
-    val serverId: String?,
-    val version: Long,
 )

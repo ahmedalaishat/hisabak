@@ -114,7 +114,7 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
 
 ```
 com.hisabak
-├── core/common/              shared value objects (Money, SyncMetadata, IDs)
+├── core/common/              shared value objects (Money, IDs)
 ├── ui/
 │   ├── components/           shared Compose components
 │   └── theme/                Material 3 theme (colors, typography, shapes)
@@ -160,19 +160,19 @@ Pattern: `List` → tap row or FAB → push `Edit(id?)` destination → Save/Can
 ## Domain Models
 
 ### Transaction
-- `id`, `amount: Money`, `brandId`, `note?`, `occurredAt: Instant`, `sourceSmsId?`, `sync`
+- `id`, `amount: Money`, `brandId`, `note?`, `occurredAt: Instant`, `sourceSmsId?`
 
 ### Brand
-- `id`, `name`, `categoryId?`, `sync`
+- `id`, `name`, `categoryId?`
 
 ### Category
-- `id`, `name`, `type: CategoryType`, `color: String`, `icon: String`, `sync`
+- `id`, `name`, `type: CategoryType`, `color: String`, `icon: String`
 - `CategoryType`: INCOME | EXPENSES | SAVINGS | INVESTMENT
 - `color` options: green, blue, orange, red, teal, purple, pink, gray
 - `icon` options: wallet, cart, briefcase, car, utensils, piggy-bank, home, film, book, heart, gift, plane
 
 ### Budget
-- `id`, `name`, `amount: Money`, `startAt`, `endAt?`, `saving`, `period`, `reoccurrence`, `categoryIds`, `sync`
+- `id`, `name`, `amount: Money`, `startAt`, `endAt?`, `saving`, `period`, `reoccurrence`, `categoryIds`
 - `Reoccurrence`: CUSTOM | DAILY | WEEKLY | MONTHLY | YEARLY
 
 ### Money
@@ -285,7 +285,6 @@ Each component has a `.prompt.md` (what/when + usage) and `.d.ts` (props) — re
 - No error handling for impossible cases — trust domain guarantees
 - No premature abstractions — add only what the current task requires
 - Validate only at system boundaries (user input, external SMS)
-- All entities carry `SyncMetadata` (prepared for future cloud sync)
 - `rememberSaveable` keeps tab nav state alive across tab switches
 - Don't invent new screens/flows from scratch — match existing Hisabak designs;
   if a design doesn't exist yet, leave a `// TODO: design` note rather than guessing

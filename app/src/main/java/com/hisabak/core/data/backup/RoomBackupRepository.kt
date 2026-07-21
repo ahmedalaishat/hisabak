@@ -53,42 +53,32 @@ class RoomBackupRepository(
     }
 }
 
-private fun CategoryEntity.toRecord() = CategoryRecord(
-    id, name, type, color, icon, updatedAtMillis, isDirty, deletedAtMillis, serverId, version,
-)
+private fun CategoryEntity.toRecord() = CategoryRecord(id, name, type, color, icon)
 
-private fun CategoryRecord.toEntity() = CategoryEntity(
-    id, name, type, color, icon, updatedAtMillis, isDirty, deletedAtMillis, serverId, version,
-)
+private fun CategoryRecord.toEntity() = CategoryEntity(id, name, type, color, icon)
 
 private fun CategoryLimitEntity.toRecord() = CategoryLimitRecord(categoryId, effectiveFrom, amountMinor, currency)
 
 private fun CategoryLimitRecord.toEntity() = CategoryLimitEntity(categoryId, effectiveFrom, amountMinor, currency)
 
-private fun BrandEntity.toRecord() = BrandRecord(
-    id, name, categoryId, updatedAtMillis, isDirty, deletedAtMillis, serverId, version,
-)
+private fun BrandEntity.toRecord() = BrandRecord(id, name, categoryId)
 
-private fun BrandRecord.toEntity() = BrandEntity(
-    id, name, categoryId, updatedAtMillis, isDirty, deletedAtMillis, serverId, version,
-)
+private fun BrandRecord.toEntity() = BrandEntity(id, name, categoryId)
 
 private fun TransactionEntity.toRecord() = TransactionRecord(
     id, amountMinor, currency, brandId, note, occurredAtMillis, sourceSmsId,
-    updatedAtMillis, isDirty, deletedAtMillis, serverId, version,
 )
 
 private fun TransactionRecord.toEntity() = TransactionEntity(
     id, amountMinor, currency, brandId, note, occurredAtMillis, sourceSmsId,
-    updatedAtMillis, isDirty, deletedAtMillis, serverId, version,
 )
 
 private fun SmsMessageEntity.toRecord() = SmsMessageRecord(
     id, body, receivedAtMillis, transactionId, parsedBrandName, parsedAmountMinor, parsedCurrency,
-    parsedOccurredAtMillis, updatedAtMillis, isDirty, deletedAtMillis, serverId, version,
+    parsedOccurredAtMillis,
 )
 
 private fun SmsMessageRecord.toEntity() = SmsMessageEntity(
     id, body, receivedAtMillis, transactionId, parsedBrandName, parsedAmountMinor, parsedCurrency,
-    parsedOccurredAtMillis, updatedAtMillis, isDirty, deletedAtMillis, serverId, version,
+    parsedOccurredAtMillis,
 )

@@ -12,23 +12,21 @@ interface BrandDao {
     @Query(
         """
         SELECT * FROM brands
-        WHERE deletedAtMillis IS NULL
-          AND (:search IS NULL OR name LIKE '%' || :search || '%' COLLATE NOCASE)
+        WHERE (:search IS NULL OR name LIKE '%' || :search || '%' COLLATE NOCASE)
           AND (:categoryId IS NULL OR categoryId = :categoryId)
         ORDER BY LOWER(name)
         """,
     )
     fun observeFiltered(search: String?, categoryId: String?): Flow<List<BrandEntity>>
 
-    @Query("SELECT * FROM brands WHERE id = :id AND deletedAtMillis IS NULL")
+    @Query("SELECT * FROM brands WHERE id = :id")
     suspend fun getById(id: String): BrandEntity?
 
     @Query(
         """
         SELECT * FROM brands
-        WHERE deletedAtMillis IS NULL
-          AND (name LIKE '%' || :name || '%' COLLATE NOCASE
-               OR :name LIKE '%' || name || '%' COLLATE NOCASE)
+        WHERE name LIKE '%' || :name || '%' COLLATE NOCASE
+           OR :name LIKE '%' || name || '%' COLLATE NOCASE
         LIMIT 1
         """,
     )
@@ -48,7 +46,6 @@ interface BrandDao {
     @Query("DELETE FROM brands WHERE id = :id")
     suspend fun deleteById(id: String)
 
-    // Backup: every row incl. soft-deleted tombstones.
     @Query("SELECT * FROM brands")
     suspend fun getAllForBackup(): List<BrandEntity>
 

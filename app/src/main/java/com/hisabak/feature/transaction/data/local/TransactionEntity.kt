@@ -26,9 +26,4 @@ data class TransactionEntity(
     val note: String?,
     val occurredAtMillis: Long,
     val sourceSmsId: String?,
-    val updatedAtMillis: Long,
-    val isDirty: Boolean,
-    val deletedAtMillis: Long?,
-    val serverId: String?,
-    val version: Long,
 )

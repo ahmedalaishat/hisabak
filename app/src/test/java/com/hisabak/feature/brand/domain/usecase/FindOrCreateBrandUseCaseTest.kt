@@ -14,7 +14,7 @@ import org.junit.Test
 class FindOrCreateBrandUseCaseTest {
 
     private val repo = FakeBrandRepository()
-    private val useCase = FindOrCreateBrandUseCase(repo, TestClock())
+    private val useCase = FindOrCreateBrandUseCase(repo)
 
     @Test
     fun `creates a new brand when none matches`() = runTest {
