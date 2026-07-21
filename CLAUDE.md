@@ -39,17 +39,16 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   The Room schema is exported to `app/schemas/` (committed); bump the DB version and add a
   real `Migration` for any entity change — **release builds don't destructively fall back**
   (debug builds do, for fast iteration).
-- **At-rest encryption:** the database is **always** encrypted with SQLCipher (`net.zetetic:
-  sqlcipher-android`), wired in `di/DatabaseModule.kt` via `.openHelperFactory(SupportOpenHelperFactory(key))`
-  — transparent above the open-helper, so entities/DAOs/migrations/schema export are unchanged. The
-  key is a random secret generated on-device and wrapped by a non-exportable Android Keystore AES-GCM
-  key (`KeystoreDatabaseKeyStore`, `core/data/local/security/`; same pattern as the backup passphrase
-  store, distinct alias `hisabak_database_key`). It is **not** auth-gated, so the DB opens on cold
-  start and in the unattended `BackupWorker` — the live-device threat is App Lock's job, not the key's.
-  Always-on (no toggle); existing plaintext databases are migrated once, in place, before Room opens
-  (`DatabaseEncryptionMigration` — detects the `SQLite format 3` header, runs `sqlcipher_export`,
-  verifies + atomically swaps; idempotent, retries on crash). Load the native lib once
-  (`System.loadLibrary("sqlcipher")`) before opening. Lightweight app prefs (the onboarding flag, the
+- **At-rest protection:** the database is plain (unencrypted) SQLite, relying on Android's
+  file-based encryption of app-private storage; the live-device threat is App Lock's job. The
+  app-level SQLCipher layer that versions ≤1.8.x used was **removed** (its Keystore-wrapped key was
+  never auth-gated, so it added little over FBE). Databases carried over from those versions are
+  decrypted once, in place, before Room opens (`DatabaseDecryptionMigration`,
+  `core/data/local/security/` — keys off the `SQLite format 3` header, unlocks with the legacy
+  passphrase from `KeystoreDatabaseKeyStore`, runs `sqlcipher_export`, verifies + atomically swaps,
+  then clears the stored key; idempotent, retries on crash; loads the SQLCipher native lib only when
+  an encrypted file is actually found). The `sqlcipher-android` dependency is retained **only** for
+  this migration — drop it, the migration, and the key store once the ≤1.8.x upgrade window closes. Lightweight app prefs (the onboarding flag, the
   theme mode, and the `appLockEnabled` flag) use DataStore (`core/data/preferences/`) behind the
   `AppPreferences` interface (`core/domain/`); `MainActivity` reads `themeMode` and feeds the
   resolved boolean to `HisabakTheme(darkTheme=…)`.

@@ -123,9 +123,9 @@
     <h2>Where your data is stored</h2>
     <p>
       Your transactions, brands, categories, and budgets are stored only in a private database on
-      your device. That database is <strong>encrypted at rest</strong> (SQLCipher, AES-256) with a
-      key held in the device's hardware-backed keystore, so the data cannot be read off the device's
-      storage. Automatic cloud backup is disabled, so this data is not copied off the device by
+      your device, in app-private storage that Android protects with its built-in
+      <strong>file-based encryption</strong> — other apps cannot read it, and the data on disk is
+      encrypted, so it cannot be read if the device's storage is extracted. Automatic cloud backup is disabled, so this data is not copied off the device by
       the system. Uninstalling the app removes it.
     </p>
 
