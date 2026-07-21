@@ -1,5 +1,6 @@
 package com.hisabak.core.data.local
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.hisabak.feature.brand.data.local.BrandDao
@@ -27,8 +28,9 @@ import com.hisabak.feature.transaction.data.local.TransactionEntity
         NotificationEntity::class,
         CategoryLimitAlertEntity::class,
     ],
-    version = HisabakDatabase.SCHEMA_VERSION, // v2: notifications + category_limit_alerts
+    version = HisabakDatabase.SCHEMA_VERSION, // v3: sync-metadata columns dropped
     exportSchema = true,
+    autoMigrations = [AutoMigration(from = 2, to = 3, spec = DropSyncColumnsSpec::class)],
 )
 abstract class HisabakDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
@@ -43,6 +45,6 @@ abstract class HisabakDatabase : RoomDatabase() {
         const val NAME = "hisabak.db"
 
         /** Single source of truth for the Room schema version; also stamped into backup files. */
-        const val SCHEMA_VERSION = 2
+        const val SCHEMA_VERSION = 3
     }
 }

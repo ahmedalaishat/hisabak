@@ -1,5 +1,7 @@
 package com.hisabak.core.data.local
 
+import androidx.room.DeleteColumn
+import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
@@ -39,3 +41,33 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         )
     }
 }
+
+/**
+ * v2 → v3: drops the unused sync-metadata columns (`updatedAtMillis`, `isDirty`, `deletedAtMillis`,
+ * `serverId`, `version`) that every financial table carried for a cloud sync that was never built.
+ * Registered as an AutoMigration in [HisabakDatabase] so Room generates the table rebuilds
+ * (SQLite on minSdk 29 has no DROP COLUMN).
+ */
+@DeleteColumn.Entries(
+    DeleteColumn(tableName = "categories", columnName = "updatedAtMillis"),
+    DeleteColumn(tableName = "categories", columnName = "isDirty"),
+    DeleteColumn(tableName = "categories", columnName = "deletedAtMillis"),
+    DeleteColumn(tableName = "categories", columnName = "serverId"),
+    DeleteColumn(tableName = "categories", columnName = "version"),
+    DeleteColumn(tableName = "brands", columnName = "updatedAtMillis"),
+    DeleteColumn(tableName = "brands", columnName = "isDirty"),
+    DeleteColumn(tableName = "brands", columnName = "deletedAtMillis"),
+    DeleteColumn(tableName = "brands", columnName = "serverId"),
+    DeleteColumn(tableName = "brands", columnName = "version"),
+    DeleteColumn(tableName = "transactions", columnName = "updatedAtMillis"),
+    DeleteColumn(tableName = "transactions", columnName = "isDirty"),
+    DeleteColumn(tableName = "transactions", columnName = "deletedAtMillis"),
+    DeleteColumn(tableName = "transactions", columnName = "serverId"),
+    DeleteColumn(tableName = "transactions", columnName = "version"),
+    DeleteColumn(tableName = "sms_messages", columnName = "updatedAtMillis"),
+    DeleteColumn(tableName = "sms_messages", columnName = "isDirty"),
+    DeleteColumn(tableName = "sms_messages", columnName = "deletedAtMillis"),
+    DeleteColumn(tableName = "sms_messages", columnName = "serverId"),
+    DeleteColumn(tableName = "sms_messages", columnName = "version"),
+)
+class DropSyncColumnsSpec : AutoMigrationSpec

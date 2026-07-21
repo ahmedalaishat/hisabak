@@ -4,7 +4,6 @@ import com.hisabak.feature.brand.domain.usecase.FindOrCreateBrandUseCase
 import com.hisabak.core.common.Clock
 import com.hisabak.core.common.DomainError
 import com.hisabak.core.common.DomainResult
-import com.hisabak.core.common.SyncMetadata
 import com.hisabak.feature.transaction.domain.Transaction
 import com.hisabak.feature.transaction.domain.TransactionId
 import com.hisabak.feature.transaction.domain.TransactionRepository
@@ -36,24 +35,16 @@ class SmsTransactionProcessor(
             ?: return DomainResult.Failure(DomainError.ValidationFailed("SMS parse missing amount"))
 
         return findOrCreateBrand(brandName).flatMap { brand ->
-            val now = clock.now()
             val tx = Transaction(
                 id = TransactionId.new(),
                 amount = amount,
                 brandId = brand.id,
                 note = null,
-                occurredAt = parsed.occurredAt ?: now,
+                occurredAt = parsed.occurredAt ?: clock.now(),
                 sourceSmsId = message.id.value,
-                sync = SyncMetadata(updatedAt = now),
             )
             transactionRepository.upsert(tx).flatMap {
-                smsRepository.upsert(
-                    message.copy(
-                        parsed = parsed,
-                        transactionId = tx.id,
-                        sync = message.sync.copy(updatedAt = now, isDirty = true),
-                    )
-                ).map { tx }
+                smsRepository.upsert(message.copy(parsed = parsed, transactionId = tx.id)).map { tx }
             }
         }
     }

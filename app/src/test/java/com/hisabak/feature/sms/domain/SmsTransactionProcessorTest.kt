@@ -30,7 +30,7 @@ class SmsTransactionProcessorTest {
     private fun processor(patterns: List<String>) = SmsTransactionProcessor(
         detector = RegexSmsTemplateDetector(patterns),
         parser = TemplateSmsParser(defaultCurrency = Currency.AED, zone = ZoneOffset.UTC),
-        findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo, clock),
+        findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo),
         transactionRepository = transactionRepo,
         smsRepository = smsRepo,
         clock = clock,

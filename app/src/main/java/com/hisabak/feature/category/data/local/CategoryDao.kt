@@ -9,10 +9,10 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CategoryDao {
-    @Query("SELECT * FROM categories WHERE deletedAtMillis IS NULL ORDER BY LOWER(name)")
+    @Query("SELECT * FROM categories ORDER BY LOWER(name)")
     fun observeAll(): Flow<List<CategoryEntity>>
 
-    @Query("SELECT * FROM categories WHERE id = :id AND deletedAtMillis IS NULL")
+    @Query("SELECT * FROM categories WHERE id = :id")
     suspend fun getById(id: String): CategoryEntity?
 
     @Query("SELECT COUNT(*) FROM categories")
@@ -29,7 +29,6 @@ interface CategoryDao {
     @Query("DELETE FROM categories WHERE id = :id")
     suspend fun deleteById(id: String)
 
-    // Backup: every row incl. soft-deleted tombstones.
     @Query("SELECT * FROM categories")
     suspend fun getAllForBackup(): List<CategoryEntity>
 

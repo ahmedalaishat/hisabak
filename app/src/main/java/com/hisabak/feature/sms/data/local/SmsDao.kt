@@ -11,23 +11,19 @@ interface SmsDao {
     @Query(
         """
         SELECT * FROM sms_messages
-        WHERE deletedAtMillis IS NULL
-          AND (:search IS NULL OR body LIKE '%' || :search || '%' COLLATE NOCASE)
+        WHERE (:search IS NULL OR body LIKE '%' || :search || '%' COLLATE NOCASE)
         ORDER BY receivedAtMillis DESC
         """,
     )
     fun observeFiltered(search: String?): Flow<List<SmsMessageEntity>>
 
-    @Query("SELECT * FROM sms_messages WHERE id = :id AND deletedAtMillis IS NULL")
+    @Query("SELECT * FROM sms_messages WHERE id = :id")
     suspend fun getById(id: String): SmsMessageEntity?
 
-    @Query("SELECT COUNT(*) FROM sms_messages WHERE deletedAtMillis IS NULL")
+    @Query("SELECT COUNT(*) FROM sms_messages")
     suspend fun count(): Int
 
-    @Query(
-        "SELECT COUNT(*) FROM sms_messages " +
-            "WHERE body = :body AND receivedAtMillis = :receivedAtMillis AND deletedAtMillis IS NULL",
-    )
+    @Query("SELECT COUNT(*) FROM sms_messages WHERE body = :body AND receivedAtMillis = :receivedAtMillis")
     suspend fun countByContent(body: String, receivedAtMillis: Long): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -39,7 +35,6 @@ interface SmsDao {
     @Query("DELETE FROM sms_messages WHERE id = :id")
     suspend fun deleteById(id: String)
 
-    // Backup: every row incl. soft-deleted tombstones.
     @Query("SELECT * FROM sms_messages")
     suspend fun getAllForBackup(): List<SmsMessageEntity>
 

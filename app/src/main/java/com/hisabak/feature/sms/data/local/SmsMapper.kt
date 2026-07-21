@@ -2,7 +2,6 @@ package com.hisabak.feature.sms.data.local
 
 import com.hisabak.core.common.Currency
 import com.hisabak.core.common.Money
-import com.hisabak.core.common.SyncMetadata
 import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessage
 import com.hisabak.feature.sms.domain.SmsMessageId
@@ -24,13 +23,6 @@ fun SmsMessageEntity.toDomain(): SmsMessage {
         receivedAt = Instant.ofEpochMilli(receivedAtMillis),
         transactionId = transactionId?.let(::TransactionId),
         parsed = parsed,
-        sync = SyncMetadata(
-            updatedAt = Instant.ofEpochMilli(updatedAtMillis),
-            isDirty = isDirty,
-            deletedAt = deletedAtMillis?.let(Instant::ofEpochMilli),
-            serverId = serverId,
-            version = version,
-        ),
     )
 }
 
@@ -43,9 +35,4 @@ fun SmsMessage.toEntity(): SmsMessageEntity = SmsMessageEntity(
     parsedAmountMinor = parsed?.amount?.amountMinor,
     parsedCurrency = parsed?.amount?.currency?.code,
     parsedOccurredAtMillis = parsed?.occurredAt?.toEpochMilli(),
-    updatedAtMillis = sync.updatedAt.toEpochMilli(),
-    isDirty = sync.isDirty,
-    deletedAtMillis = sync.deletedAt?.toEpochMilli(),
-    serverId = sync.serverId,
-    version = sync.version,
 )

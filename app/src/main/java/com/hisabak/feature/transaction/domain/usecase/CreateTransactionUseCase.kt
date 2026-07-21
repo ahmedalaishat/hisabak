@@ -4,7 +4,6 @@ import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.core.common.Clock
 import com.hisabak.core.common.DomainResult
 import com.hisabak.core.common.Money
-import com.hisabak.core.common.SyncMetadata
 import com.hisabak.feature.transaction.domain.Transaction
 import com.hisabak.feature.transaction.domain.TransactionId
 import com.hisabak.feature.transaction.domain.TransactionRepository
@@ -21,15 +20,13 @@ class CreateTransactionUseCase(
         occurredAt: Instant? = null,
         sourceSmsId: String? = null,
     ): DomainResult<Transaction> {
-        val now = clock.now()
         val tx = Transaction(
             id = TransactionId.new(),
             amount = amount,
             brandId = brandId,
             note = note,
-            occurredAt = occurredAt ?: now,
+            occurredAt = occurredAt ?: clock.now(),
             sourceSmsId = sourceSmsId,
-            sync = SyncMetadata(updatedAt = now),
         )
         return repository.upsert(tx).map { tx }
     }

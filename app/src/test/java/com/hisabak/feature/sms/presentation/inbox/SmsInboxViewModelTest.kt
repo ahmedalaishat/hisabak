@@ -52,7 +52,7 @@ class SmsInboxViewModelTest {
         processor = SmsTransactionProcessor(
             detector = detector,
             parser = parser,
-            findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo, clock),
+            findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo),
             transactionRepository = transactionRepo,
             smsRepository = smsRepo,
             clock = clock,

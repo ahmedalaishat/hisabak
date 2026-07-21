@@ -37,8 +37,8 @@ class BrandEditViewModelTest {
         brandId = brandId,
         brandRepository = brandRepo,
         observeCategories = ObserveCategoriesUseCase(catRepo),
-        createBrand = CreateBrandUseCase(brandRepo, clock),
-        updateBrand = UpdateBrandUseCase(brandRepo, clock),
+        createBrand = CreateBrandUseCase(brandRepo),
+        updateBrand = UpdateBrandUseCase(brandRepo),
         analytics = analytics,
     )
 
