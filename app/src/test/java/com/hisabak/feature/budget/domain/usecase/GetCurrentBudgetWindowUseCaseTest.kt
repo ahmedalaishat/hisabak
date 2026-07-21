@@ -5,7 +5,6 @@ import com.hisabak.feature.budget.domain.BudgetId
 import com.hisabak.feature.budget.domain.Reoccurrence
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.testutil.aed
-import com.hisabak.testutil.sync
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.LocalDate
@@ -28,7 +27,6 @@ class GetCurrentBudgetWindowUseCaseTest {
         reoccurrence = reoccurrence,
         period = period,
         categoryIds = setOf(CategoryId("c1")),
-        sync = sync(),
     )
 
     @Test

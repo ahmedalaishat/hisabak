@@ -38,8 +38,8 @@ class CategoryEditViewModelTest {
     private fun viewModel(categoryId: CategoryId? = null) = CategoryEditViewModel(
         categoryId = categoryId,
         categoryRepository = catRepo,
-        createCategory = CreateCategoryUseCase(catRepo, clock),
-        updateCategory = UpdateCategoryUseCase(catRepo, clock),
+        createCategory = CreateCategoryUseCase(catRepo),
+        updateCategory = UpdateCategoryUseCase(catRepo),
         observeCategoryLimits = ObserveCategoryLimitsUseCase(limitRepo),
         setCategoryLimit = SetCategoryLimitUseCase(limitRepo, clock),
         currency = Currency.AED,

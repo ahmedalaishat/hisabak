@@ -2,7 +2,6 @@ package com.hisabak.testutil
 
 import com.hisabak.core.common.Currency
 import com.hisabak.core.common.Money
-import com.hisabak.core.common.SyncMetadata
 import com.hisabak.feature.brand.domain.Brand
 import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.category.domain.Category
@@ -22,8 +21,6 @@ import java.time.YearMonth
 val TEST_CURRENCY = Currency.AED
 val FIXED_INSTANT: Instant = Instant.parse("2026-06-17T10:00:00Z")
 
-fun sync(updatedAt: Instant = FIXED_INSTANT) = SyncMetadata(updatedAt = updatedAt)
-
 fun aed(minor: Long): Money = Money(minor, TEST_CURRENCY)
 
 fun brand(
@@ -34,7 +31,6 @@ fun brand(
     id = BrandId(id),
     name = name,
     categoryId = categoryId,
-    sync = sync(),
 )
 
 fun category(
@@ -49,7 +45,6 @@ fun category(
     type = type,
     color = color,
     icon = icon,
-    sync = sync(),
 )
 
 fun categoryLimit(
@@ -76,7 +71,6 @@ fun transaction(
     note = note,
     occurredAt = occurredAt,
     sourceSmsId = sourceSmsId,
-    sync = sync(),
 )
 
 fun smsMessage(
@@ -87,7 +81,6 @@ fun smsMessage(
     id = SmsMessageId(id),
     body = body,
     receivedAt = receivedAt,
-    sync = sync(),
 )
 
 fun notification(

@@ -16,13 +16,13 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val transactionModule = module {
-    single<TransactionRepository> { RoomTransactionRepository(dao = get(), clock = get()) }
+    single<TransactionRepository> { RoomTransactionRepository(dao = get()) }
     single { TransactionListFilterBus() }
 
     factory { ObserveTransactionsUseCase(get()) }
     factory { GetTransactionsPageUseCase(get()) }
     factory { CreateTransactionUseCase(get(), get()) }
-    factory { UpdateTransactionUseCase(get(), get()) }
+    factory { UpdateTransactionUseCase(get()) }
     factory { DeleteTransactionUseCase(get()) }
     factory { ReassignBrandTransactionsUseCase(get()) }
 

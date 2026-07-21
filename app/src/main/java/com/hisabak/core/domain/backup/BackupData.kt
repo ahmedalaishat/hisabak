@@ -4,8 +4,8 @@ import kotlinx.serialization.Serializable
 
 /**
  * A logical snapshot of the user's financial data — the wire format for backups, decoupled from the
- * Room entities so the schema can evolve independently. Records mirror the 5 financial tables
- * (incl. soft-delete tombstones); added fields use defaults so older backups decode forward.
+ * Room entities so the schema can evolve independently. Records mirror the 5 financial tables;
+ * added fields use defaults so older backups decode forward.
  * Excludes ephemeral/derived tables (notifications, category limit alerts) and app settings.
  */
 @Serializable
@@ -27,11 +27,6 @@ data class CategoryRecord(
     val type: String,
     val color: String,
     val icon: String,
-    val updatedAtMillis: Long,
-    val isDirty: Boolean,
-    val deletedAtMillis: Long? = null,
-    val serverId: String? = null,
-    val version: Long = 0,
 )
 
 @Serializable
@@ -47,11 +42,6 @@ data class BrandRecord(
     val id: String,
     val name: String,
     val categoryId: String? = null,
-    val updatedAtMillis: Long,
-    val isDirty: Boolean,
-    val deletedAtMillis: Long? = null,
-    val serverId: String? = null,
-    val version: Long = 0,
 )
 
 @Serializable
@@ -63,11 +53,6 @@ data class TransactionRecord(
     val note: String? = null,
     val occurredAtMillis: Long,
     val sourceSmsId: String? = null,
-    val updatedAtMillis: Long,
-    val isDirty: Boolean,
-    val deletedAtMillis: Long? = null,
-    val serverId: String? = null,
-    val version: Long = 0,
 )
 
 @Serializable
@@ -80,9 +65,4 @@ data class SmsMessageRecord(
     val parsedAmountMinor: Long? = null,
     val parsedCurrency: String? = null,
     val parsedOccurredAtMillis: Long? = null,
-    val updatedAtMillis: Long,
-    val isDirty: Boolean,
-    val deletedAtMillis: Long? = null,
-    val serverId: String? = null,
-    val version: Long = 0,
 )

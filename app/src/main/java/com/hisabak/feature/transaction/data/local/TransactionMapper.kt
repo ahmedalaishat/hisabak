@@ -2,7 +2,6 @@ package com.hisabak.feature.transaction.data.local
 
 import com.hisabak.core.common.Currency
 import com.hisabak.core.common.Money
-import com.hisabak.core.common.SyncMetadata
 import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.transaction.domain.Transaction
 import com.hisabak.feature.transaction.domain.TransactionId
@@ -15,13 +14,6 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     note = note,
     occurredAt = Instant.ofEpochMilli(occurredAtMillis),
     sourceSmsId = sourceSmsId,
-    sync = SyncMetadata(
-        updatedAt = Instant.ofEpochMilli(updatedAtMillis),
-        isDirty = isDirty,
-        deletedAt = deletedAtMillis?.let(Instant::ofEpochMilli),
-        serverId = serverId,
-        version = version,
-    ),
 )
 
 fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
@@ -32,9 +24,4 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     note = note,
     occurredAtMillis = occurredAt.toEpochMilli(),
     sourceSmsId = sourceSmsId,
-    updatedAtMillis = sync.updatedAt.toEpochMilli(),
-    isDirty = sync.isDirty,
-    deletedAtMillis = sync.deletedAt?.toEpochMilli(),
-    serverId = sync.serverId,
-    version = sync.version,
 )

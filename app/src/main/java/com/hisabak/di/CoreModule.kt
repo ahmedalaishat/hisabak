@@ -18,7 +18,7 @@ val coreModule = module {
     single<Clock> { SystemClock() }
     single { Currency.AED }
     single { SeedData(clock = get(), currency = get()) }
-    single { StarterData(clock = get()) }
+    single { StarterData() }
     // Process-lifetime scope for work that must outlive the component that started it (e.g. a
     // share/process-text capture whose translucent activity finishes before the write completes).
     single(APPLICATION_SCOPE) { CoroutineScope(SupervisorJob() + Dispatchers.IO) }

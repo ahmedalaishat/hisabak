@@ -17,9 +17,4 @@ data class SmsMessageEntity(
     val parsedAmountMinor: Long?,
     val parsedCurrency: String?,
     val parsedOccurredAtMillis: Long?,
-    val updatedAtMillis: Long,
-    val isDirty: Boolean,
-    val deletedAtMillis: Long?,
-    val serverId: String?,
-    val version: Long,
 )

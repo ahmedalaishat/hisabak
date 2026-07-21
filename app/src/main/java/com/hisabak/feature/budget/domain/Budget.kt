@@ -2,7 +2,6 @@ package com.hisabak.feature.budget.domain
 
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.core.common.Money
-import com.hisabak.core.common.SyncMetadata
 import java.time.LocalDate
 
 data class Budget(
@@ -15,7 +14,6 @@ data class Budget(
     val period: Int = 1,
     val reoccurrence: Reoccurrence,
     val categoryIds: Set<CategoryId>,
-    val sync: SyncMetadata,
 ) {
     init {
         require(name.isNotBlank()) { "Budget name must not be blank" }

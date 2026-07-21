@@ -3,7 +3,6 @@ package com.hisabak.di
 import com.hisabak.core.common.Clock
 import com.hisabak.core.common.Currency
 import com.hisabak.core.common.Money
-import com.hisabak.core.common.SyncMetadata
 import com.hisabak.feature.brand.domain.Brand
 import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.category.domain.Category
@@ -29,29 +28,28 @@ class SeedData(clock: Clock, private val currency: Currency) {
     private val now = clock.now()
     private val zone = ZoneId.systemDefault()
     private val today = LocalDate.ofInstant(now, zone)
-    private val sync = SyncMetadata(updatedAt = now)
 
-    private val groceries = Category(CategoryId.new(), "Groceries", CategoryType.EXPENSES, color = "green", icon = "cart", sync = sync)
-    private val salary = Category(CategoryId.new(), "Salary", CategoryType.INCOME, color = "blue", icon = "briefcase", sync = sync)
-    private val transport = Category(CategoryId.new(), "Transport", CategoryType.EXPENSES, color = "orange", icon = "car", sync = sync)
-    private val dining = Category(CategoryId.new(), "Dining", CategoryType.EXPENSES, color = "red", icon = "utensils", sync = sync)
-    private val shopping = Category(CategoryId.new(), "Shopping", CategoryType.EXPENSES, color = "pink", icon = "gift", sync = sync)
-    private val savingsCat = Category(CategoryId.new(), "Savings", CategoryType.SAVINGS, color = "teal", icon = "piggy-bank", sync = sync)
-    private val investments = Category(CategoryId.new(), "Investments", CategoryType.INVESTMENT, color = "purple", icon = "wallet", sync = sync)
+    private val groceries = Category(CategoryId.new(), "Groceries", CategoryType.EXPENSES, color = "green", icon = "cart")
+    private val salary = Category(CategoryId.new(), "Salary", CategoryType.INCOME, color = "blue", icon = "briefcase")
+    private val transport = Category(CategoryId.new(), "Transport", CategoryType.EXPENSES, color = "orange", icon = "car")
+    private val dining = Category(CategoryId.new(), "Dining", CategoryType.EXPENSES, color = "red", icon = "utensils")
+    private val shopping = Category(CategoryId.new(), "Shopping", CategoryType.EXPENSES, color = "pink", icon = "gift")
+    private val savingsCat = Category(CategoryId.new(), "Savings", CategoryType.SAVINGS, color = "teal", icon = "piggy-bank")
+    private val investments = Category(CategoryId.new(), "Investments", CategoryType.INVESTMENT, color = "purple", icon = "wallet")
 
     val categories: List<Category> = listOf(
         groceries, salary, transport, dining, shopping, savingsCat, investments,
     )
 
-    private val wholeFoods = Brand(BrandId.new(), "Whole Foods", groceries.id, sync)
-    private val traderJoes = Brand(BrandId.new(), "Trader Joe's", groceries.id, sync)
-    private val acme = Brand(BrandId.new(), "Acme Corp", salary.id, sync)
-    private val uber = Brand(BrandId.new(), "Uber", transport.id, sync)
-    private val starbucks = Brand(BrandId.new(), "Starbucks", dining.id, sync)
-    private val nobu = Brand(BrandId.new(), "Nobu", dining.id, sync)
-    private val appleStore = Brand(BrandId.new(), "Apple Store", shopping.id, sync)
-    private val vault = Brand(BrandId.new(), "Vault", savingsCat.id, sync)
-    private val sarwa = Brand(BrandId.new(), "Sarwa", investments.id, sync)
+    private val wholeFoods = Brand(BrandId.new(), "Whole Foods", groceries.id)
+    private val traderJoes = Brand(BrandId.new(), "Trader Joe's", groceries.id)
+    private val acme = Brand(BrandId.new(), "Acme Corp", salary.id)
+    private val uber = Brand(BrandId.new(), "Uber", transport.id)
+    private val starbucks = Brand(BrandId.new(), "Starbucks", dining.id)
+    private val nobu = Brand(BrandId.new(), "Nobu", dining.id)
+    private val appleStore = Brand(BrandId.new(), "Apple Store", shopping.id)
+    private val vault = Brand(BrandId.new(), "Vault", savingsCat.id)
+    private val sarwa = Brand(BrandId.new(), "Sarwa", investments.id)
 
     val brands: List<Brand> = listOf(
         wholeFoods, traderJoes, acme, uber, starbucks, nobu, appleStore, vault, sarwa,
@@ -132,6 +130,5 @@ class SeedData(clock: Clock, private val currency: Currency) {
             brandId = brandId,
             note = note,
             occurredAt = date.atTime(12, 0).atZone(zone).toInstant(),
-            sync = sync,
         )
 }

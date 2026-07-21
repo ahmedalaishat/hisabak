@@ -10,9 +10,4 @@ data class CategoryEntity(
     val type: String,
     val color: String,
     val icon: String,
-    val updatedAtMillis: Long,
-    val isDirty: Boolean,
-    val deletedAtMillis: Long?,
-    val serverId: String?,
-    val version: Long,
 )

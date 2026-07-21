@@ -12,8 +12,7 @@ interface TransactionDao {
     @Query(
         """
         SELECT * FROM transactions
-        WHERE deletedAtMillis IS NULL
-          AND (:brandId IS NULL OR brandId = :brandId)
+        WHERE (:brandId IS NULL OR brandId = :brandId)
           AND (:dateFromMillis IS NULL OR occurredAtMillis >= :dateFromMillis)
           AND (:dateToMillis IS NULL OR occurredAtMillis <= :dateToMillis)
           AND (:search IS NULL OR note LIKE '%' || :search || '%' COLLATE NOCASE)
@@ -30,8 +29,7 @@ interface TransactionDao {
     @Query(
         """
         SELECT * FROM transactions
-        WHERE deletedAtMillis IS NULL
-          AND (:brandId IS NULL OR brandId = :brandId)
+        WHERE (:brandId IS NULL OR brandId = :brandId)
           AND (:dateFromMillis IS NULL OR occurredAtMillis >= :dateFromMillis)
           AND (:dateToMillis IS NULL OR occurredAtMillis <= :dateToMillis)
           AND (:search IS NULL OR note LIKE '%' || :search || '%' COLLATE NOCASE)
@@ -51,8 +49,7 @@ interface TransactionDao {
     @Query(
         """
         SELECT COUNT(*) FROM transactions
-        WHERE deletedAtMillis IS NULL
-          AND (:brandId IS NULL OR brandId = :brandId)
+        WHERE (:brandId IS NULL OR brandId = :brandId)
           AND (:dateFromMillis IS NULL OR occurredAtMillis >= :dateFromMillis)
           AND (:dateToMillis IS NULL OR occurredAtMillis <= :dateToMillis)
           AND (:search IS NULL OR note LIKE '%' || :search || '%' COLLATE NOCASE)
@@ -65,7 +62,7 @@ interface TransactionDao {
         dateToMillis: Long?,
     ): Long
 
-    @Query("SELECT * FROM transactions WHERE id = :id AND deletedAtMillis IS NULL")
+    @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun getById(id: String): TransactionEntity?
 
     @Query("SELECT COUNT(*) FROM transactions")
@@ -80,19 +77,15 @@ interface TransactionDao {
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun deleteById(id: String)
 
-    // Backup: every row incl. soft-deleted tombstones.
     @Query("SELECT * FROM transactions")
     suspend fun getAllForBackup(): List<TransactionEntity>
 
     @Query("DELETE FROM transactions")
     suspend fun deleteAll()
 
-    @Query("SELECT COUNT(*) FROM transactions WHERE brandId = :brandId AND deletedAtMillis IS NULL")
+    @Query("SELECT COUNT(*) FROM transactions WHERE brandId = :brandId")
     suspend fun countForBrand(brandId: String): Long
 
-    @Query(
-        "UPDATE transactions SET brandId = :toBrandId, updatedAtMillis = :nowMillis, isDirty = 1 " +
-            "WHERE brandId = :fromBrandId",
-    )
-    suspend fun reassignBrand(fromBrandId: String, toBrandId: String, nowMillis: Long)
+    @Query("UPDATE transactions SET brandId = :toBrandId WHERE brandId = :fromBrandId")
+    suspend fun reassignBrand(fromBrandId: String, toBrandId: String)
 }

@@ -50,8 +50,8 @@ android {
         applicationId = "com.hisabak"
         minSdk = 29
         targetSdk = 36
-        versionCode = 11
-        versionName = "1.8.0"
+        versionCode = 12
+        versionName = "1.9.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -159,6 +159,8 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    // Retained only to decrypt databases created by <=1.8.x (one-time migration); drop once the
+    // upgrade window closes.
     implementation(libs.sqlcipher.android)
     implementation(libs.androidx.sqlite)
     implementation(libs.androidx.datastore.preferences)

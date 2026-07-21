@@ -39,17 +39,16 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   The Room schema is exported to `app/schemas/` (committed); bump the DB version and add a
   real `Migration` for any entity change — **release builds don't destructively fall back**
   (debug builds do, for fast iteration).
-- **At-rest encryption:** the database is **always** encrypted with SQLCipher (`net.zetetic:
-  sqlcipher-android`), wired in `di/DatabaseModule.kt` via `.openHelperFactory(SupportOpenHelperFactory(key))`
-  — transparent above the open-helper, so entities/DAOs/migrations/schema export are unchanged. The
-  key is a random secret generated on-device and wrapped by a non-exportable Android Keystore AES-GCM
-  key (`KeystoreDatabaseKeyStore`, `core/data/local/security/`; same pattern as the backup passphrase
-  store, distinct alias `hisabak_database_key`). It is **not** auth-gated, so the DB opens on cold
-  start and in the unattended `BackupWorker` — the live-device threat is App Lock's job, not the key's.
-  Always-on (no toggle); existing plaintext databases are migrated once, in place, before Room opens
-  (`DatabaseEncryptionMigration` — detects the `SQLite format 3` header, runs `sqlcipher_export`,
-  verifies + atomically swaps; idempotent, retries on crash). Load the native lib once
-  (`System.loadLibrary("sqlcipher")`) before opening. Lightweight app prefs (the onboarding flag, the
+- **At-rest protection:** the database is plain (unencrypted) SQLite, relying on Android's
+  file-based encryption of app-private storage; the live-device threat is App Lock's job. The
+  app-level SQLCipher layer that versions ≤1.8.x used was **removed** (its Keystore-wrapped key was
+  never auth-gated, so it added little over FBE). Databases carried over from those versions are
+  decrypted once, in place, before Room opens (`DatabaseDecryptionMigration`,
+  `core/data/local/security/` — keys off the `SQLite format 3` header, unlocks with the legacy
+  passphrase from `KeystoreDatabaseKeyStore`, runs `sqlcipher_export`, verifies + atomically swaps,
+  then clears the stored key; idempotent, retries on crash; loads the SQLCipher native lib only when
+  an encrypted file is actually found). The `sqlcipher-android` dependency is retained **only** for
+  this migration — drop it, the migration, and the key store once the ≤1.8.x upgrade window closes. Lightweight app prefs (the onboarding flag, the
   theme mode, and the `appLockEnabled` flag) use DataStore (`core/data/preferences/`) behind the
   `AppPreferences` interface (`core/domain/`); `MainActivity` reads `themeMode` and feeds the
   resolved boolean to `HisabakTheme(darkTheme=…)`.
@@ -115,7 +114,7 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
 
 ```
 com.hisabak
-├── core/common/              shared value objects (Money, SyncMetadata, IDs)
+├── core/common/              shared value objects (Money, IDs)
 ├── ui/
 │   ├── components/           shared Compose components
 │   └── theme/                Material 3 theme (colors, typography, shapes)
@@ -161,19 +160,19 @@ Pattern: `List` → tap row or FAB → push `Edit(id?)` destination → Save/Can
 ## Domain Models
 
 ### Transaction
-- `id`, `amount: Money`, `brandId`, `note?`, `occurredAt: Instant`, `sourceSmsId?`, `sync`
+- `id`, `amount: Money`, `brandId`, `note?`, `occurredAt: Instant`, `sourceSmsId?`
 
 ### Brand
-- `id`, `name`, `categoryId?`, `sync`
+- `id`, `name`, `categoryId?`
 
 ### Category
-- `id`, `name`, `type: CategoryType`, `color: String`, `icon: String`, `sync`
+- `id`, `name`, `type: CategoryType`, `color: String`, `icon: String`
 - `CategoryType`: INCOME | EXPENSES | SAVINGS | INVESTMENT
 - `color` options: green, blue, orange, red, teal, purple, pink, gray
 - `icon` options: wallet, cart, briefcase, car, utensils, piggy-bank, home, film, book, heart, gift, plane
 
 ### Budget
-- `id`, `name`, `amount: Money`, `startAt`, `endAt?`, `saving`, `period`, `reoccurrence`, `categoryIds`, `sync`
+- `id`, `name`, `amount: Money`, `startAt`, `endAt?`, `saving`, `period`, `reoccurrence`, `categoryIds`
 - `Reoccurrence`: CUSTOM | DAILY | WEEKLY | MONTHLY | YEARLY
 
 ### Money
@@ -286,7 +285,6 @@ Each component has a `.prompt.md` (what/when + usage) and `.d.ts` (props) — re
 - No error handling for impossible cases — trust domain guarantees
 - No premature abstractions — add only what the current task requires
 - Validate only at system boundaries (user input, external SMS)
-- All entities carry `SyncMetadata` (prepared for future cloud sync)
 - `rememberSaveable` keeps tab nav state alive across tab switches
 - Don't invent new screens/flows from scratch — match existing Hisabak designs;
   if a design doesn't exist yet, leave a `// TODO: design` note rather than guessing

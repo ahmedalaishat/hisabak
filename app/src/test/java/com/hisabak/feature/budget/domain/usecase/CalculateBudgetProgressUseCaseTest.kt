@@ -7,7 +7,6 @@ import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.testutil.FakeBudgetRepository
 import com.hisabak.testutil.TestClock
 import com.hisabak.testutil.aed
-import com.hisabak.testutil.sync
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -26,7 +25,6 @@ class CalculateBudgetProgressUseCaseTest {
         endAt = LocalDate.of(2026, 6, 30),
         reoccurrence = Reoccurrence.CUSTOM,
         categoryIds = setOf(CategoryId("c1")),
-        sync = sync(),
     )
 
     @Test

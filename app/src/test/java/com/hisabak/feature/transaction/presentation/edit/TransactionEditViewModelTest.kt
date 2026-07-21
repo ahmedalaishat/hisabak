@@ -60,7 +60,7 @@ class TransactionEditViewModelTest {
         observeBrands = ObserveBrandsUseCase(brandRepo),
         observeCategories = ObserveCategoriesUseCase(catRepo),
         createTransaction = CreateTransactionUseCase(txRepo, clock),
-        updateTransaction = UpdateTransactionUseCase(txRepo, clock),
+        updateTransaction = UpdateTransactionUseCase(txRepo),
         analytics = analytics,
     )
 

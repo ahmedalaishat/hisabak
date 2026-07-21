@@ -19,10 +19,10 @@ val brandModule = module {
     single { BrandEditBus() }
 
     factory { ObserveBrandsUseCase(get()) }
-    factory { CreateBrandUseCase(get(), get()) }
-    factory { UpdateBrandUseCase(get(), get()) }
+    factory { CreateBrandUseCase(get()) }
+    factory { UpdateBrandUseCase(get()) }
     factory { DeleteBrandUseCase(get()) }
-    factory { FindOrCreateBrandUseCase(get(), get()) }
+    factory { FindOrCreateBrandUseCase(get()) }
 
     viewModel {
         BrandListViewModel(
