@@ -159,6 +159,8 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    // Retained only to decrypt databases created by <=1.8.x (one-time migration); drop once the
+    // upgrade window closes.
     implementation(libs.sqlcipher.android)
     implementation(libs.androidx.sqlite)
     implementation(libs.androidx.datastore.preferences)

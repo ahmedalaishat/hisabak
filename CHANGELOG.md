@@ -6,6 +6,14 @@ All notable changes to Hisabak are documented here. Format based on
 
 ## [Unreleased]
 
+### Changed
+- **Simpler on-device storage** — the app-level SQLCipher database encryption has been removed;
+  your data stays in app-private storage protected by Android's built-in file-based encryption
+  (and by App Lock, if you use it). The app-level layer added no real protection on top — its key
+  was stored on the same device with nothing gating it — and removing it makes the app smaller and
+  faster to start. Existing databases are converted automatically on first launch after updating —
+  nothing for you to do, and no data is lost.
+
 ## [1.8.0] — 2026-06-25
 
 ### Added

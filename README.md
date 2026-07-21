@@ -90,12 +90,8 @@ Everything below is built and shipping today:
   icons, and brands mapped to categories. Safe deletion with brand-merge and confirmation.
 - [x] 🛎️ **Notifications center** — unread badge on the bell, swipe-to-dismiss, and mark-all-read.
 - [x] 🔒 **App lock** — optional biometric / device-PIN lock that gates access on launch and when
-  you return to the app, so your finances stay private on a shared device. (Access gate; the
-  database itself is also encrypted at rest — see below.)
-- [x] 🛡️ **Encrypted at rest** — the on-device database is always encrypted with SQLCipher
-  (AES-256). The key is generated on-device and wrapped in the Android Keystore, so your financial
-  data is unreadable if the device's storage is ever extracted. Existing databases are migrated to
-  encrypted automatically on first launch — nothing for you to turn on.
+  you return to the app, so your finances stay private on a shared device. (Your data lives in
+  app-private storage, protected at rest by Android's built-in file-based encryption.)
 - [x] ⚙️ **Settings** — pick your **theme** (light / dark / system) and **language**
   (**English / العربية**, fully localized and right-to-left). Both are saved across launches.
 - [x] ☁️ **Google Drive backup & restore** — connect a Google account and back up your data to a
