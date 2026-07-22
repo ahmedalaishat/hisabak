@@ -1,6 +1,7 @@
 package com.hisabak.core.data.backup
 
-import androidx.room.withTransaction
+import androidx.room.immediateTransaction
+import androidx.room.useWriterConnection
 import com.hisabak.core.data.local.HisabakDatabase
 import com.hisabak.core.domain.backup.BackupData
 import com.hisabak.core.domain.backup.BackupRepository
@@ -37,19 +38,21 @@ class RoomBackupRepository(
         smsMessages = smsDao.getAllForBackup().map { it.toRecord() },
     )
 
-    override suspend fun replaceAll(data: BackupData) = db.withTransaction {
-        // Delete children → parents to respect the brand/transaction foreign keys.
-        transactionDao.deleteAll()
-        smsDao.deleteAll()
-        categoryLimitDao.deleteAll()
-        brandDao.deleteAll()
-        categoryDao.deleteAll()
-        // Insert parents → children.
-        categoryDao.upsertAll(data.categories.map { it.toEntity() })
-        brandDao.upsertAll(data.brands.map { it.toEntity() })
-        transactionDao.upsertAll(data.transactions.map { it.toEntity() })
-        smsDao.upsertAll(data.smsMessages.map { it.toEntity() })
-        categoryLimitDao.upsertAll(data.categoryLimits.map { it.toEntity() })
+    override suspend fun replaceAll(data: BackupData) = db.useWriterConnection { transactor ->
+        transactor.immediateTransaction {
+            // Delete children → parents to respect the brand/transaction foreign keys.
+            transactionDao.deleteAll()
+            smsDao.deleteAll()
+            categoryLimitDao.deleteAll()
+            brandDao.deleteAll()
+            categoryDao.deleteAll()
+            // Insert parents → children.
+            categoryDao.upsertAll(data.categories.map { it.toEntity() })
+            brandDao.upsertAll(data.brands.map { it.toEntity() })
+            transactionDao.upsertAll(data.transactions.map { it.toEntity() })
+            smsDao.upsertAll(data.smsMessages.map { it.toEntity() })
+            categoryLimitDao.upsertAll(data.categoryLimits.map { it.toEntity() })
+        }
     }
 }
 

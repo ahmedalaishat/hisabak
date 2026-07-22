@@ -1,6 +1,7 @@
 package com.hisabak.core.data.local
 
-import androidx.room.withTransaction
+import androidx.room.immediateTransaction
+import androidx.room.useWriterConnection
 import com.hisabak.core.common.Currency
 import com.hisabak.di.SeedData
 import com.hisabak.feature.brand.data.local.toEntity
@@ -16,11 +17,13 @@ class DatabaseSeeder(
     /** Full demo dataset (categories, brands, transactions, limits) for development/staging. */
     suspend fun seedIfEmpty() {
         if (db.categoryDao().count() > 0) return
-        db.withTransaction {
-            db.categoryDao().upsertAll(seed.categories.map { it.toEntity() })
-            db.brandDao().upsertAll(seed.brands.map { it.toEntity() })
-            db.transactionDao().upsertAll(seed.transactions.map { it.toEntity() })
-            db.categoryLimitDao().upsertAll(seed.categoryLimits.map { it.toEntity(currency) })
+        db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                db.categoryDao().upsertAll(seed.categories.map { it.toEntity() })
+                db.brandDao().upsertAll(seed.brands.map { it.toEntity() })
+                db.transactionDao().upsertAll(seed.transactions.map { it.toEntity() })
+                db.categoryLimitDao().upsertAll(seed.categoryLimits.map { it.toEntity(currency) })
+            }
         }
     }
 

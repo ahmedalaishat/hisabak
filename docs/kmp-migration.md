@@ -23,7 +23,7 @@ Hisabak/
 ├── settings.gradle.kts            # :androidApp, :shared
 ├── shared/                        # KMP lib: android + iosArm64 + iosSimulatorArm64
 │   ├── build.gradle.kts           # CMP, Room KMP plugin, KSP per-target
-│   ├── schemas/                   # moved verbatim from app/schemas/
+│   ├── schemas/                   # moved verbatim from app/schemas/ (flat layout, no per-target dirs)
 │   └── src/{commonMain,androidMain,iosMain,commonTest,androidHostTest}/
 │       └── commonMain/composeResources/{values,values-ar,font}/
 ├── androidApp/                    # from app/ — flavors, signing, Firebase, manifests, nav, MainActivity
@@ -105,10 +105,19 @@ Packages keep `com.hisabak.*` names so moves don't ripple through imports.
   `CompactAmountTest`, all ViewModel tests). `CategoryLimitMonitor` now depends on a domain
   `CategoryLimitAlertStore` port (Room DAO adapter in androidApp). Test count unchanged:
   186 (71 androidApp + 115 shared, + the `PlatformTest` sample).
-- [ ] **PR 5 — Room KMP** *(risky)*: entities/DAOs/DB/repos → commonMain; `androidx.room` plugin;
-  `@ConstructedBy`; `expect fun databaseBuilder()` (android actual wires
-  `DatabaseDecryptionMigration` pre-open; iOS actual uses BundledSQLiteDriver); `app/schemas/` →
-  `shared/schemas/` verbatim, byte-identical v3 JSON asserted.
+- [x] **PR 5 — Room KMP** *(risky)*: entities/DAOs/DB/repos (incl. `RoomBackupRepository` +
+  `DatabaseSeeder`, on `useWriterConnection` + `immediateTransaction`) → commonMain;
+  `androidx.room` plugin + per-target KSP in `shared`; `@ConstructedBy` + expect
+  `HisabakDatabaseConstructor`; plain per-platform `hisabakDatabaseBuilder(...)` functions
+  (androidMain keeps the framework driver — no `setDriver` — with androidApp's Koin module still
+  running `DatabaseDecryptionMigration` pre-open; iosMain uses BundledSQLiteDriver + Documents
+  dir). `MIGRATION_1_2` rewritten to the `SQLiteConnection` form (SQL unchanged);
+  `DropSyncColumnsSpec` uses repeated `@DeleteColumn` (the explicit `.Entries` container isn't
+  unwrapped by native KSP). `androidApp/schemas/` → `shared/schemas/` verbatim — the room plugin
+  keeps the same flat `<db-class>/<version>.json` layout (no per-target subdirs) and
+  `copyRoomSchemas` regenerates a byte-identical v3 JSON (asserted by delete + regenerate + diff).
+  `sqlite` bumped 2.5.1 → 2.6.2 (the androidx.sqlite Room 2.8.4 ships against); sqlcipher deps
+  moved to `shared` androidMain.
 - [ ] **PR 6 — DataStore/preferences → commonMain**: `expect` store-path provider (android
   `filesDir`, iOS Documents dir). `AppLocale` stays androidApp.
 - [ ] **PR 7 — DriveAuthorizer contract redesign + Koin split**: remove the `Intent`/`IntentSender`
