@@ -32,11 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.hisabak.R
+import com.hisabak.shared.resources.*
 import com.hisabak.feature.backup.presentation.SyncKind
 import com.hisabak.feature.backup.presentation.SyncScreen
 import com.hisabak.feature.backup.presentation.messageRes
@@ -88,10 +88,10 @@ fun RestoreScreen(
                 var passphrase by rememberSaveable { mutableStateOf("") }
                 RestorePane(
                     heroIcon = HugeIcons.Lock,
-                    title = stringResource(R.string.restore_passphrase_title),
-                    subtitle = stringResource(R.string.restore_passphrase_subtitle, state.account?.email ?: ""),
+                    title = stringResource(Res.string.restore_passphrase_title),
+                    subtitle = stringResource(Res.string.restore_passphrase_subtitle, state.account?.email ?: ""),
                     message = (state.message as? RestoreMessage.Failed)?.let { stringResource(it.error.messageRes()) },
-                    primaryText = stringResource(R.string.restore_action),
+                    primaryText = stringResource(Res.string.restore_action),
                     primaryEnabled = passphrase.isNotEmpty(),
                     onPrimary = { onSubmitPassphrase(passphrase) },
                     onSkip = onSkip,
@@ -99,7 +99,7 @@ fun RestoreScreen(
                     OutlinedTextField(
                         value = passphrase,
                         onValueChange = { passphrase = it },
-                        label = { Text(stringResource(R.string.backup_passphrase)) },
+                        label = { Text(stringResource(Res.string.backup_passphrase)) },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -109,11 +109,11 @@ fun RestoreScreen(
             }
             RestoreView.Intro -> RestorePane(
                 heroIcon = HugeIcons.CloudDownload,
-                title = stringResource(R.string.restore_title),
-                subtitle = stringResource(R.string.restore_subtitle),
-                message = if (state.message is RestoreMessage.NothingFound) stringResource(R.string.restore_none_found) else null,
+                title = stringResource(Res.string.restore_title),
+                subtitle = stringResource(Res.string.restore_subtitle),
+                message = if (state.message is RestoreMessage.NothingFound) stringResource(Res.string.restore_none_found) else null,
                 primaryText = stringResource(
-                    if (state.account != null) R.string.restore_try_another else R.string.restore_connect,
+                    if (state.account != null) Res.string.restore_try_another else Res.string.restore_connect,
                 ),
                 primaryEnabled = true,
                 onPrimary = onConnect,
@@ -161,7 +161,7 @@ private fun RestorePane(
 
         Column(modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.s3)) {
             Text(
-                text = stringResource(R.string.restore_overline).uppercase(),
+                text = stringResource(Res.string.restore_overline).uppercase(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -201,7 +201,7 @@ private fun RestorePane(
                 fullWidth = true,
             )
             HisabakButton(
-                text = stringResource(R.string.restore_skip),
+                text = stringResource(Res.string.restore_skip),
                 onClick = onSkip,
                 variant = ButtonVariant.Ghost,
                 fullWidth = true,

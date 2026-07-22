@@ -39,11 +39,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hisabak.R
+import com.hisabak.shared.resources.*
+import com.hisabak.ui.components.localizedFormatArg
 import com.hisabak.core.common.Money
 import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.feature.brand.domain.BrandId
@@ -134,7 +135,7 @@ fun TransactionListScreen(
         item {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
                 Text(
-                    text = stringResource(R.string.transaction_summary),
+                    text = stringResource(Res.string.transaction_summary),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -171,7 +172,7 @@ fun TransactionListScreen(
             SearchField(
                 value = state.search,
                 onValueChange = onSearchChange,
-                placeholder = stringResource(R.string.transaction_search_placeholder),
+                placeholder = stringResource(Res.string.transaction_search_placeholder),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -183,23 +184,23 @@ fun TransactionListScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 FilterPill(
-                    label = state.selectedCategoryName ?: stringResource(R.string.common_category),
+                    label = state.selectedCategoryName ?: stringResource(Res.string.common_category),
                     active = state.categoryFilter != null,
                     onClick = { openFilter = FilterTarget.CATEGORY },
                 )
                 FilterPill(
-                    label = state.selectedBrandName ?: stringResource(R.string.common_brand),
+                    label = state.selectedBrandName ?: stringResource(Res.string.common_brand),
                     active = state.brandFilter != null,
                     onClick = { openFilter = FilterTarget.BRAND },
                 )
                 FilterPill(
-                    label = if (state.dateRange == DateRangeFilter.ALL) stringResource(R.string.common_date) else stringResource(state.dateRange.labelRes),
+                    label = if (state.dateRange == DateRangeFilter.ALL) stringResource(Res.string.common_date) else stringResource(state.dateRange.labelRes),
                     active = state.dateRange != DateRangeFilter.ALL,
                     onClick = { openFilter = FilterTarget.DATE },
                 )
                 if (state.hasActiveFilters) {
                     Text(
-                        text = stringResource(R.string.action_clear),
+                        text = stringResource(Res.string.action_clear),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
@@ -215,18 +216,18 @@ fun TransactionListScreen(
             item {
                 if (filtered) {
                     EmptyStatePanel(
-                        title = stringResource(R.string.transaction_empty_filtered_title),
-                        subtitle = stringResource(R.string.transaction_empty_filtered_subtitle),
+                        title = stringResource(Res.string.transaction_empty_filtered_title),
+                        subtitle = stringResource(Res.string.transaction_empty_filtered_subtitle),
                         icon = HugeIcons.ReceiptLong,
-                        actionLabel = stringResource(if (state.hasActiveFilters) R.string.action_clear_filters else R.string.transaction_add),
+                        actionLabel = stringResource(if (state.hasActiveFilters) Res.string.action_clear_filters else Res.string.transaction_add),
                         onAction = if (state.hasActiveFilters) onClearFilters else onAdd,
                     )
                 } else {
                     EmptyStatePanel(
-                        title = stringResource(R.string.transaction_empty_title),
-                        subtitle = stringResource(R.string.transaction_empty_subtitle),
+                        title = stringResource(Res.string.transaction_empty_title),
+                        subtitle = stringResource(Res.string.transaction_empty_subtitle),
                         icon = HugeIcons.ReceiptLong,
-                        actionLabel = stringResource(R.string.transaction_add),
+                        actionLabel = stringResource(Res.string.transaction_add),
                         onAction = onAdd,
                     )
                 }
@@ -256,21 +257,21 @@ fun TransactionListScreen(
 
     when (openFilter) {
         FilterTarget.CATEGORY -> FilterSelectSheet(
-            title = stringResource(R.string.transaction_filter_category),
+            title = stringResource(Res.string.transaction_filter_category),
             entries = state.categoryOptions.map { FilterEntry(it.id.value, it.name, it.color) },
             selectedId = state.categoryFilter?.value,
             onSelect = { id -> onCategoryFilterChange(id?.let(::CategoryId)); openFilter = null },
             onDismiss = { openFilter = null },
         )
         FilterTarget.BRAND -> FilterSelectSheet(
-            title = stringResource(R.string.transaction_filter_brand),
+            title = stringResource(Res.string.transaction_filter_brand),
             entries = state.brandOptions.map { FilterEntry(it.id.value, it.name, null) },
             selectedId = state.brandFilter?.value,
             onSelect = { id -> onBrandFilterChange(id?.let(::BrandId)); openFilter = null },
             onDismiss = { openFilter = null },
         )
         FilterTarget.DATE -> FilterSelectSheet(
-            title = stringResource(R.string.transaction_filter_date),
+            title = stringResource(Res.string.transaction_filter_date),
             entries = DateRangeFilter.entries
                 .filter { it != DateRangeFilter.ALL }
                 .map { FilterEntry(it.name, stringResource(it.labelRes), null) },
@@ -321,7 +322,7 @@ private fun FilterSelectSheet(
     selectedId: String?,
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit,
-    allLabel: String = stringResource(R.string.common_all),
+    allLabel: String = stringResource(Res.string.common_all),
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -375,7 +376,7 @@ private fun FilterSheetRow(
         if (selected) {
             Icon(
                 HugeIcons.Check,
-                contentDescription = stringResource(R.string.common_selected),
+                contentDescription = stringResource(Res.string.common_selected),
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(Sizing.icon),
             )
@@ -395,7 +396,7 @@ private fun IncomeRatioBar(incomeMinor: Long, expensesMinor: Long) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
         ProgressBar(progress = ratio, color = HisabakTheme.colors.income)
         Text(
-            text = stringResource(R.string.transaction_income_ratio, pct),
+            text = stringResource(Res.string.transaction_income_ratio, localizedFormatArg(pct)),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -418,8 +419,8 @@ private fun DayHeader(date: LocalDate) {
 private fun dayLabel(date: LocalDate): String {
     val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
     return when (date) {
-        today -> stringResource(R.string.time_today)
-        today.minus(1, DateTimeUnit.DAY) -> stringResource(R.string.time_yesterday)
+        today -> stringResource(Res.string.time_today)
+        today.minus(1, DateTimeUnit.DAY) -> stringResource(Res.string.time_yesterday)
         else -> {
             val pattern = if (date.year == today.year) "MMM d" else "MMM d, yyyy"
             formatLocalDate(date, pattern)
@@ -517,10 +518,10 @@ private fun formatRelative(instant: Instant): String {
     val diff = now - instant
     return when {
         diff.isNegative() -> formatDate(instant)
-        diff.inWholeHours < 1 -> stringResource(R.string.time_minutes_ago, diff.inWholeMinutes.coerceAtLeast(1).toInt())
-        diff.inWholeHours < 24 -> stringResource(R.string.time_hours_ago, diff.inWholeHours.toInt())
-        diff.inWholeDays == 1L -> stringResource(R.string.time_yesterday)
-        diff.inWholeDays < 7 -> stringResource(R.string.time_days_ago, diff.inWholeDays.toInt())
+        diff.inWholeHours < 1 -> stringResource(Res.string.time_minutes_ago, localizedFormatArg(diff.inWholeMinutes.coerceAtLeast(1).toInt()))
+        diff.inWholeHours < 24 -> stringResource(Res.string.time_hours_ago, localizedFormatArg(diff.inWholeHours.toInt()))
+        diff.inWholeDays == 1L -> stringResource(Res.string.time_yesterday)
+        diff.inWholeDays < 7 -> stringResource(Res.string.time_days_ago, localizedFormatArg(diff.inWholeDays.toInt()))
         else -> formatDate(instant)
     }
 }

@@ -55,20 +55,30 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   theme mode, and the `appLockEnabled` flag) use DataStore (`core/data/preferences/`) behind the
   `AppPreferences` interface (`core/domain/`); `MainActivity` reads `themeMode` and feeds the
   resolved boolean to `HisabakTheme(darkTheme=…)`.
-- **Localization:** English + Arabic (RTL). User-facing strings live in `res/values/strings.xml`
-  (+ `res/values-ar/`) and are read via `stringResource`/`pluralStringResource` — **don't hardcode
-  UI text**. The in-app language switch is framework-only (no appcompat, so Navigation 3's
+- **Localization:** English + Arabic (RTL). User-facing strings live in **Compose Multiplatform
+  resources** — `shared/src/commonMain/composeResources/values/strings.xml` (+ `values-ar/`),
+  generated `Res` class in `com.hisabak.shared.resources` — read via CMP's
+  `stringResource`/`pluralStringResource` (`org.jetbrains.compose.resources`) — **don't hardcode
+  UI text**. The only Android-resource strings left in `androidApp/src/main/res/values{,-ar}/`
+  are the 10 notification strings read via `Context.getString` outside Compose
+  (`AndroidNotificationStrings`, `SystemNotifier`) plus the flavor-generated `app_name`.
+  The in-app language switch is framework-only (no appcompat, so Navigation 3's
   `NavDisplay` keeps its `ComponentActivity` dispatcher owner): the chosen tag is stored by
-  `AppLocale` (`core/data/preferences/`) in a synchronous SharedPreferences, `MainActivity`
-  overrides `attachBaseContext` to wrap the Context in that locale + layout direction, and the
-  Settings screen saves the tag then calls `recreate()`. **Numbers follow the language:** English
-  uses Western digits (pinned to `Locale.US`), Arabic uses **Arabic-Indic** digits — the wrapped
-  locale carries `nu-arab` so resource-formatted numbers (percentages, dates, counts via `%d`)
-  render Arabic-Indic config-driven, amounts pin `ar-u-nu-arab` in `compactAmountParts`, and the
-  few fixed-format numbers use `localizeDigits(text, arabic)`. Amounts always read LTR
-  (glyph · number · K/M-or-أ/م suffix) via a forced `LayoutDirection.Ltr`, with the number and
-  suffix as separate `Text`s so Arabic-Indic digits don't bidi-reorder. Amounts keep the dirham
-  glyph in both languages.
+  `AppLocale` (androidApp, `core/data/preferences/`) in a synchronous SharedPreferences,
+  `MainActivity` overrides `attachBaseContext` to wrap the Context in that locale + layout
+  direction, and the Settings screen saves the tag then calls `recreate()`. **The
+  `Locale.setDefault(...)` call in `AppLocale.wrap` is load-bearing:** CMP resolves
+  values/values-ar off the process default locale (`Locale.current`), not the wrapped Context.
+  **Numbers follow the language:** English uses Western digits, Arabic uses **Arabic-Indic**
+  digits. CMP's `%1$d` interpolation is *not* locale-aware (plain `toString()` substitution,
+  positional `%1$d`/`%1$s` only, no `%%` escape), so numeric format args are localized at the
+  call site via `localizedFormatArg(n)`; amounts get Arabic-Indic digits + `٬`/`٫` separators
+  from the pure-Kotlin `compactAmountParts(major, arabic)`, and the few fixed-format numbers
+  use `localizeDigits(text, arabic)` (all in `ui/components/HisabakComponents.kt`, shared).
+  Arabic plural selection works in CMP (full CLDR rules, all 6 Arabic categories). Amounts
+  always read LTR (glyph · number · K/M-or-أ/م suffix) via a forced `LayoutDirection.Ltr`,
+  with the number and suffix as separate `Text`s so Arabic-Indic digits don't bidi-reorder.
+  Amounts keep the dirham glyph in both languages.
 - **Platform:** Android only, portrait, edge-to-edge. `minSdk 29`.
 - **Dates & times: use kotlinx-datetime** (`kotlin.time.Instant`, `kotlinx.datetime.LocalDate` /
   `YearMonth` / `TimeZone`), **not `java.time`** — the code is KMP-bound and java.time doesn't
@@ -219,8 +229,10 @@ Pattern: `List` → tap row or FAB → push `Edit(id?)` destination → Save/Can
 This app uses the **Hisabak design system**. When building or editing UI, follow these rules.
 The full system (tokens, component specs, screen prototypes) lives in
 `.claude/skills/hisabak-design/`. **The Compose app is the source of truth** — the tokens are
-already translated into `ui/theme/` (`Color.kt`, `Type.kt`, `Shape.kt`, `Motion.kt`,
-`HisabakTheme.kt`) and shared components in `ui/components/`. For production UI, use those
+already translated into `shared/src/commonMain/kotlin/com/hisabak/ui/theme/` (`Color.kt`,
+`Type.kt`, `Shape.kt`, `Motion.kt`, `HisabakTheme.kt`) and shared components in
+`shared/src/commonMain/kotlin/com/hisabak/ui/components/` — both **Compose Multiplatform**
+(commonMain); keep them free of Android-only APIs. For production UI, use those
 directly; see the design skill's `compose-bridge.md` for the token/component → Kotlin map.
 Use the HTML/CSS kit only for throwaway visual mockups.
 
@@ -232,11 +244,14 @@ Use the HTML/CSS kit only for throwaway visual mockups.
   hex; use `MaterialTheme.colorScheme.*`, `HisabakTheme.colors.*`, `HisabakType.*`, `Spacing.*`,
   `Sizing.*`.
 - **Type:** DM Sans for UI; **Geist Mono with tabular figures for every amount**
-  (`HisabakType.amount` / `amountLarge` / `amountHero`). Amounts align in columns —
-  don't use the sans font for money. **Arabic uses Tajawal** for both UI and amounts (one
-  cohesive face — Geist Mono has no Arabic-Indic glyphs); the typography is built via the shared
-  `hisabakTypography(family, arabic)` builder in `Type.kt`, and `AmountText`/`MoneyText` swap the
-  figure family to Tajawal under Arabic. Fonts load via the Downloadable Fonts (Google Fonts) provider.
+  (`HisabakType.amount` / `amountLarge` / `amountHero` — composable getters reading
+  `LocalHisabakFonts`). Amounts align in columns — don't use the sans font for money.
+  **Arabic uses Tajawal** for both UI and amounts (one cohesive face — Geist Mono has no
+  Arabic-Indic glyphs); the typography is built via the shared `hisabakTypography(family, arabic)`
+  builder in `Type.kt`, and `AmountText`/`MoneyText` swap the figure family to Tajawal under
+  Arabic. Fonts are **bundled OFL TTFs** in `shared/src/commonMain/composeResources/font/`
+  (DM Sans 400/500/600/700, Geist Mono 400/500/600, Tajawal 400/500/700) loaded through CMP
+  resources — the downloadable-fonts (Google Fonts provider) setup was removed.
 - **Spacing:** 8dp grid. 16dp page margin, 16dp card padding, 12dp between cards.
   Touch targets ≥ 44dp.
 - **Shape:** 12dp default card radius, 16dp hero/sheet, pill for buttons/chips/badges,
@@ -285,8 +300,9 @@ rasterizer in `CategoryGlyphIcon.kt` strokes the same vector).
 - Address the user as **you**. **Sentence case** for buttons/labels; Title Case only for
   proper screen names ("SMS Inbox"). No emoji.
 - Money in the UI uses the **dirham glyph**, never the literal text "AED". Use the shared
-  components — `DirhamGlyph`, `AmountText`, `MoneyText` (`ui/components/HisabakComponents.kt`,
-  glyph = `res/drawable/ic_dirham`) — which render the glyph + Geist Mono tabular figures.
+  components — `DirhamGlyph`, `AmountText`, `MoneyText` (shared
+  `ui/components/HisabakComponents.kt`, glyph = `shared/src/commonMain/composeResources/drawable/
+  ic_dirham.xml`) — which render the glyph + Geist Mono tabular figures.
   Never hardcode `"AED …"` in a `Text`. (The only exception is simulated bank-SMS sample
   text, which genuinely contains "AED".) Amounts are shown **compactly** — thousands as `K`,
   millions as `M`, both to 2 decimals, under 1,000 exact (the shared `compactAmount` /

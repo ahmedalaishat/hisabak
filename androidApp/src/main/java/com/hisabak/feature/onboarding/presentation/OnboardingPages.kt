@@ -50,11 +50,12 @@ import com.hisabak.ui.components.localizeDigits
 import com.hisabak.ui.components.rememberIsArabic
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.hisabak.R
+import com.hisabak.shared.resources.*
+import com.hisabak.ui.components.localizedFormatArg
 import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.HisabakType
 import com.hisabak.ui.theme.LocalReducedMotion
@@ -191,9 +192,9 @@ fun WelcomePage(active: Boolean, parallax: Float) {
     val p = appearProgress(active, 900)
     OnboardingPage(
         active, parallax,
-        overline = stringResource(R.string.onboarding_welcome_overline),
-        title = stringResource(R.string.onboarding_welcome_title),
-        subtitle = stringResource(R.string.onboarding_welcome_subtitle),
+        overline = stringResource(Res.string.onboarding_welcome_overline),
+        title = stringResource(Res.string.onboarding_welcome_title),
+        subtitle = stringResource(Res.string.onboarding_welcome_subtitle),
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
@@ -209,7 +210,7 @@ fun WelcomePage(active: Boolean, parallax: Float) {
             PreviewCard(Modifier.width(300.dp)) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        stringResource(R.string.onboarding_demo_net_worth),
+                        stringResource(Res.string.onboarding_demo_net_worth),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -251,9 +252,9 @@ fun SmsCapturePage(active: Boolean, parallax: Float) {
     val density = LocalDensity.current
     OnboardingPage(
         active, parallax,
-        overline = stringResource(if (BuildConfig.SMS_AUTO_CAPTURE) R.string.onboarding_sms_overline_auto else R.string.onboarding_sms_overline_quick),
-        title = stringResource(R.string.onboarding_sms_title),
-        subtitle = stringResource(if (BuildConfig.SMS_AUTO_CAPTURE) R.string.onboarding_sms_subtitle_auto else R.string.onboarding_sms_subtitle_quick),
+        overline = stringResource(if (BuildConfig.SMS_AUTO_CAPTURE) Res.string.onboarding_sms_overline_auto else Res.string.onboarding_sms_overline_quick),
+        title = stringResource(Res.string.onboarding_sms_title),
+        subtitle = stringResource(if (BuildConfig.SMS_AUTO_CAPTURE) Res.string.onboarding_sms_subtitle_auto else Res.string.onboarding_sms_subtitle_quick),
     ) {
         Column(Modifier.width(320.dp), horizontalAlignment = Alignment.Start) {
             // SMS bubble
@@ -276,7 +277,7 @@ fun SmsCapturePage(active: Boolean, parallax: Float) {
                     tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp),
                 )
                 Text(
-                    stringResource(R.string.onboarding_demo_parsed),
+                    stringResource(Res.string.onboarding_demo_parsed),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -319,9 +320,9 @@ fun BudgetsPage(active: Boolean, parallax: Float) {
     val barColor = lerp(MaterialTheme.colorScheme.primary, HisabakTheme.colors.warning, warnT)
     OnboardingPage(
         active, parallax,
-        overline = stringResource(R.string.onboarding_budgets_overline),
-        title = stringResource(R.string.onboarding_budgets_title),
-        subtitle = stringResource(R.string.onboarding_budgets_subtitle, 50, 80, 100),
+        overline = stringResource(Res.string.onboarding_budgets_overline),
+        title = stringResource(Res.string.onboarding_budgets_title),
+        subtitle = stringResource(Res.string.onboarding_budgets_subtitle, localizedFormatArg(50), localizedFormatArg(80), localizedFormatArg(100)),
     ) {
         PreviewCard(Modifier.width(320.dp)) {
             val arabic = rememberIsArabic()
@@ -331,7 +332,7 @@ fun BudgetsPage(active: Boolean, parallax: Float) {
                     Spacer(Modifier.width(Spacing.s4))
                     Column(Modifier.weight(1f)) {
                         Text("Groceries", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
-                        Text(stringResource(R.string.onboarding_demo_june_budget), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(Res.string.onboarding_demo_june_budget), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         DirhamGlyph(size = HisabakType.amount.fontSize * 0.78f, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -362,14 +363,14 @@ fun BudgetsPage(active: Boolean, parallax: Float) {
                             .padding(horizontal = Spacing.s4, vertical = Spacing.s2),
                     ) {
                         Icon(HugeIcons.NotificationsActive, null, tint = HisabakTheme.colors.warning, modifier = Modifier.size(16.dp))
-                        Text(stringResource(R.string.onboarding_demo_budget_warning, 80), style = MaterialTheme.typography.labelMedium, color = HisabakTheme.colors.warning)
+                        Text(stringResource(Res.string.onboarding_demo_budget_warning, localizedFormatArg(80)), style = MaterialTheme.typography.labelMedium, color = HisabakTheme.colors.warning)
                     }
                     Spacer(Modifier.weight(1f))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         DirhamGlyph(size = MaterialTheme.typography.bodySmall.fontSize * 0.9f, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.width(3.dp))
                         Text(
-                            stringResource(R.string.onboarding_demo_left, compactMajor(1200.0, arabic)),
+                            stringResource(Res.string.onboarding_demo_left, compactMajor(1200.0, arabic)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -390,9 +391,9 @@ fun InsightsPage(active: Boolean, parallax: Float) {
     val accent = MaterialTheme.colorScheme.primary
     OnboardingPage(
         active, parallax,
-        overline = stringResource(R.string.onboarding_insights_overline),
-        title = stringResource(R.string.onboarding_insights_title),
-        subtitle = stringResource(R.string.onboarding_insights_subtitle),
+        overline = stringResource(Res.string.onboarding_insights_overline),
+        title = stringResource(Res.string.onboarding_insights_title),
+        subtitle = stringResource(Res.string.onboarding_insights_subtitle),
     ) {
         Column(Modifier.width(320.dp), verticalArrangement = Arrangement.spacedBy(Spacing.s4)) {
             PreviewCard(Modifier.fillMaxWidth()) {
@@ -420,7 +421,7 @@ fun InsightsPage(active: Boolean, parallax: Float) {
             }
             PreviewCard(Modifier.fillMaxWidth()) {
                 Column {
-                    Text(stringResource(R.string.onboarding_demo_net_worth_6m), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(Res.string.onboarding_demo_net_worth_6m), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(Spacing.s3))
                     Canvas(Modifier.fillMaxWidth().height(64.dp)) {
                         val pts = listOf(0.74f, 0.62f, 0.68f, 0.42f, 0.48f, 0.26f, 0.16f)
@@ -461,19 +462,19 @@ fun GetStartedPage(active: Boolean, parallax: Float) {
     val c = HisabakTheme.colors
     OnboardingPage(
         active, parallax,
-        overline = stringResource(R.string.onboarding_ready_overline),
-        title = stringResource(R.string.onboarding_ready_title),
-        subtitle = stringResource(if (BuildConfig.SMS_AUTO_CAPTURE) R.string.onboarding_ready_subtitle_auto else R.string.onboarding_ready_subtitle_quick),
+        overline = stringResource(Res.string.onboarding_ready_overline),
+        title = stringResource(Res.string.onboarding_ready_title),
+        subtitle = stringResource(if (BuildConfig.SMS_AUTO_CAPTURE) Res.string.onboarding_ready_subtitle_auto else Res.string.onboarding_ready_subtitle_quick),
     ) {
         Column(Modifier.width(320.dp), verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
             if (BuildConfig.SMS_AUTO_CAPTURE) {
-                RecapRow(p, 0f, HugeIcons.Bolt, c.income, c.incomeSoft, stringResource(R.string.onboarding_recap_capture_auto_title), stringResource(R.string.onboarding_recap_capture_auto_sub))
+                RecapRow(p, 0f, HugeIcons.Bolt, c.income, c.incomeSoft, stringResource(Res.string.onboarding_recap_capture_auto_title), stringResource(Res.string.onboarding_recap_capture_auto_sub))
             } else {
-                RecapRow(p, 0f, HugeIcons.Bolt, c.income, c.incomeSoft, stringResource(R.string.onboarding_recap_capture_quick_title), stringResource(R.string.onboarding_recap_capture_quick_sub))
+                RecapRow(p, 0f, HugeIcons.Bolt, c.income, c.incomeSoft, stringResource(Res.string.onboarding_recap_capture_quick_title), stringResource(Res.string.onboarding_recap_capture_quick_sub))
             }
-            RecapRow(p, 0.12f, HugeIcons.Lock, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), stringResource(R.string.onboarding_recap_private_title), stringResource(R.string.onboarding_recap_private_sub))
-            RecapRow(p, 0.24f, HugeIcons.Savings, c.warning, c.warningSoft, stringResource(R.string.onboarding_recap_budgets_title), stringResource(R.string.onboarding_recap_budgets_sub))
-            RecapRow(p, 0.36f, HugeIcons.Insights, c.savings, c.savings.copy(alpha = 0.15f), stringResource(R.string.onboarding_recap_insights_title), stringResource(R.string.onboarding_recap_insights_sub))
+            RecapRow(p, 0.12f, HugeIcons.Lock, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), stringResource(Res.string.onboarding_recap_private_title), stringResource(Res.string.onboarding_recap_private_sub))
+            RecapRow(p, 0.24f, HugeIcons.Savings, c.warning, c.warningSoft, stringResource(Res.string.onboarding_recap_budgets_title), stringResource(Res.string.onboarding_recap_budgets_sub))
+            RecapRow(p, 0.36f, HugeIcons.Insights, c.savings, c.savings.copy(alpha = 0.15f), stringResource(Res.string.onboarding_recap_insights_title), stringResource(Res.string.onboarding_recap_insights_sub))
             Spacer(Modifier.height(Spacing.s2))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -490,12 +491,12 @@ fun GetStartedPage(active: Boolean, parallax: Float) {
                 Spacer(Modifier.width(Spacing.s4))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        stringResource(if (BuildConfig.SMS_AUTO_CAPTURE) R.string.onboarding_cta_card_title_auto else R.string.onboarding_cta_card_title_quick),
+                        stringResource(if (BuildConfig.SMS_AUTO_CAPTURE) Res.string.onboarding_cta_card_title_auto else Res.string.onboarding_cta_card_title_quick),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        stringResource(if (BuildConfig.SMS_AUTO_CAPTURE) R.string.onboarding_cta_card_body_auto else R.string.onboarding_cta_card_body_quick),
+                        stringResource(if (BuildConfig.SMS_AUTO_CAPTURE) Res.string.onboarding_cta_card_body_auto else Res.string.onboarding_cta_card_body_quick),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -535,9 +536,9 @@ fun PrivacyPage(active: Boolean, parallax: Float) {
     val p = appearProgress(active, 900)
     OnboardingPage(
         active, parallax,
-        overline = stringResource(R.string.onboarding_privacy_overline),
-        title = stringResource(R.string.onboarding_privacy_title),
-        subtitle = stringResource(R.string.onboarding_privacy_subtitle),
+        overline = stringResource(Res.string.onboarding_privacy_overline),
+        title = stringResource(Res.string.onboarding_privacy_title),
+        subtitle = stringResource(Res.string.onboarding_privacy_subtitle),
     ) {
         Column(Modifier.width(320.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
@@ -548,9 +549,9 @@ fun PrivacyPage(active: Boolean, parallax: Float) {
             Spacer(Modifier.height(Spacing.s7))
             PreviewCard(Modifier.fillMaxWidth()) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.s5)) {
-                    GuaranteeRow(p, 0f, HugeIcons.PhoneAndroid, stringResource(R.string.onboarding_guarantee_device))
-                    GuaranteeRow(p, 0.12f, HugeIcons.CloudOff, stringResource(R.string.onboarding_guarantee_no_sync))
-                    GuaranteeRow(p, 0.24f, HugeIcons.VisibilityOff, stringResource(R.string.onboarding_guarantee_no_account))
+                    GuaranteeRow(p, 0f, HugeIcons.PhoneAndroid, stringResource(Res.string.onboarding_guarantee_device))
+                    GuaranteeRow(p, 0.12f, HugeIcons.CloudOff, stringResource(Res.string.onboarding_guarantee_no_sync))
+                    GuaranteeRow(p, 0.24f, HugeIcons.VisibilityOff, stringResource(Res.string.onboarding_guarantee_no_account))
                 }
             }
         }

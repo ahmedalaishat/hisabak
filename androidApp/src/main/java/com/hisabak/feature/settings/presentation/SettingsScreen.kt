@@ -41,14 +41,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hisabak.R
+import com.hisabak.shared.resources.*
 import com.hisabak.core.domain.ThemeMode
 import com.hisabak.ui.components.HisabakButton
 import com.hisabak.ui.components.IconTile
@@ -88,11 +88,11 @@ fun SettingsScreen(
             PassphraseReminderCard(onConfirm = onConfirmRemembered, onCheck = { showVerify = true })
         }
 
-        SettingsGroup(title = stringResource(R.string.settings_group_backup_security)) {
+        SettingsGroup(title = stringResource(Res.string.settings_group_backup_security)) {
             SettingCard(
                 icon = HugeIcons.Lock,
-                title = stringResource(R.string.settings_app_lock),
-                hint = stringResource(R.string.settings_app_lock_hint),
+                title = stringResource(Res.string.settings_app_lock),
+                hint = stringResource(Res.string.settings_app_lock_hint),
                 trailing = {
                     Switch(
                         checked = appLockEnabled,
@@ -103,8 +103,8 @@ fun SettingsScreen(
             )
             SettingCard(
                 icon = HugeIcons.CloudSync,
-                title = stringResource(R.string.settings_backup_restore),
-                hint = stringResource(R.string.settings_backup_restore_hint),
+                title = stringResource(Res.string.settings_backup_restore),
+                hint = stringResource(Res.string.settings_backup_restore_hint),
                 onClick = onOpenBackup,
                 trailing = {
                     Icon(
@@ -116,17 +116,17 @@ fun SettingsScreen(
             )
         }
 
-        SettingsGroup(title = stringResource(R.string.settings_group_preferences)) {
+        SettingsGroup(title = stringResource(Res.string.settings_group_preferences)) {
             SettingCard(
                 icon = HugeIcons.Palette,
-                title = stringResource(R.string.settings_theme),
-                hint = stringResource(R.string.settings_appearance_hint),
+                title = stringResource(Res.string.settings_theme),
+                hint = stringResource(Res.string.settings_appearance_hint),
             ) {
                 SegmentedControl(
                     options = listOf(
-                        SegmentOption(ThemeMode.SYSTEM, stringResource(R.string.settings_theme_system)),
-                        SegmentOption(ThemeMode.LIGHT, stringResource(R.string.settings_theme_light)),
-                        SegmentOption(ThemeMode.DARK, stringResource(R.string.settings_theme_dark)),
+                        SegmentOption(ThemeMode.SYSTEM, stringResource(Res.string.settings_theme_system)),
+                        SegmentOption(ThemeMode.LIGHT, stringResource(Res.string.settings_theme_light)),
+                        SegmentOption(ThemeMode.DARK, stringResource(Res.string.settings_theme_dark)),
                     ),
                     selected = themeMode,
                     onSelect = onThemeChange,
@@ -135,13 +135,13 @@ fun SettingsScreen(
             }
             SettingCard(
                 icon = HugeIcons.Translate,
-                title = stringResource(R.string.settings_language),
-                hint = stringResource(R.string.settings_language_hint),
+                title = stringResource(Res.string.settings_language),
+                hint = stringResource(Res.string.settings_language_hint),
             ) {
                 SegmentedControl(
                     options = listOf(
-                        SegmentOption(LANGUAGE_ENGLISH, stringResource(R.string.settings_language_english)),
-                        SegmentOption(LANGUAGE_ARABIC, stringResource(R.string.settings_language_arabic)),
+                        SegmentOption(LANGUAGE_ENGLISH, stringResource(Res.string.settings_language_english)),
+                        SegmentOption(LANGUAGE_ARABIC, stringResource(Res.string.settings_language_arabic)),
                     ),
                     selected = language,
                     onSelect = onLanguageChange,
@@ -180,21 +180,21 @@ private fun PassphraseReminderCard(onConfirm: () -> Unit, onCheck: () -> Unit) {
                     )
                 }
                 Text(
-                    stringResource(R.string.settings_pass_reminder_title),
+                    stringResource(Res.string.settings_pass_reminder_title),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
             Text(
-                stringResource(R.string.settings_pass_reminder_body),
+                stringResource(Res.string.settings_pass_reminder_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        ReminderAction(stringResource(R.string.settings_pass_reminder_yes), onConfirm)
+        ReminderAction(stringResource(Res.string.settings_pass_reminder_yes), onConfirm)
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        ReminderAction(stringResource(R.string.settings_pass_reminder_check), onCheck)
+        ReminderAction(stringResource(Res.string.settings_pass_reminder_check), onCheck)
     }
 }
 
@@ -235,31 +235,31 @@ private fun PassphraseVerifySheet(
             if (success) {
                 SuccessCheck()
                 Text(
-                    stringResource(R.string.settings_pass_verify_success_title),
+                    stringResource(Res.string.settings_pass_verify_success_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
                 )
                 Text(
-                    stringResource(R.string.settings_pass_verify_success_body),
+                    stringResource(Res.string.settings_pass_verify_success_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
                 HisabakButton(
-                    text = stringResource(R.string.settings_pass_verify_done),
+                    text = stringResource(Res.string.settings_pass_verify_done),
                     onClick = onDismiss,
                     fullWidth = true,
                 )
             } else {
                 Text(
-                    stringResource(R.string.settings_pass_verify_title),
+                    stringResource(Res.string.settings_pass_verify_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
                 )
                 Text(
-                    stringResource(R.string.settings_pass_verify_body),
+                    stringResource(Res.string.settings_pass_verify_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -267,11 +267,11 @@ private fun PassphraseVerifySheet(
                 OutlinedTextField(
                     value = input,
                     onValueChange = { input = it; wrong = false },
-                    label = { Text(stringResource(R.string.backup_passphrase)) },
+                    label = { Text(stringResource(Res.string.backup_passphrase)) },
                     singleLine = true,
                     isError = wrong,
                     supportingText = if (wrong) {
-                        { Text(stringResource(R.string.settings_pass_verify_wrong)) }
+                        { Text(stringResource(Res.string.settings_pass_verify_wrong)) }
                     } else {
                         null
                     },
@@ -280,7 +280,7 @@ private fun PassphraseVerifySheet(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 HisabakButton(
-                    text = stringResource(R.string.settings_pass_verify_action),
+                    text = stringResource(Res.string.settings_pass_verify_action),
                     onClick = {
                         busy = true
                         onVerify(input) { ok ->
@@ -293,7 +293,7 @@ private fun PassphraseVerifySheet(
                 )
                 if (wrong) {
                     Text(
-                        text = stringResource(R.string.settings_pass_change),
+                        text = stringResource(Res.string.settings_pass_change),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier

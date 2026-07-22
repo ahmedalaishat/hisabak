@@ -35,11 +35,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hisabak.R
+import com.hisabak.shared.resources.*
+import com.hisabak.ui.components.localizedFormatArg
 import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.ui.components.AmountText
@@ -83,7 +84,7 @@ fun BrandListScreen(
 
     var pendingDelete by remember { mutableStateOf<BrandRow?>(null) }
 
-    val allLabel = stringResource(R.string.common_all)
+    val allLabel = stringResource(Res.string.common_all)
     val filterOptions: List<Pair<String, CategoryId?>> = buildList {
         add(allLabel to null)
         state.availableCategories.forEach { add(it.name to it.id) }
@@ -105,7 +106,7 @@ fun BrandListScreen(
             SearchField(
                 value = state.search,
                 onValueChange = onSearchChange,
-                placeholder = stringResource(R.string.brand_search_placeholder),
+                placeholder = stringResource(Res.string.brand_search_placeholder),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -124,21 +125,21 @@ fun BrandListScreen(
         // Most-used card hidden for now (see the shared MostUsedCard / BrandRow.transactionCount).
 
         item {
-            SectionHeader(title = stringResource(R.string.brand_all_section))
+            SectionHeader(title = stringResource(Res.string.brand_all_section))
         }
 
         if (state.rows.isEmpty()) {
             item {
                 EmptyStatePanel(
                     title = when {
-                        state.search.isNotBlank() -> stringResource(R.string.common_no_matches)
-                        state.categoryFilter != null -> stringResource(R.string.brand_empty_in_category)
-                        else -> stringResource(R.string.brand_empty_title)
+                        state.search.isNotBlank() -> stringResource(Res.string.common_no_matches)
+                        state.categoryFilter != null -> stringResource(Res.string.brand_empty_in_category)
+                        else -> stringResource(Res.string.brand_empty_title)
                     },
                     subtitle = if (state.search.isBlank())
-                        stringResource(R.string.brand_empty_subtitle)
+                        stringResource(Res.string.brand_empty_subtitle)
                     else
-                        stringResource(R.string.common_no_matches_subtitle, state.search),
+                        stringResource(Res.string.common_no_matches_subtitle, state.search),
                     icon = HugeIcons.Storefront,
                 )
             }
@@ -178,10 +179,10 @@ private fun BrandDeleteDialog(
     if (row.transactionCount == 0) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text(stringResource(R.string.common_delete_title, row.name)) },
-            text = { Text(stringResource(R.string.brand_delete_empty_body)) },
-            confirmButton = { TextButton(onClick = onConfirmDelete) { Text(stringResource(R.string.action_delete)) } },
-            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+            title = { Text(stringResource(Res.string.common_delete_title, row.name)) },
+            text = { Text(stringResource(Res.string.brand_delete_empty_body)) },
+            confirmButton = { TextButton(onClick = onConfirmDelete) { Text(stringResource(Res.string.action_delete)) } },
+            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) } },
         )
         return
     }
@@ -191,13 +192,13 @@ private fun BrandDeleteDialog(
     val count = row.transactionCount
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.common_delete_title, row.name)) },
+        title = { Text(stringResource(Res.string.common_delete_title, row.name)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
-                Text(pluralStringResource(R.plurals.brand_delete_move_body, count, count))
+                Text(pluralStringResource(Res.plurals.brand_delete_move_body, count, localizedFormatArg(count)))
                 if (otherBrands.isEmpty()) {
                     Text(
-                        stringResource(R.string.brand_delete_no_target),
+                        stringResource(Res.string.brand_delete_no_target),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -213,7 +214,7 @@ private fun BrandDeleteDialog(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
                         ) {
                             Text(
-                                target?.name ?: stringResource(R.string.brand_delete_choose),
+                                target?.name ?: stringResource(Res.string.brand_delete_choose),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = if (target == null) MaterialTheme.colorScheme.onSurfaceVariant
                                 else MaterialTheme.colorScheme.onSurface,
@@ -242,9 +243,9 @@ private fun BrandDeleteDialog(
             TextButton(
                 onClick = { target?.let { onConfirmMerge(it.id) } },
                 enabled = target != null,
-            ) { Text(stringResource(R.string.brand_delete_and_move)) }
+            ) { Text(stringResource(Res.string.brand_delete_and_move)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) } },
     )
 }
 
@@ -256,11 +257,11 @@ private fun HeaderRow(onCreate: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = stringResource(R.string.common_brands),
+            text = stringResource(Res.string.common_brands),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
-        CreateActionButton(text = stringResource(R.string.brand_new_title), onClick = onCreate)
+        CreateActionButton(text = stringResource(Res.string.brand_new_title), onClick = onCreate)
     }
 }
 
@@ -318,7 +319,7 @@ private fun BrandRowItem(
                 IconButton(onClick = onDelete) {
                     Icon(
                         imageVector = HugeIcons.DeleteOutline,
-                        contentDescription = stringResource(R.string.common_delete_named, row.name),
+                        contentDescription = stringResource(Res.string.common_delete_named, row.name),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

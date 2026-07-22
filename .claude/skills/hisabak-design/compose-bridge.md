@@ -5,9 +5,12 @@ CSS tokens and React/HTML components in this skill are the *spec and mockup kit*
 maps each one to the real Kotlin it became. When building production UI, use the Kotlin
 below directly — never hand-write CSS or port JSX.
 
-App theme: `androidApp/src/main/java/com/hisabak/ui/theme/` · shared components:
-`androidApp/src/main/java/com/hisabak/ui/components/` · charts:
-`androidApp/src/main/java/com/hisabak/feature/dashboard/presentation/components/`.
+App theme: `shared/src/commonMain/kotlin/com/hisabak/ui/theme/` · shared components:
+`shared/src/commonMain/kotlin/com/hisabak/ui/components/` (Compose Multiplatform — keep them
+multiplatform-safe) · charts: Vico charts stay in
+`androidApp/src/main/java/com/hisabak/feature/dashboard/presentation/components/` (VicoCharts.kt);
+the pure-Canvas `DonutChart` lives in
+`shared/src/commonMain/kotlin/com/hisabak/feature/dashboard/presentation/components/`.
 
 Wrap UI in `HisabakTheme { … }`. Read finance colors via `HisabakTheme.colors`; standard
 roles via `MaterialTheme.colorScheme`. Never hardcode hex.
@@ -32,8 +35,12 @@ roles via `MaterialTheme.colorScheme`. Never hardcode hex.
 
 | Design | Compose |
 |---|---|
-| DM Sans UI scale (hero/display/title/section/body/label/caption/overline) | `MaterialTheme.typography.*` (`HisabakTypography`); **Arabic → Tajawal** (`HisabakTypographyArabic`), selected by locale in `HisabakTheme` |
-| **Amounts — Geist Mono, tabular** (Arabic figures → Tajawal) | `HisabakType.amount` / `HisabakType.amountLarge` / `HisabakType.amountHero` |
+| DM Sans UI scale (hero/display/title/section/body/label/caption/overline) | `MaterialTheme.typography.*` (built by `hisabakTypography(family, arabic)`); **Arabic → Tajawal**, selected by locale in `HisabakTheme` |
+| **Amounts — Geist Mono, tabular** (Arabic figures → Tajawal) | `HisabakType.amount` / `HisabakType.amountLarge` / `HisabakType.amountHero` (composable getters over `LocalHisabakFonts`) |
+
+Fonts are **bundled OFL TTFs** in `shared/src/commonMain/composeResources/font/` (DM Sans
+400/500/600/700, Geist Mono 400/500/600, Tajawal 400/500/700), loaded via CMP resources —
+no downloadable-fonts provider.
 
 Money renders the **dirham glyph** (never the literal text "AED"), tabular figures; income
 `+`, expense true-minus `−`, both colored; hero balances neutral/unsigned. Always use

@@ -6,6 +6,11 @@ All notable changes to Hisabak are documented here. Format based on
 
 ## [Unreleased]
 
+### Changed
+- **Bundled fonts** — DM Sans, Geist Mono and Tajawal now ship inside the app instead of being
+  downloaded through Google Play services, so the app's typography renders correctly offline, on
+  first launch, and on devices without Play services.
+
 ## [1.9.0] — 2026-07-21
 
 ### Changed

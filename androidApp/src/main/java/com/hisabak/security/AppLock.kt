@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,6 +34,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hisabak.R
+import com.hisabak.shared.resources.*
 import com.hisabak.core.domain.AppPreferences
 import com.hisabak.core.domain.security.AuthAvailability
 import com.hisabak.core.domain.security.shouldLock
@@ -98,8 +99,8 @@ private fun LockedContent(content: @Composable () -> Unit) {
 private fun LockScreen(onUnlocked: () -> Unit) {
     val context = LocalContext.current
     val authenticator = koinInject<BiometricAuthenticator>()
-    val title = stringResource(R.string.app_lock_prompt_title)
-    val subtitle = stringResource(R.string.app_lock_prompt_subtitle)
+    val title = stringResource(Res.string.app_lock_prompt_title)
+    val subtitle = stringResource(Res.string.app_lock_prompt_subtitle)
 
     fun prompt() {
         // Graceful degradation: if the user removed their PIN/biometric after enabling the lock, the
@@ -141,26 +142,26 @@ private fun LockScreen(onUnlocked: () -> Unit) {
             )
             Image(
                 painter = painterResource(R.drawable.ic_launcher_foreground),
-                contentDescription = stringResource(R.string.app_brand_name),
+                contentDescription = stringResource(Res.string.app_brand_name),
                 modifier = Modifier.fillMaxSize(),
             )
         }
         Text(
-            text = stringResource(R.string.app_lock_locked_title),
+            text = stringResource(Res.string.app_lock_locked_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = Spacing.s6),
         )
         Text(
-            text = stringResource(R.string.app_lock_locked_hint),
+            text = stringResource(Res.string.app_lock_locked_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = Spacing.s2),
         )
         HisabakButton(
-            text = stringResource(R.string.app_lock_unlock),
+            text = stringResource(Res.string.app_lock_unlock),
             onClick = { prompt() },
             variant = ButtonVariant.Primary,
             modifier = Modifier.padding(top = Spacing.s6),

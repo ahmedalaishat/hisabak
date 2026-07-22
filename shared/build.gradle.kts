@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
 }
@@ -23,6 +25,9 @@ kotlin {
         namespace = "com.hisabak.shared"
         compileSdk = 36
         minSdk = 29
+        // CMP resources ride into the app as Android assets; without this the variant has no
+        // assets source and Res lookups crash at runtime with MissingResourceException.
+        androidResources.enable = true
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
         }
@@ -39,6 +44,14 @@ kotlin {
             implementation(libs.androidx.sqlite.bundled)
             // api: androidApp Koin modules construct the platform DataStore instances.
             api(libs.androidx.datastore.preferences.core)
+            api(compose.runtime)
+            api(compose.foundation)
+            api(compose.ui)
+            // api: androidApp screens read Res.string/Res.font accessors + the CMP resource APIs.
+            api(compose.components.resources)
+            api(libs.jetbrains.compose.material3)
+            api(libs.jetbrains.lifecycle.runtime.compose)
+            api(libs.jetbrains.lifecycle.viewmodel.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -57,6 +70,11 @@ kotlin {
 
 room {
     schemaDirectory("$projectDir/schemas")
+}
+
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "com.hisabak.shared.resources"
 }
 
 dependencies {

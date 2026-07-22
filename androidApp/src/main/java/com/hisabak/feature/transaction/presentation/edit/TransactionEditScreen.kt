@@ -40,7 +40,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -49,7 +49,7 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hisabak.R
+import com.hisabak.shared.resources.*
 import com.hisabak.core.common.sanitizeAmountInput
 import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.category.domain.CategoryType
@@ -102,7 +102,7 @@ fun TransactionEditScreen(
         verticalArrangement = Arrangement.spacedBy(Spacing.s5),
     ) {
         Text(
-            text = stringResource(if (state.isNew) R.string.transaction_new_title else R.string.transaction_edit_title),
+            text = stringResource(if (state.isNew) Res.string.transaction_new_title else Res.string.transaction_edit_title),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -116,10 +116,10 @@ fun TransactionEditScreen(
 
         SegmentedControl(
             options = listOf(
-                SegmentOption(CategoryType.EXPENSES,   stringResource(R.string.category_type_expense),       BadgeTone.Expense),
-                SegmentOption(CategoryType.INCOME,     stringResource(R.string.category_type_income),         BadgeTone.Income),
-                SegmentOption(CategoryType.SAVINGS,    stringResource(R.string.category_type_savings),        BadgeTone.Savings),
-                SegmentOption(CategoryType.INVESTMENT, stringResource(R.string.category_type_invest_short),   BadgeTone.Investment),
+                SegmentOption(CategoryType.EXPENSES,   stringResource(Res.string.category_type_expense),       BadgeTone.Expense),
+                SegmentOption(CategoryType.INCOME,     stringResource(Res.string.category_type_income),         BadgeTone.Income),
+                SegmentOption(CategoryType.SAVINGS,    stringResource(Res.string.category_type_savings),        BadgeTone.Savings),
+                SegmentOption(CategoryType.INVESTMENT, stringResource(Res.string.category_type_invest_short),   BadgeTone.Investment),
             ),
             selected = state.selectedType,
             onSelect = onTypeSelected,
@@ -128,13 +128,13 @@ fun TransactionEditScreen(
 
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.sectionTitleGap)) {
             Text(
-                text = stringResource(R.string.common_brand),
+                text = stringResource(Res.string.common_brand),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (state.brandOptions.isEmpty()) {
                 Text(
-                    text = stringResource(R.string.transaction_no_brands),
+                    text = stringResource(Res.string.transaction_no_brands),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -160,7 +160,7 @@ fun TransactionEditScreen(
 
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.sectionTitleGap)) {
             Text(
-                text = stringResource(R.string.common_date),
+                text = stringResource(Res.string.common_date),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -176,7 +176,7 @@ fun TransactionEditScreen(
         OutlinedTextField(
             value = state.noteInput,
             onValueChange = onNoteChange,
-            label = { Text(stringResource(R.string.transaction_note_label)) },
+            label = { Text(stringResource(Res.string.transaction_note_label)) },
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -185,14 +185,14 @@ fun TransactionEditScreen(
         }
 
         HisabakButton(
-            text = stringResource(if (state.isSaving) R.string.action_saving else R.string.action_save),
+            text = stringResource(if (state.isSaving) Res.string.action_saving else Res.string.action_save),
             onClick = onSave,
             variant = ButtonVariant.Primary,
             enabled = state.canSave,
             fullWidth = true,
         )
         HisabakButton(
-            text = stringResource(R.string.action_cancel),
+            text = stringResource(Res.string.action_cancel),
             onClick = onCancel,
             variant = ButtonVariant.Ghost,
             fullWidth = true,
@@ -209,9 +209,9 @@ fun TransactionEditScreen(
                 TextButton(onClick = {
                     pickerState.selectedDateMillis?.let { onDateSelected(Instant.fromEpochMilliseconds(it)) }
                         ?: onDateDismiss()
-                }) { Text(stringResource(R.string.action_ok)) }
+                }) { Text(stringResource(Res.string.action_ok)) }
             },
-            dismissButton = { TextButton(onClick = onDateDismiss) { Text(stringResource(R.string.action_cancel)) } },
+            dismissButton = { TextButton(onClick = onDateDismiss) { Text(stringResource(Res.string.action_cancel)) } },
         ) {
             DatePicker(state = pickerState)
         }

@@ -22,7 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hisabak.feature.brand.domain.BrandId
@@ -36,6 +36,7 @@ import com.hisabak.ui.components.rememberIsArabic
 import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.Spacing
 import org.koin.compose.viewmodel.koinViewModel
+import com.hisabak.shared.resources.*
 
 private enum class ManageTab { Brands, Categories }
 
@@ -61,7 +62,7 @@ fun ManageRoute(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
             ) {
                 ManageSwitchCard(
-                    label = stringResource(R.string.common_brands),
+                    label = stringResource(Res.string.common_brands),
                     count = counts.brands,
                     icon = HugeIcons.Storefront,
                     selected = tab == ManageTab.Brands,
@@ -69,7 +70,7 @@ fun ManageRoute(
                     modifier = Modifier.weight(1f),
                 )
                 ManageSwitchCard(
-                    label = stringResource(R.string.common_categories),
+                    label = stringResource(Res.string.common_categories),
                     count = counts.categories,
                     icon = HugeIcons.Category,
                     selected = tab == ManageTab.Categories,
@@ -107,7 +108,7 @@ fun ManageRoute(
         ) {
             Icon(
                 HugeIcons.Add,
-                contentDescription = stringResource(if (tab == ManageTab.Brands) R.string.brand_new_title else R.string.category_new_title),
+                contentDescription = stringResource(if (tab == ManageTab.Brands) Res.string.brand_new_title else Res.string.category_new_title),
             )
         }
     }

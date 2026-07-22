@@ -22,9 +22,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.unit.dp
-import com.hisabak.R
+import com.hisabak.shared.resources.Res
+import com.hisabak.shared.resources.category_type_expenses
+import com.hisabak.shared.resources.category_type_income
 import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.Motion
 import com.hisabak.ui.theme.PillShape
@@ -138,7 +140,7 @@ fun IncomeStatCard(
     modifier: Modifier = Modifier,
     currencySymbol: Boolean = false,
 ) = StatCard(
-    label = stringResource(R.string.category_type_income),
+    label = stringResource(Res.string.category_type_income),
     value = value,
     icon = HugeIcons.TrendingUp,
     accent = StatAccent.Positive,
@@ -154,7 +156,7 @@ fun ExpensesStatCard(
     modifier: Modifier = Modifier,
     currencySymbol: Boolean = false,
 ) = StatCard(
-    label = stringResource(R.string.category_type_expenses),
+    label = stringResource(Res.string.category_type_expenses),
     value = value,
     icon = HugeIcons.TrendingDown,
     accent = StatAccent.Negative,

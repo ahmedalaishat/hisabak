@@ -50,12 +50,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.hisabak.R
+import com.hisabak.shared.resources.*
+import com.hisabak.ui.components.localizedFormatArg
+import org.jetbrains.compose.resources.StringResource
 import com.hisabak.core.common.Money
 import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.feature.category.domain.CategoryType
@@ -189,10 +191,10 @@ fun DashboardScreen(
     }
 }
 
-private enum class DashboardTab(val labelRes: Int) {
-    SUMMARY(R.string.dashboard_tab_summary),
-    TRENDS(R.string.dashboard_tab_trends),
-    CATEGORIES(R.string.dashboard_tab_categories),
+private enum class DashboardTab(val labelRes: StringResource) {
+    SUMMARY(Res.string.dashboard_tab_summary),
+    TRENDS(Res.string.dashboard_tab_trends),
+    CATEGORIES(Res.string.dashboard_tab_categories),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -242,7 +244,7 @@ private fun SummaryTab(
         // ── Net worth hero ──────────────────────────────────────────────────
         item {
             OverTimeCard(
-                label = stringResource(R.string.dashboard_net_worth),
+                label = stringResource(Res.string.dashboard_net_worth),
                 money = snap.netWorth,
                 trendPct = snap.netWorthTrendPct,
                 trendPositiveIsGood = true,
@@ -258,7 +260,7 @@ private fun SummaryTab(
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 TotalPill(
-                    label = stringResource(R.string.dashboard_cash),
+                    label = stringResource(Res.string.dashboard_cash),
                     money = snap.totalCash,
                     icon = { Icon(HugeIcons.AccountBalanceWallet, null, modifier = Modifier.size(16.dp)) },
                     bgColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -266,7 +268,7 @@ private fun SummaryTab(
                     modifier = Modifier.weight(1f),
                 )
                 TotalPill(
-                    label = stringResource(R.string.category_type_savings),
+                    label = stringResource(Res.string.category_type_savings),
                     money = snap.totalSavings,
                     icon = { Icon(HugeIcons.Savings, null, modifier = Modifier.size(16.dp)) },
                     bgColor = c.savingsSoft,
@@ -274,7 +276,7 @@ private fun SummaryTab(
                     modifier = Modifier.weight(1f),
                 )
                 TotalPill(
-                    label = stringResource(R.string.category_type_invest_short),
+                    label = stringResource(Res.string.category_type_invest_short),
                     money = snap.totalInvestment,
                     icon = { Icon(HugeIcons.TrendingUp, null, modifier = Modifier.size(16.dp)) },
                     bgColor = c.investmentSoft,
@@ -287,7 +289,7 @@ private fun SummaryTab(
         // ── Income / Expenses (net for the selected period) ─────────────────
         item {
             KpiCard(
-                label = stringResource(R.string.category_type_income),
+                label = stringResource(Res.string.category_type_income),
                 money = snap.income,
                 trendPct = snap.incomeTrendPct,
                 trendPositiveIsGood = true,
@@ -300,7 +302,7 @@ private fun SummaryTab(
         }
         item {
             KpiCard(
-                label = stringResource(R.string.category_type_expenses),
+                label = stringResource(Res.string.category_type_expenses),
                 money = snap.expense,
                 trendPct = snap.expenseTrendPct,
                 trendPositiveIsGood = false,
@@ -315,7 +317,7 @@ private fun SummaryTab(
         // ── Income over time ────────────────────────────────────────────────
         item {
             OverTimeCard(
-                label = stringResource(R.string.dashboard_income_over_time),
+                label = stringResource(Res.string.dashboard_income_over_time),
                 money = snap.incomeTotal,
                 trendPct = snap.incomeSeriesTrendPct,
                 trendPositiveIsGood = true,
@@ -329,7 +331,7 @@ private fun SummaryTab(
         // ── Expense over time ───────────────────────────────────────────────
         item {
             OverTimeCard(
-                label = stringResource(R.string.dashboard_expense_over_time),
+                label = stringResource(Res.string.dashboard_expense_over_time),
                 money = snap.expenseTotal,
                 trendPct = snap.expenseSeriesTrendPct,
                 trendPositiveIsGood = false,
@@ -358,7 +360,7 @@ private fun TrendsTab(
         verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
     ) {
         // ── Income & spending grouped bars ──────────────────────────────────
-        item { SectionHeader(title = stringResource(R.string.dashboard_income_spending)) }
+        item { SectionHeader(title = stringResource(Res.string.dashboard_income_spending)) }
         item {
             val bars = monthlyPairs(snap.incomeDaily, snap.expenseDaily)
             if (bars.income.isNotEmpty()) {
@@ -367,8 +369,8 @@ private fun TrendsTab(
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                         modifier = Modifier.padding(bottom = Spacing.s4),
                     ) {
-                        LegendDot(color = c.income, label = stringResource(R.string.category_type_income))
-                        LegendDot(color = c.expense, label = stringResource(R.string.category_type_expenses))
+                        LegendDot(color = c.income, label = stringResource(Res.string.category_type_income))
+                        LegendDot(color = c.expense, label = stringResource(Res.string.category_type_expenses))
                     }
                     GroupedBarChart(
                         incomeValues = bars.income,
@@ -383,7 +385,7 @@ private fun TrendsTab(
         }
 
         // ── Expenses by category ────────────────────────────────────────────
-        item { SectionHeader(title = stringResource(R.string.dashboard_expenses_by_category)) }
+        item { SectionHeader(title = stringResource(Res.string.dashboard_expenses_by_category)) }
         item {
             CategoryDonutCard(
                 shares = snap.expenseByCategory,
@@ -392,7 +394,7 @@ private fun TrendsTab(
         }
 
         // ── Top brands ──────────────────────────────────────────────────────
-        item { SectionHeader(title = stringResource(R.string.dashboard_top_brands)) }
+        item { SectionHeader(title = stringResource(Res.string.dashboard_top_brands)) }
         item {
             BrandDonutCard(
                 shares = snap.expenseByBrand,
@@ -402,7 +404,7 @@ private fun TrendsTab(
 
         // ── Income sources ──────────────────────────────────────────────────
         if (snap.incomeByCategory.isNotEmpty()) {
-            item { SectionHeader(title = stringResource(R.string.dashboard_income_sources)) }
+            item { SectionHeader(title = stringResource(Res.string.dashboard_income_sources)) }
             item {
                 CategoryDonutCard(
                     shares = snap.incomeByCategory,
@@ -590,7 +592,7 @@ private fun CategoryDonutCard(
 ) {
     DashCard(modifier = modifier) {
         if (shares.isEmpty()) {
-            Text(stringResource(R.string.dashboard_no_data), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(Res.string.dashboard_no_data), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             return@DashCard
         }
         Row(
@@ -626,7 +628,7 @@ private fun BrandDonutCard(
 ) {
     DashCard(modifier = modifier) {
         if (shares.isEmpty()) {
-            Text(stringResource(R.string.dashboard_no_data), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(Res.string.dashboard_no_data), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             return@DashCard
         }
         Row(
@@ -721,7 +723,7 @@ private fun CategoriesTab(
         if (rows.isEmpty() && snap.uncategorizedCount == 0) {
             item {
                 Text(
-                    stringResource(R.string.dashboard_no_category_activity),
+                    stringResource(Res.string.dashboard_no_category_activity),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -828,7 +830,7 @@ private fun CategoryLimitCard(
                     )
                 } else {
                     Text(
-                        stringResource(R.string.dashboard_no_activity),
+                        stringResource(Res.string.dashboard_no_activity),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = Spacing.s4),
@@ -885,12 +887,12 @@ private fun UncategorizedBanner(count: Int, total: Money, onClick: () -> Unit) {
             Box(Modifier.size(10.dp).background(MaterialTheme.colorScheme.onSurfaceVariant, CircleShape))
             Column(Modifier.weight(1f)) {
                 Text(
-                    pluralStringResource(R.plurals.dashboard_uncategorized_count, count, count),
+                    pluralStringResource(Res.plurals.dashboard_uncategorized_count, count, localizedFormatArg(count)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    stringResource(R.string.dashboard_uncategorized_hint),
+                    stringResource(Res.string.dashboard_uncategorized_hint),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -929,13 +931,13 @@ private fun UncategorizedCard(
             Box(Modifier.size(10.dp).background(color, CircleShape))
             Column(Modifier.weight(1f)) {
                 Text(
-                    stringResource(R.string.dashboard_uncategorized),
+                    stringResource(Res.string.dashboard_uncategorized),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                 )
                 Text(
-                    pluralStringResource(R.plurals.common_transaction_count, count, count),
+                    pluralStringResource(Res.plurals.common_transaction_count, count, localizedFormatArg(count)),
                     style = MaterialTheme.typography.labelSmall,
                     color = color,
                 )
@@ -989,7 +991,7 @@ private fun LimitProgressRow(spent: Long, limit: Long) {
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s1)) {
             Text(
-                stringResource(R.string.dashboard_limit_pct_of, pct),
+                stringResource(Res.string.dashboard_limit_pct_of, localizedFormatArg(pct)),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (over) c.expense else MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1000,7 +1002,7 @@ private fun LimitProgressRow(spent: Long, limit: Long) {
             )
             if (over) {
                 Text(
-                    stringResource(R.string.dashboard_over_limit),
+                    stringResource(Res.string.dashboard_over_limit),
                     style = MaterialTheme.typography.labelSmall,
                     color = c.expense,
                 )
