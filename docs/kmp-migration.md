@@ -94,10 +94,17 @@ Packages keep `com.hisabak.*` names so moves don't ripple through imports.
   files (Instant/LocalDate/TimeZone/YearMonth/daysUntil/Format); add the `LocalizedDateFormatter`
   port; Room TypeConverters; add boundary tests (month ends, DST) first; schema JSON diff must be
   empty.
-- [ ] **PR 4 (splittable 4a/4b/4c) — Pure core → commonMain**: `core/common` + testutil fakes →
-  commonTest (JUnit4 → kotlin-test; `MainDispatcherRule` → `@BeforeTest/@AfterTest`
-  `Dispatchers.setMain/resetMain` helper); `core/domain` + all `feature/*/domain`; SMS engine +
-  codec + monitors + seed data. Identical test counts before/after, called out per PR.
+- [x] **PR 4 — Pure core → commonMain**: `core/common`, `core/domain`, all `feature/*/domain`,
+  SMS engine + codec + monitors + seed data → `shared/commonMain`; their tests →
+  `shared/commonTest` (JUnit4 → kotlin-test). The fakes moved into a new **`:testutil` KMP
+  module** (`api(project(":shared"))`) so both `shared/commonTest` and `androidApp/src/test`
+  (ViewModel tests) share them — multiplatform test-fixtures don't exist yet.
+  `MainDispatcherRule` (JUnit4 `TestWatcher`) and `FakeDriveAuthorizer` (Intent-typed until
+  PR 7) stayed in `androidApp/src/test`, as did the JVM-bound tests (`AesGcmBackupCrypto*`,
+  `BackupUseCasesTest`, `DatabaseDecryptionMigrationTest`, `BaseViewModelTest`,
+  `CompactAmountTest`, all ViewModel tests). `CategoryLimitMonitor` now depends on a domain
+  `CategoryLimitAlertStore` port (Room DAO adapter in androidApp). Test count unchanged:
+  186 (71 androidApp + 115 shared, + the `PlatformTest` sample).
 - [ ] **PR 5 — Room KMP** *(risky)*: entities/DAOs/DB/repos → commonMain; `androidx.room` plugin;
   `@ConstructedBy`; `expect fun databaseBuilder()` (android actual wires
   `DatabaseDecryptionMigration` pre-open; iOS actual uses BundledSQLiteDriver); `app/schemas/` →

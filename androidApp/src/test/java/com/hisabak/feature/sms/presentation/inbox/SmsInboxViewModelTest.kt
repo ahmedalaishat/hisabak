@@ -13,7 +13,7 @@ import com.hisabak.feature.sms.domain.usecase.IngestSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ObserveSmsMessagesUseCase
 import com.hisabak.testutil.FakeAnalytics
 import com.hisabak.testutil.FakeBrandRepository
-import com.hisabak.testutil.FakeCategoryLimitAlertDao
+import com.hisabak.testutil.FakeCategoryLimitAlertStore
 import com.hisabak.testutil.FakeCategoryLimitRepository
 import com.hisabak.testutil.FakeCategoryRepository
 import com.hisabak.testutil.FakeNotificationRepository
@@ -74,7 +74,7 @@ class SmsInboxViewModelTest {
             categories = FakeCategoryRepository(),
             limits = FakeCategoryLimitRepository(),
             notifications = FakeNotificationRepository(),
-            alertDao = FakeCategoryLimitAlertDao(),
+            alertStore = FakeCategoryLimitAlertStore(),
             systemNotifier = notifier,
             currency = Currency.AED,
             clock = clock,

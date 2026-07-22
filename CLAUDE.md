@@ -121,15 +121,22 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
 
 ## Project Structure
 
-Two Gradle modules (KMP restructure in progress — see `docs/kmp-migration.md`):
+Three Gradle modules (KMP restructure in progress — see `docs/kmp-migration.md`):
 
 - **`androidApp/`** — the Android application (`com.android.application`, prod/staging
-  flavors, signing, Firebase). Today it still holds nearly all code; it shrinks as the
-  migration moves code into `shared`.
+  flavors, signing, Firebase). Holds the Android-bound code (Room, DataStore, Keystore,
+  platform services, all Compose UI/ViewModels for now); it shrinks as the migration
+  moves code into `shared`.
 - **`shared/`** — the KMP library (`org.jetbrains.kotlin.multiplatform` +
   `com.android.kotlin.multiplatform.library`; android + iosArm64 + iosSimulatorArm64,
-  static `Shared` framework). Source sets: `commonMain` / `androidMain` / `iosMain` +
+  static `Shared` framework). `commonMain` holds the pure-Kotlin core: `core/common`,
+  `core/domain`, every `feature/*/domain`, the SMS parsing engine, `JsonBackupCodec`,
+  seed/starter data. Source sets: `commonMain` / `androidMain` / `iosMain` +
   `commonTest` (kotlin-test) / `androidHostTest` (JUnit4).
+- **`testutil/`** — a small KMP library with the shared test fakes
+  (`com.hisabak.testutil`: `TestClock`, `TestData`, `Fake*`), used by both
+  `shared/commonTest` and `androidApp/src/test` (KMP has no multiplatform
+  test-fixtures yet).
 
 Package layout (unchanged by the migration — files move between modules, packages stay):
 
@@ -326,9 +333,12 @@ JVM unit tests guard the domain logic and ViewModels. Full guide: `docs/testing.
   automatically whenever Kotlin files changed and blocks on failure.
 - **New feature → new tests.** When you add or change a use case, repository, ViewModel,
   or any business logic, add or update its test **in the same change**.
-- Tests live in `androidApp/src/test/…` mirroring `main`. Reuse the harness in
-  `com.hisabak.testutil` (`TestClock`, `MainDispatcherRule`, `Fake*` repositories,
-  `TestData`) rather than a mocking framework; build the real use case around a fake repo.
+- Tests live in `shared/src/commonTest/…` (domain logic, **kotlin-test**) and
+  `androidApp/src/test/…` (ViewModels + JVM-bound tests, **JUnit4**), each mirroring its
+  main source set. Reuse the harness in the `:testutil` module (`com.hisabak.testutil`:
+  `TestClock`, `Fake*` repositories, `TestData`; `MainDispatcherRule` stays in
+  `androidApp/src/test`) rather than a mocking framework; build the real use case around
+  a fake repo.
 - Currently out of scope (no tests required): Compose UI, Room DAOs, navigation.
 
 ---

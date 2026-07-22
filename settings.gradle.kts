@@ -25,4 +25,5 @@ dependencyResolutionManagement {
 rootProject.name = "Hisabak"
 include(":androidApp")
 include(":shared")
+include(":testutil")
  

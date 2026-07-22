@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import com.hisabak.R
 import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.ui.theme.Spacing
 
@@ -27,7 +28,7 @@ fun PeriodChipRow(
             FilterChip(
                 selected = selected == option,
                 onClick = { onSelect(option) },
-                label = { Text(stringResource(option.labelRes), style = MaterialTheme.typography.labelMedium) },
+                label = { Text(stringResource(option.labelRes()), style = MaterialTheme.typography.labelMedium) },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = MaterialTheme.colorScheme.primary,
                     selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
@@ -41,4 +42,13 @@ fun PeriodChipRow(
             )
         }
     }
+}
+
+/** String resource for a period chip label — UI-side so the shared enum stays platform-free. */
+private fun SummaryPeriod.labelRes(): Int = when (this) {
+    SummaryPeriod.CURRENT_MONTH -> R.string.period_this_month
+    SummaryPeriod.LAST_MONTH -> R.string.period_last_month
+    SummaryPeriod.CURRENT_YEAR -> R.string.period_this_year
+    SummaryPeriod.LAST_YEAR -> R.string.period_last_year
+    SummaryPeriod.ALL -> R.string.period_all_time
 }
