@@ -118,7 +118,7 @@ Packages keep `com.hisabak.*` names so moves don't ripple through imports.
   `copyRoomSchemas` regenerates a byte-identical v3 JSON (asserted by delete + regenerate + diff).
   `sqlite` bumped 2.5.1 → 2.6.2 (the androidx.sqlite Room 2.8.4 ships against); sqlcipher deps
   moved to `shared` androidMain.
-- [ ] **PR 6 — DataStore/preferences → commonMain**: `expect` store-path provider (android
+- [x] **PR 6 — DataStore/preferences → commonMain**: `expect` store-path provider (android
   `filesDir`, iOS Documents dir). `AppLocale` stays androidApp.
 - [ ] **PR 7 — DriveAuthorizer contract redesign + Koin split**: remove the `Intent`/`IntentSender`
   leak — `NeedsConsent` carries an opaque common `ConsentRequest`; an android-side

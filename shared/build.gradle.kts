@@ -37,6 +37,8 @@ kotlin {
             // api: androidApp builds the database from the shared builder, so it needs Room types.
             api(libs.androidx.room.runtime)
             implementation(libs.androidx.sqlite.bundled)
+            // api: androidApp Koin modules construct the platform DataStore instances.
+            api(libs.androidx.datastore.preferences.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

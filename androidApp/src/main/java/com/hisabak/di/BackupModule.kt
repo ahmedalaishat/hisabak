@@ -8,6 +8,8 @@ import com.hisabak.core.data.backup.GoogleDriveAuthorizer
 import com.hisabak.core.data.backup.GoogleDriveBackupRemote
 import com.hisabak.core.data.backup.JsonBackupCodec
 import com.hisabak.core.data.backup.KeystoreBackupPassphraseStore
+import com.hisabak.core.data.preferences.BACKUP_ACCOUNT_STORE
+import com.hisabak.core.data.preferences.preferencesDataStore
 import com.hisabak.core.data.backup.RoomBackupRepository
 import com.hisabak.core.data.backup.WorkManagerAutoBackupScheduler
 import com.hisabak.core.data.local.HisabakDatabase
@@ -28,7 +30,9 @@ import org.koin.dsl.module
 
 val backupModule = module {
     single<BackupPassphraseStore> { KeystoreBackupPassphraseStore(androidContext()) }
-    single<BackupAccountStore> { DataStoreBackupAccountStore(androidContext()) }
+    single<BackupAccountStore> {
+        DataStoreBackupAccountStore(preferencesDataStore(androidContext(), BACKUP_ACCOUNT_STORE))
+    }
     single<DriveAuthorizer> { GoogleDriveAuthorizer(androidContext()) }
     single<BackupRemote> { GoogleDriveBackupRemote(authorizer = get()) }
     single<AutoBackupScheduler> { WorkManagerAutoBackupScheduler(androidContext()) }
