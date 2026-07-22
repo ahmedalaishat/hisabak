@@ -29,7 +29,7 @@ class RunBackupUseCase(
                 formatVersion = BACKUP_FORMAT_VERSION,
                 schemaVersion = schemaVersion,
                 appVersionCode = appVersionCode,
-                createdAtMillis = clock.now().toEpochMilli(),
+                createdAtMillis = clock.now().toEpochMilliseconds(),
                 data = data,
             )
             val encoded = codec.encode(envelope)

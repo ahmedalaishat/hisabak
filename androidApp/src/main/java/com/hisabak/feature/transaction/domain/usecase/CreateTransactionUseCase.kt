@@ -7,7 +7,7 @@ import com.hisabak.core.common.Money
 import com.hisabak.feature.transaction.domain.Transaction
 import com.hisabak.feature.transaction.domain.TransactionId
 import com.hisabak.feature.transaction.domain.TransactionRepository
-import java.time.Instant
+import kotlin.time.Instant
 
 class CreateTransactionUseCase(
     private val repository: TransactionRepository,

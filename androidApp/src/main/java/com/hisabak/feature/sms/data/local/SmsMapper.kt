@@ -6,21 +6,21 @@ import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessage
 import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.transaction.domain.TransactionId
-import java.time.Instant
+import kotlin.time.Instant
 
 fun SmsMessageEntity.toDomain(): SmsMessage {
     val parsed = if (parsedBrandName != null || parsedAmountMinor != null || parsedOccurredAtMillis != null) {
         ParsedSmsData(
             brandName = parsedBrandName,
             amount = parsedAmountMinor?.let { Money(it, Currency(parsedCurrency ?: "AED")) },
-            occurredAt = parsedOccurredAtMillis?.let(Instant::ofEpochMilli),
+            occurredAt = parsedOccurredAtMillis?.let(Instant::fromEpochMilliseconds),
         )
     } else null
 
     return SmsMessage(
         id = SmsMessageId(id),
         body = body,
-        receivedAt = Instant.ofEpochMilli(receivedAtMillis),
+        receivedAt = Instant.fromEpochMilliseconds(receivedAtMillis),
         transactionId = transactionId?.let(::TransactionId),
         parsed = parsed,
     )
@@ -29,10 +29,10 @@ fun SmsMessageEntity.toDomain(): SmsMessage {
 fun SmsMessage.toEntity(): SmsMessageEntity = SmsMessageEntity(
     id = id.value,
     body = body,
-    receivedAtMillis = receivedAt.toEpochMilli(),
+    receivedAtMillis = receivedAt.toEpochMilliseconds(),
     transactionId = transactionId?.value,
     parsedBrandName = parsed?.brandName,
     parsedAmountMinor = parsed?.amount?.amountMinor,
     parsedCurrency = parsed?.amount?.currency?.code,
-    parsedOccurredAtMillis = parsed?.occurredAt?.toEpochMilli(),
+    parsedOccurredAtMillis = parsed?.occurredAt?.toEpochMilliseconds(),
 )

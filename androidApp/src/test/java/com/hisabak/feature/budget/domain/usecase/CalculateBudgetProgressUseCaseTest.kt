@@ -10,7 +10,7 @@ import com.hisabak.testutil.aed
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 class CalculateBudgetProgressUseCaseTest {
 
@@ -21,8 +21,8 @@ class CalculateBudgetProgressUseCaseTest {
         id = BudgetId("bg1"),
         name = "Groceries",
         amount = aed(1_000_00),
-        startAt = LocalDate.of(2026, 6, 1),
-        endAt = LocalDate.of(2026, 6, 30),
+        startAt = LocalDate(2026, 6, 1),
+        endAt = LocalDate(2026, 6, 30),
         reoccurrence = Reoccurrence.CUSTOM,
         categoryIds = setOf(CategoryId("c1")),
     )
@@ -33,7 +33,7 @@ class CalculateBudgetProgressUseCaseTest {
         val useCase = CalculateBudgetProgressUseCase(repo, window, clock)
 
         // June window is 30 days; June 16 is the 15th elapsed day -> 50%.
-        val progress = useCase(budget(), today = LocalDate.of(2026, 6, 16))
+        val progress = useCase(budget(), today = LocalDate(2026, 6, 16))
 
         assertEquals(aed(400_00), progress.spent)
         assertEquals(aed(1_000_00), progress.limit)
@@ -45,7 +45,7 @@ class CalculateBudgetProgressUseCaseTest {
         val repo = FakeBudgetRepository(sumInWindow = aed(0))
         val useCase = CalculateBudgetProgressUseCase(repo, window, clock)
 
-        val progress = useCase(budget(), today = LocalDate.of(2026, 12, 31))
+        val progress = useCase(budget(), today = LocalDate(2026, 12, 31))
 
         assertEquals(100.0, progress.elapsedDaysPercentage, 0.001)
         assertEquals(0L, progress.remainingDays)
@@ -56,7 +56,7 @@ class CalculateBudgetProgressUseCaseTest {
         val repo = FakeBudgetRepository(sumInWindow = aed(0))
         val useCase = CalculateBudgetProgressUseCase(repo, window, clock)
 
-        val progress = useCase(budget(), today = LocalDate.of(2026, 1, 1))
+        val progress = useCase(budget(), today = LocalDate(2026, 1, 1))
 
         assertEquals(0.0, progress.elapsedDaysPercentage, 0.001)
     }

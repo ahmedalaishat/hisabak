@@ -32,19 +32,19 @@ class SettingsViewModel(
         preferences.passphraseConfirmedAt,
     ) { enabled, encryption, passphraseSet, confirmedAt ->
         enabled && encryption && passphraseSet &&
-            clock.now().toEpochMilli() - confirmedAt > REMINDER_INTERVAL.inWholeMilliseconds
+            clock.now().toEpochMilliseconds() - confirmedAt > REMINDER_INTERVAL.inWholeMilliseconds
     }
 
     /** "Yes, I remember" — reset the reminder without asking the user to type it. */
     fun confirmPassphraseRemembered() {
-        viewModelScope.launch { preferences.setPassphraseConfirmedAt(clock.now().toEpochMilli()) }
+        viewModelScope.launch { preferences.setPassphraseConfirmedAt(clock.now().toEpochMilliseconds()) }
     }
 
     /** "Let me check" — verify the typed passphrase; on success reset the reminder. */
     fun verifyPassphrase(input: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             val correct = passphraseStore.get() == input
-            if (correct) preferences.setPassphraseConfirmedAt(clock.now().toEpochMilli())
+            if (correct) preferences.setPassphraseConfirmedAt(clock.now().toEpochMilliseconds())
             onResult(correct)
         }
     }

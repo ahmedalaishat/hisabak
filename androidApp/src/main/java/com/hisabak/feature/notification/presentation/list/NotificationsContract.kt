@@ -4,7 +4,7 @@ import com.hisabak.core.presentation.ViewEffect
 import com.hisabak.core.presentation.ViewIntent
 import com.hisabak.core.presentation.ViewState
 import com.hisabak.feature.notification.domain.NotificationId
-import java.time.Instant
+import kotlin.time.Instant
 
 data class NotificationRow(
     val id: NotificationId,

@@ -35,10 +35,9 @@ import com.hisabak.ui.components.SkeletonRowList
 import com.hisabak.ui.components.SurfaceCard
 import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.Spacing
-import java.time.Duration
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import com.hisabak.ui.format.formatInstant
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 @Composable
 fun NotificationsScreen(
@@ -196,14 +195,12 @@ private fun DismissBackground() {
 
 @Composable
 private fun relativeTime(instant: Instant): String {
-    val minutes = Duration.between(instant, Instant.now()).toMinutes()
+    val minutes = (Clock.System.now() - instant).inWholeMinutes
     return when {
         minutes < 1 -> stringResource(R.string.time_just_now)
         minutes < 60 -> stringResource(R.string.time_minutes_ago, minutes.toInt())
         minutes < 60 * 24 -> stringResource(R.string.time_hours_ago, (minutes / 60).toInt())
         minutes < 60 * 24 * 7 -> stringResource(R.string.time_days_ago, (minutes / (60 * 24)).toInt())
-        else -> DateTimeFormatter.ofPattern("d MMM")
-            .withZone(ZoneId.systemDefault())
-            .format(instant)
+        else -> formatInstant(instant, "d MMM")
     }
 }

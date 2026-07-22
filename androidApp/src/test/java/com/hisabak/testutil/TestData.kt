@@ -14,8 +14,8 @@ import com.hisabak.feature.sms.domain.SmsMessage
 import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.transaction.domain.Transaction
 import com.hisabak.feature.transaction.domain.TransactionId
-import java.time.Instant
-import java.time.YearMonth
+import kotlin.time.Instant
+import kotlinx.datetime.YearMonth
 
 /** Fixed defaults so test entities are terse to build and deterministic. */
 val TEST_CURRENCY = Currency.AED
@@ -50,7 +50,7 @@ fun category(
 fun categoryLimit(
     categoryId: String,
     amountMinor: Long?,
-    effectiveFrom: YearMonth = YearMonth.of(2026, 6),
+    effectiveFrom: YearMonth = YearMonth(2026, 6),
 ): CategoryLimit = CategoryLimit(
     categoryId = CategoryId(categoryId),
     amount = amountMinor?.let(::aed),

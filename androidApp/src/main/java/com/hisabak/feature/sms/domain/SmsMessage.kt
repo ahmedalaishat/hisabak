@@ -1,7 +1,7 @@
 package com.hisabak.feature.sms.domain
 
 import com.hisabak.feature.transaction.domain.TransactionId
-import java.time.Instant
+import kotlin.time.Instant
 
 data class SmsMessage(
     val id: SmsMessageId,

@@ -87,8 +87,9 @@ import com.hisabak.ui.theme.PillShape
 import com.hisabak.ui.theme.Sizing
 import com.hisabak.ui.theme.Spacing
 import com.hisabak.ui.theme.standardTween
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import com.hisabak.ui.format.formatLocalDate
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.yearMonth
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -464,12 +465,12 @@ private fun chartLabels(series: List<MonthPoint>, period: SummaryPeriod): List<S
 private fun dateLabels(dates: List<LocalDate>, period: SummaryPeriod): List<String> {
     val daily = period == SummaryPeriod.CURRENT_MONTH || period == SummaryPeriod.LAST_MONTH
     val multiYear = dates.mapTo(HashSet()) { it.year }.size > 1
-    val formatter = when {
-        daily -> DateTimeFormatter.ofPattern("d MMM")
-        multiYear -> DateTimeFormatter.ofPattern("MMM ''yy")
-        else -> DateTimeFormatter.ofPattern("MMM")
+    val pattern = when {
+        daily -> "d MMM"
+        multiYear -> "MMM ''yy"
+        else -> "MMM"
     }
-    return dates.map { it.format(formatter) }
+    return dates.map { formatLocalDate(it, pattern) }
 }
 
 // ── Stat pills ────────────────────────────────────────────────────────────────
@@ -1042,20 +1043,20 @@ private fun monthlyPairs(
     expense: List<DayPoint>,
 ): MonthlyBars {
     val incomeByMonth = income
-        .groupBy { it.day.withDayOfMonth(1) }
+        .groupBy { it.day.yearMonth.firstDay }
         .mapValues { (_, v) -> v.sumOf { it.amountMinor } / 100.0 }
     val expenseByMonth = expense
-        .groupBy { it.day.withDayOfMonth(1) }
+        .groupBy { it.day.yearMonth.firstDay }
         .mapValues { (_, v) -> v.sumOf { it.amountMinor } / 100.0 }
     val months = (incomeByMonth.keys + expenseByMonth.keys)
         .toSortedSet()
         .toList()
     if (months.isEmpty()) return MonthlyBars(emptyList(), emptyList(), emptyList())
     val multiYear = months.mapTo(HashSet()) { it.year }.size > 1
-    val formatter = DateTimeFormatter.ofPattern(if (multiYear) "MMM ''yy" else "MMM")
+    val pattern = if (multiYear) "MMM ''yy" else "MMM"
     return MonthlyBars(
         income = months.map { incomeByMonth[it] ?: 0.0 },
         expense = months.map { expenseByMonth[it] ?: 0.0 },
-        labels = months.map { it.format(formatter) },
+        labels = months.map { formatLocalDate(it, pattern) },
     )
 }

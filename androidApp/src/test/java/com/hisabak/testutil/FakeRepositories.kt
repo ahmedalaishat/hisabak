@@ -34,8 +34,8 @@ import com.hisabak.feature.transaction.domain.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import java.time.Instant
-import java.time.YearMonth
+import kotlin.time.Instant
+import kotlinx.datetime.YearMonth
 
 class FakeTransactionRepository(initial: List<Transaction> = emptyList()) : TransactionRepository {
     private val items = MutableStateFlow(initial)
@@ -47,8 +47,8 @@ class FakeTransactionRepository(initial: List<Transaction> = emptyList()) : Tran
         list.filter { tx ->
             (filter.brandId == null || tx.brandId == filter.brandId) &&
                 (filter.search == null || tx.note?.contains(filter.search, ignoreCase = true) == true) &&
-                (filter.dateFrom == null || !tx.occurredAt.isBefore(filter.dateFrom)) &&
-                (filter.dateTo == null || tx.occurredAt.isBefore(filter.dateTo))
+                (filter.dateFrom == null || tx.occurredAt >= filter.dateFrom) &&
+                (filter.dateTo == null || tx.occurredAt < filter.dateTo)
         }
     }
 

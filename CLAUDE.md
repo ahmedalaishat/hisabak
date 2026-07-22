@@ -66,10 +66,15 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   (glyph · number · K/M-or-أ/م suffix) via a forced `LayoutDirection.Ltr`, with the number and
   suffix as separate `Text`s so Arabic-Indic digits don't bidi-reorder. Amounts keep the dirham
   glyph in both languages.
-- **Platform:** Android only, portrait, edge-to-edge. `minSdk 29`. **Core-library desugaring is
-  enabled** (`isCoreLibraryDesugaringEnabled` + `desugar_jdk_libs`), so `java.time` is safe to use
-  freely down to API 29 — without it, API-34+ additions like `LocalDate.ofInstant` throw
-  `NoSuchMethodError` on older devices at runtime (this caused the v1.5.0 launch crash).
+- **Platform:** Android only, portrait, edge-to-edge. `minSdk 29`.
+- **Dates & times: use kotlinx-datetime** (`kotlin.time.Instant`, `kotlinx.datetime.LocalDate` /
+  `YearMonth` / `TimeZone`), **not `java.time`** — the code is KMP-bound and java.time doesn't
+  exist on iOS. The single sanctioned `java.time` site is `ui/format/DateFormats.kt`
+  (locale-aware display formatting; becomes the `LocalizedDateFormatter` port when screens move
+  to `shared`). Core-library desugaring stays enabled in `androidApp`
+  (`isCoreLibraryDesugaringEnabled` + `desugar_jdk_libs`) for that formatter path — API-34+
+  java.time additions like `LocalDate.ofInstant` throw `NoSuchMethodError` on older devices
+  without it (caused the v1.5.0 launch crash).
 - **App lock:** optional biometric/device-credential gate (Settings → Security, `appLockEnabled`
   pref). `androidx.biometric` `BiometricPrompt` with `BIOMETRIC_STRONG or DEVICE_CREDENTIAL` (PIN
   fallback, no custom PIN UI). **`MainActivity` is a `FragmentActivity`** — required by

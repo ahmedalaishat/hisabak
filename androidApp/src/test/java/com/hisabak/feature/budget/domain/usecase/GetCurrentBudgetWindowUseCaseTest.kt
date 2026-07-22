@@ -7,7 +7,7 @@ import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.testutil.aed
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 class GetCurrentBudgetWindowUseCaseTest {
 
@@ -32,41 +32,62 @@ class GetCurrentBudgetWindowUseCaseTest {
     @Test
     fun `custom budget uses its explicit start and end`() {
         val window = useCase(
-            budget(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30), Reoccurrence.CUSTOM),
-            today = LocalDate.of(2026, 6, 17),
+            budget(LocalDate(2026, 6, 1), LocalDate(2026, 6, 30), Reoccurrence.CUSTOM),
+            today = LocalDate(2026, 6, 17),
         )
-        assertEquals(LocalDate.of(2026, 6, 1), window.start)
-        assertEquals(LocalDate.of(2026, 6, 30), window.end)
+        assertEquals(LocalDate(2026, 6, 1), window.start)
+        assertEquals(LocalDate(2026, 6, 30), window.end)
         assertEquals(30L, window.totalDays)
     }
 
     @Test
     fun `monthly budget returns the window containing today`() {
         val window = useCase(
-            budget(LocalDate.of(2026, 1, 1), reoccurrence = Reoccurrence.MONTHLY),
-            today = LocalDate.of(2026, 6, 17),
+            budget(LocalDate(2026, 1, 1), reoccurrence = Reoccurrence.MONTHLY),
+            today = LocalDate(2026, 6, 17),
         )
-        assertEquals(LocalDate.of(2026, 6, 1), window.start)
-        assertEquals(LocalDate.of(2026, 6, 30), window.end)
+        assertEquals(LocalDate(2026, 6, 1), window.start)
+        assertEquals(LocalDate(2026, 6, 30), window.end)
     }
 
     @Test
     fun `daily budget window is the single day`() {
         val window = useCase(
-            budget(LocalDate.of(2026, 6, 1), reoccurrence = Reoccurrence.DAILY),
-            today = LocalDate.of(2026, 6, 17),
+            budget(LocalDate(2026, 6, 1), reoccurrence = Reoccurrence.DAILY),
+            today = LocalDate(2026, 6, 17),
         )
-        assertEquals(LocalDate.of(2026, 6, 17), window.start)
-        assertEquals(LocalDate.of(2026, 6, 17), window.end)
+        assertEquals(LocalDate(2026, 6, 17), window.start)
+        assertEquals(LocalDate(2026, 6, 17), window.end)
+    }
+
+    @Test
+    fun `monthly budget anchored at month-end clamps to shorter months`() {
+        val window = useCase(
+            budget(LocalDate(2026, 1, 31), reoccurrence = Reoccurrence.MONTHLY),
+            today = LocalDate(2026, 3, 5),
+        )
+        assertEquals(LocalDate(2026, 2, 28), window.start)
+        assertEquals(LocalDate(2026, 3, 27), window.end)
+    }
+
+    @Test
+    fun `monthly budget anchored at month-end includes the leap day`() {
+        val window = useCase(
+            budget(LocalDate(2024, 1, 31), reoccurrence = Reoccurrence.MONTHLY),
+            today = LocalDate(2024, 2, 15),
+        )
+        assertEquals(LocalDate(2024, 1, 31), window.start)
+        assertEquals(LocalDate(2024, 2, 28), window.end)
+        assertEquals(29L, window.totalDays)
     }
 
     @Test
     fun `today on a window boundary stays in the earlier window`() {
         val window = useCase(
-            budget(LocalDate.of(2026, 1, 1), reoccurrence = Reoccurrence.MONTHLY),
-            today = LocalDate.of(2026, 1, 1),
+            budget(LocalDate(2026, 1, 1), reoccurrence = Reoccurrence.MONTHLY),
+            today = LocalDate(2026, 1, 1),
         )
-        assertEquals(LocalDate.of(2026, 1, 1), window.start)
-        assertEquals(LocalDate.of(2026, 1, 31), window.end)
+        assertEquals(LocalDate(2026, 1, 1), window.start)
+        assertEquals(LocalDate(2026, 1, 31), window.end)
     }
 }

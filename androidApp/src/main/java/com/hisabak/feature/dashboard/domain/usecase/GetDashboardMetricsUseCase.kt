@@ -22,9 +22,16 @@ import com.hisabak.feature.transaction.domain.Transaction
 import com.hisabak.feature.transaction.domain.usecase.ObserveTransactionsUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.ZoneId
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.minus
+import kotlinx.datetime.number
+import kotlinx.datetime.onDay
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.yearMonth
 
 class GetDashboardMetricsUseCase(
     private val observeTransactions: ObserveTransactionsUseCase,
@@ -52,8 +59,8 @@ class GetDashboardMetricsUseCase(
         limits: List<CategoryLimit>,
         period: SummaryPeriod,
     ): DashboardSnapshot {
-        val zone = ZoneId.systemDefault()
-        val today = LocalDate.ofInstant(clock.now(), zone)
+        val zone = TimeZone.currentSystemDefault()
+        val today = clock.now().toLocalDateTime(zone).date
 
         val catById = categories.associateBy { it.id }
         val brandById = brands.associateBy { it.id }
@@ -63,9 +70,9 @@ class GetDashboardMetricsUseCase(
 
         val range = period.instantRange(today, zone)
         fun inPeriod(tx: Transaction): Boolean =
-            range == null || (!tx.occurredAt.isBefore(range.first) && tx.occurredAt.isBefore(range.second))
+            range == null || (tx.occurredAt >= range.first && tx.occurredAt < range.second)
         fun upToEnd(tx: Transaction): Boolean =
-            range == null || tx.occurredAt.isBefore(range.second)
+            range == null || tx.occurredAt < range.second
 
         val periodTxs = transactions.filter(::inPeriod)
         val cumulativeTxs = transactions.filter(::upToEnd)
@@ -96,14 +103,14 @@ class GetDashboardMetricsUseCase(
         // Trend versus the equal-length window immediately before this one.
         val prevRange = period.previousInstantRange(today, zone)
         val prevTxs = prevRange?.let { (start, end) ->
-            transactions.filter { !it.occurredAt.isBefore(start) && it.occurredAt.isBefore(end) }
+            transactions.filter { it.occurredAt >= start && it.occurredAt < end }
         }.orEmpty()
         val incomeTrendPct = pctChange(sumType(prevTxs, CategoryType.INCOME), income)
         val expenseTrendPct = pctChange(sumType(prevTxs, CategoryType.EXPENSES), expense)
 
         // Cumulative-to-date running series for the hero / over-time charts. Each carries the
         // balance accumulated before the period start, so they read as running totals.
-        val beforePeriod = transactions.filter { range != null && it.occurredAt.isBefore(range.first) }
+        val beforePeriod = transactions.filter { range != null && it.occurredAt < range.first }
         val openingNetWorth = beforePeriod.sumOf(signedNetWorth)
         val openingIncome = beforePeriod.filter { typeOf(it) == CategoryType.INCOME }.sumOf { it.amount.amountMinor }
         val openingExpense = beforePeriod.filter { typeOf(it) == CategoryType.EXPENSES }.sumOf { it.amount.amountMinor }
@@ -164,7 +171,7 @@ class GetDashboardMetricsUseCase(
         // The applicable monthly limit for each bucket of a category's trend (null = no limit then).
         val limitByCategory = categories.associate { cat ->
             cat.id to trendByCategory[cat.id].orEmpty().map { point ->
-                limits.effectiveFor(cat.id, YearMonth.from(point.day))?.amountMinor
+                limits.effectiveFor(cat.id, point.day.yearMonth)?.amountMinor
             }
         }
 
@@ -219,41 +226,41 @@ class GetDashboardMetricsUseCase(
         period: SummaryPeriod,
         today: LocalDate,
         bucketTxs: List<Transaction>,
-        zone: ZoneId,
+        zone: TimeZone,
     ): List<LocalDate> = when (period) {
         SummaryPeriod.CURRENT_MONTH -> {
-            val month = YearMonth.from(today)
-            (1..today.dayOfMonth).map { month.atDay(it) }
+            val month = today.yearMonth
+            (1..today.day).map { month.onDay(it) }
         }
         SummaryPeriod.LAST_MONTH -> {
-            val month = YearMonth.from(today).minusMonths(1)
-            (1..month.lengthOfMonth()).map { month.atDay(it) }
+            val month = today.yearMonth.minus(1, DateTimeUnit.MONTH)
+            (1..month.numberOfDays).map { month.onDay(it) }
         }
-        SummaryPeriod.CURRENT_YEAR -> (1..today.monthValue).map { LocalDate.of(today.year, it, 1) }
-        SummaryPeriod.LAST_YEAR -> (1..12).map { LocalDate.of(today.year - 1, it, 1) }
+        SummaryPeriod.CURRENT_YEAR -> (1..today.month.number).map { LocalDate(today.year, it, 1) }
+        SummaryPeriod.LAST_YEAR -> (1..12).map { LocalDate(today.year - 1, it, 1) }
         SummaryPeriod.ALL -> {
             if (bucketTxs.isEmpty()) {
                 emptyList()
             } else {
-                val months = bucketTxs.map { YearMonth.from(LocalDate.ofInstant(it.occurredAt, zone)) }
+                val months = bucketTxs.map { it.occurredAt.toLocalDateTime(zone).date.yearMonth }
                 val out = mutableListOf<LocalDate>()
                 var cursor = months.min()
                 val end = months.max()
-                while (!cursor.isAfter(end)) {
-                    out += cursor.atDay(1)
-                    cursor = cursor.plusMonths(1)
+                while (cursor <= end) {
+                    out += cursor.firstDay
+                    cursor = cursor.plus(1, DateTimeUnit.MONTH)
                 }
                 out
             }
         }
     }
 
-    private fun bucketKey(tx: Transaction, period: SummaryPeriod, zone: ZoneId): LocalDate {
-        val day = LocalDate.ofInstant(tx.occurredAt, zone)
+    private fun bucketKey(tx: Transaction, period: SummaryPeriod, zone: TimeZone): LocalDate {
+        val day = tx.occurredAt.toLocalDateTime(zone).date
         return if (period == SummaryPeriod.CURRENT_MONTH || period == SummaryPeriod.LAST_MONTH) {
             day
         } else {
-            day.withDayOfMonth(1)
+            day.yearMonth.firstDay
         }
     }
 
@@ -261,7 +268,7 @@ class GetDashboardMetricsUseCase(
         bucketTxs: List<Transaction>,
         valueOf: (Transaction) -> Long,
         opening: Long,
-        zone: ZoneId,
+        zone: TimeZone,
         period: SummaryPeriod,
         today: LocalDate,
     ): List<MonthPoint> {
@@ -277,7 +284,7 @@ class GetDashboardMetricsUseCase(
 
     private fun flowSeries(
         typeTxs: List<Transaction>,
-        zone: ZoneId,
+        zone: TimeZone,
         period: SummaryPeriod,
         today: LocalDate,
     ): List<DayPoint> {
@@ -287,18 +294,18 @@ class GetDashboardMetricsUseCase(
         return dates.map { DayPoint(it, byBucket[it] ?: 0L) }
     }
 
-    private fun buildMonthlySum(transactions: List<Transaction>, zone: ZoneId): List<MonthPoint> {
+    private fun buildMonthlySum(transactions: List<Transaction>, zone: TimeZone): List<MonthPoint> {
         if (transactions.isEmpty()) return emptyList()
-        val byMonth = transactions.groupBy { YearMonth.from(LocalDate.ofInstant(it.occurredAt, zone)) }
+        val byMonth = transactions.groupBy { it.occurredAt.toLocalDateTime(zone).date.yearMonth }
             .mapValues { (_, list) -> list.sumOf { it.amount.amountMinor } }
         val sorted = byMonth.keys.sorted()
         val start = sorted.first()
         val end = sorted.last()
         val points = mutableListOf<MonthPoint>()
         var cursor = start
-        while (!cursor.isAfter(end)) {
-            points += MonthPoint(cursor.atDay(1), byMonth[cursor] ?: 0L)
-            cursor = cursor.plusMonths(1)
+        while (cursor <= end) {
+            points += MonthPoint(cursor.firstDay, byMonth[cursor] ?: 0L)
+            cursor = cursor.plus(1, DateTimeUnit.MONTH)
         }
         return points
     }

@@ -144,7 +144,7 @@ class BackupViewModel(
         viewModelScope.launch {
             passphraseStore.set(passphrase)
             preferences.setBackupEncryptionEnabled(true)
-            preferences.setPassphraseConfirmedAt(clock.now().toEpochMilli())
+            preferences.setPassphraseConfirmedAt(clock.now().toEpochMilliseconds())
         }
     }
 

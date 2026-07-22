@@ -1,6 +1,6 @@
 package com.hisabak.feature.notification.domain
 
-import java.time.Instant
+import kotlin.time.Instant
 import java.util.UUID
 
 @JvmInline

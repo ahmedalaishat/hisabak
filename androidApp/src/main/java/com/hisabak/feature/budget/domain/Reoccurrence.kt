@@ -1,11 +1,11 @@
 package com.hisabak.feature.budget.domain
 
-import java.time.temporal.ChronoUnit
+import kotlinx.datetime.DateTimeUnit
 
-enum class Reoccurrence(val unit: ChronoUnit?) {
+enum class Reoccurrence(val unit: DateTimeUnit.DateBased?) {
     CUSTOM(null),
-    DAILY(ChronoUnit.DAYS),
-    WEEKLY(ChronoUnit.WEEKS),
-    MONTHLY(ChronoUnit.MONTHS),
-    YEARLY(ChronoUnit.YEARS);
+    DAILY(DateTimeUnit.DAY),
+    WEEKLY(DateTimeUnit.WEEK),
+    MONTHLY(DateTimeUnit.MONTH),
+    YEARLY(DateTimeUnit.YEAR);
 }

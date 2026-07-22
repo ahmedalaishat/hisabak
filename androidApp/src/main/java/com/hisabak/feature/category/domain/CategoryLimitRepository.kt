@@ -2,7 +2,7 @@ package com.hisabak.feature.category.domain
 
 import com.hisabak.core.common.Money
 import kotlinx.coroutines.flow.Flow
-import java.time.YearMonth
+import kotlinx.datetime.YearMonth
 
 interface CategoryLimitRepository {
     fun observeAll(): Flow<List<CategoryLimit>>

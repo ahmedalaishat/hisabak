@@ -5,8 +5,11 @@ import com.hisabak.feature.budget.domain.BudgetWindow
 import com.hisabak.feature.budget.domain.Reoccurrence
 import com.hisabak.core.common.Clock
 import com.hisabak.core.common.DateRange
-import java.time.LocalDate
-import java.time.temporal.ChronoUnit
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.yearsUntil
 
 /**
  * Mirrors Hisabi's Budget::getCurrentWindowStartAndEndDates.
@@ -22,12 +25,12 @@ class GetCurrentBudgetWindowUseCase(private val clock: Clock) {
         val unit = requireNotNull(budget.reoccurrence.unit)
         var windowStart = budget.startAt
         while (true) {
-            val windowEnd = windowStart.plus(budget.period.toLong(), unit).minusDays(1)
-            if (!today.isAfter(windowEnd)) {
+            val windowEnd = windowStart.plus(budget.period, unit).minus(1, DateTimeUnit.DAY)
+            if (today <= windowEnd) {
                 return BudgetWindow(DateRange(windowStart, windowEnd))
             }
-            windowStart = windowStart.plus(budget.period.toLong(), unit)
-            if (ChronoUnit.YEARS.between(budget.startAt, windowStart) > MAX_YEARS_SAFETY) {
+            windowStart = windowStart.plus(budget.period, unit)
+            if (budget.startAt.yearsUntil(windowStart) > MAX_YEARS_SAFETY) {
                 return BudgetWindow(DateRange(windowStart, windowStart))
             }
         }

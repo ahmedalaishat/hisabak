@@ -5,12 +5,12 @@ import com.hisabak.feature.sms.domain.SmsTemplate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.time.Instant
-import java.time.ZoneOffset
+import kotlin.time.Instant
+import kotlinx.datetime.TimeZone
 
 class TemplateSmsParserTest {
 
-    private val parser = TemplateSmsParser(defaultCurrency = Currency.AED, zone = ZoneOffset.UTC)
+    private val parser = TemplateSmsParser(defaultCurrency = Currency.AED, zone = TimeZone.UTC)
 
     private fun parse(fields: Map<String, String>) =
         parser.parse(body = "", template = SmsTemplate(pattern = "x", fields = fields))
@@ -73,6 +73,30 @@ class TemplateSmsParserTest {
     fun `missing or blank date yields null occurredAt`() {
         assertNull(parse(mapOf("amount" to "10")).occurredAt)
         assertNull(parse(mapOf("date" to "   ")).occurredAt)
+    }
+
+    @Test
+    fun `two-digit years resolve to the 2000s`() {
+        val parsed = parse(mapOf("date" to "17-06-26"))
+        assertEquals(Instant.parse("2026-06-17T00:00:00Z"), parsed.occurredAt)
+    }
+
+    @Test
+    fun `single-digit day and month with a two-digit year`() {
+        val parsed = parse(mapOf("date" to "5-6-26", "time" to "9:05 AM"))
+        assertEquals(Instant.parse("2026-06-05T09:05:00Z"), parsed.occurredAt)
+    }
+
+    @Test
+    fun `parses compact meridiem time`() {
+        val parsed = parse(mapOf("date" to "17-06-2026", "time" to "2:30PM"))
+        assertEquals(Instant.parse("2026-06-17T14:30:00Z"), parsed.occurredAt)
+    }
+
+    @Test
+    fun `unparseable time falls back to midnight`() {
+        val parsed = parse(mapOf("date" to "17-06-2026", "time" to "soon"))
+        assertEquals(Instant.parse("2026-06-17T00:00:00Z"), parsed.occurredAt)
     }
 
     @Test

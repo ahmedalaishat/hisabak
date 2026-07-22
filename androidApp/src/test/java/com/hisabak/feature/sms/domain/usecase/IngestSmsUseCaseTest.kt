@@ -15,8 +15,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.time.Instant
-import java.time.ZoneOffset
+import kotlin.time.Instant
+import kotlinx.datetime.TimeZone
 
 class IngestSmsUseCaseTest {
 
@@ -27,7 +27,7 @@ class IngestSmsUseCaseTest {
 
     private val processor = SmsTransactionProcessor(
         detector = RegexSmsTemplateDetector(listOf("Purchase of AED {amount} at {brand} done")),
-        parser = TemplateSmsParser(Currency.AED, ZoneOffset.UTC),
+        parser = TemplateSmsParser(Currency.AED, TimeZone.UTC),
         findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo),
         transactionRepository = transactionRepo,
         smsRepository = smsRepo,

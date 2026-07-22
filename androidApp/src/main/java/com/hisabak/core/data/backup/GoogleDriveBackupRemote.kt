@@ -11,7 +11,7 @@ import kotlinx.serialization.json.Json
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
-import java.time.Instant
+import kotlin.time.Instant
 
 /**
  * [BackupRemote] over the Drive v3 REST API, storing a single file in the **App Data Folder**
@@ -31,7 +31,7 @@ class GoogleDriveBackupRemote(
         json.decodeFromString(FileListDto.serializer(), body).files.firstOrNull()?.let {
             RemoteBackup(
                 id = it.id,
-                modifiedAtMillis = it.modifiedTime?.let(Instant::parse)?.toEpochMilli() ?: 0L,
+                modifiedAtMillis = it.modifiedTime?.let(Instant::parse)?.toEpochMilliseconds() ?: 0L,
                 sizeBytes = it.size?.toLongOrNull() ?: 0L,
             )
         }

@@ -11,7 +11,7 @@ import com.hisabak.feature.category.domain.CategoryLimit
 import com.hisabak.feature.category.domain.CategoryLimitRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import java.time.YearMonth
+import kotlinx.datetime.YearMonth
 
 class RoomCategoryLimitRepository(
     private val dao: CategoryLimitDao,

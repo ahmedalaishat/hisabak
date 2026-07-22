@@ -19,7 +19,7 @@ import com.hisabak.feature.category.domain.usecase.SetCategoryLimitUseCase
 import com.hisabak.feature.category.domain.usecase.UpdateCategoryUseCase
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.time.YearMonth
+import kotlinx.datetime.yearMonth
 
 class CategoryEditViewModel(
     private val categoryId: CategoryId?,
@@ -63,7 +63,7 @@ class CategoryEditViewModel(
                 is DomainResult.Success -> {
                     val c = result.value
                     val limit = observeCategoryLimits().first()
-                        .effectiveFor(id, YearMonth.from(clock.today()))
+                        .effectiveFor(id, clock.today().yearMonth)
                     setState {
                         copy(
                             isLoading = false,
