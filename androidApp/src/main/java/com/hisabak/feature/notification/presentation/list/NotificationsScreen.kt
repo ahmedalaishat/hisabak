@@ -24,10 +24,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.hisabak.R
+import com.hisabak.shared.resources.*
+import com.hisabak.ui.components.localizedFormatArg
 import com.hisabak.feature.notification.domain.Notification
 import com.hisabak.ui.components.CircleIconTile
 import com.hisabak.ui.components.EmptyStatePanel
@@ -62,8 +63,8 @@ fun NotificationsScreen(
         EmptyStatePanel(
             modifier = modifier.fillMaxSize(),
             icon = HugeIcons.NotificationsNone,
-            title = stringResource(R.string.notifications_empty_title),
-            subtitle = stringResource(R.string.notifications_empty_subtitle),
+            title = stringResource(Res.string.notifications_empty_title),
+            subtitle = stringResource(Res.string.notifications_empty_subtitle),
         )
         return
     }
@@ -85,7 +86,7 @@ fun NotificationsScreen(
                     horizontalArrangement = Arrangement.End,
                 ) {
                     Text(
-                        text = stringResource(R.string.notifications_mark_all_read),
+                        text = stringResource(Res.string.notifications_mark_all_read),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
@@ -186,7 +187,7 @@ private fun DismissBackground() {
         contentAlignment = Alignment.CenterEnd,
     ) {
         Text(
-            text = stringResource(R.string.notifications_dismiss),
+            text = stringResource(Res.string.notifications_dismiss),
             style = MaterialTheme.typography.labelLarge,
             color = c.expense,
         )
@@ -197,10 +198,10 @@ private fun DismissBackground() {
 private fun relativeTime(instant: Instant): String {
     val minutes = (Clock.System.now() - instant).inWholeMinutes
     return when {
-        minutes < 1 -> stringResource(R.string.time_just_now)
-        minutes < 60 -> stringResource(R.string.time_minutes_ago, minutes.toInt())
-        minutes < 60 * 24 -> stringResource(R.string.time_hours_ago, (minutes / 60).toInt())
-        minutes < 60 * 24 * 7 -> stringResource(R.string.time_days_ago, (minutes / (60 * 24)).toInt())
+        minutes < 1 -> stringResource(Res.string.time_just_now)
+        minutes < 60 -> stringResource(Res.string.time_minutes_ago, localizedFormatArg(minutes.toInt()))
+        minutes < 60 * 24 -> stringResource(Res.string.time_hours_ago, localizedFormatArg((minutes / 60).toInt()))
+        minutes < 60 * 24 * 7 -> stringResource(Res.string.time_days_ago, localizedFormatArg((minutes / (60 * 24)).toInt()))
         else -> formatInstant(instant, "d MMM")
     }
 }

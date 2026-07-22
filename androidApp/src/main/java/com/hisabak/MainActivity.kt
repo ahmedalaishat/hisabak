@@ -38,7 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
@@ -96,6 +96,8 @@ import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.Motion
 import org.koin.android.ext.android.inject
 import org.koin.compose.koinInject
+import com.hisabak.shared.resources.*
+import org.jetbrains.compose.resources.StringResource
 
 // FragmentActivity (not plain ComponentActivity) is required by androidx.biometric's BiometricPrompt;
 // it still extends ComponentActivity (so Navigation 3 keeps its dispatcher owner) and pulls in
@@ -194,14 +196,14 @@ private enum class LaunchStage { Loading, Onboarding, Restore, App }
 
 private enum class RootTab(
     val key: NavKey,
-    val labelRes: Int,
+    val labelRes: StringResource,
     val icon: ImageVector,
 ) {
-    Dashboard(DashboardKey, R.string.nav_dashboard, HugeIcons.SpaceDashboard),
-    Transactions(TransactionsKey, R.string.nav_transactions, HugeIcons.List),
-    Sms(SmsKey, R.string.nav_sms, HugeIcons.Message),
-    Manage(ManageKey, R.string.nav_manage, HugeIcons.Layers),
-    Settings(SettingsKey, R.string.nav_settings, HugeIcons.Settings),
+    Dashboard(DashboardKey, Res.string.nav_dashboard, HugeIcons.SpaceDashboard),
+    Transactions(TransactionsKey, Res.string.nav_transactions, HugeIcons.List),
+    Sms(SmsKey, Res.string.nav_sms, HugeIcons.Message),
+    Manage(ManageKey, Res.string.nav_manage, HugeIcons.Layers),
+    Settings(SettingsKey, Res.string.nav_settings, HugeIcons.Settings),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -292,28 +294,28 @@ private fun HisabakNav() {
         topBar = {
             when (leaf) {
                 is CategoryEditKey -> DetailTopBar(
-                    title = stringResource(if (leaf.id == null) R.string.category_new_title else R.string.category_edit_title),
+                    title = stringResource(if (leaf.id == null) Res.string.category_new_title else Res.string.category_edit_title),
                     onBack = { navigator.goBack() },
                 )
                 is BrandEditKey -> DetailTopBar(
-                    title = stringResource(if (leaf.id == null) R.string.brand_new_title else R.string.brand_edit_title),
+                    title = stringResource(if (leaf.id == null) Res.string.brand_new_title else Res.string.brand_edit_title),
                     onBack = { navigator.goBack() },
                 )
                 NotificationsKey -> DetailTopBar(
-                    title = stringResource(R.string.notifications_title),
+                    title = stringResource(Res.string.notifications_title),
                     onBack = { navigator.goBack() },
                 )
                 BackupKey -> DetailTopBar(
-                    title = stringResource(R.string.backup_title),
+                    title = stringResource(Res.string.backup_title),
                     onBack = { navigator.goBack() },
                 )
                 else -> HisabakTopBar(
                     title = when (currentTab) {
-                        RootTab.Dashboard -> stringResource(R.string.app_brand_name)
-                        RootTab.Transactions -> stringResource(R.string.nav_transactions)
-                        RootTab.Sms -> stringResource(R.string.sms_inbox_title)
-                        RootTab.Manage -> stringResource(R.string.nav_manage)
-                        RootTab.Settings -> stringResource(R.string.nav_settings)
+                        RootTab.Dashboard -> stringResource(Res.string.app_brand_name)
+                        RootTab.Transactions -> stringResource(Res.string.nav_transactions)
+                        RootTab.Sms -> stringResource(Res.string.sms_inbox_title)
+                        RootTab.Manage -> stringResource(Res.string.nav_manage)
+                        RootTab.Settings -> stringResource(Res.string.nav_settings)
                     },
                     onNotificationsClick = { navigator.navigate(NotificationsKey) },
                     unreadCount = unreadCount,
@@ -336,7 +338,7 @@ private fun HisabakNav() {
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
-                    Icon(HugeIcons.Add, contentDescription = stringResource(R.string.transaction_add))
+                    Icon(HugeIcons.Add, contentDescription = stringResource(Res.string.transaction_add))
                 }
             }
         },

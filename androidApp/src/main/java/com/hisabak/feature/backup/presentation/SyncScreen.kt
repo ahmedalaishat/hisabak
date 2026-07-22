@@ -33,10 +33,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.hisabak.R
+import com.hisabak.shared.resources.*
+import com.hisabak.ui.components.localizedFormatArg
+import org.jetbrains.compose.resources.StringResource
 import com.hisabak.core.domain.backup.BackupError
 import com.hisabak.ui.components.ButtonVariant
 import com.hisabak.ui.components.HisabakButton
@@ -102,18 +104,18 @@ fun SyncScreen(
         ) {
             when (phase) {
                 is SyncPhase.Done -> HisabakButton(
-                    text = stringResource(R.string.sync_continue),
+                    text = stringResource(Res.string.sync_continue),
                     onClick = onContinue,
                     fullWidth = true,
                 )
                 is SyncPhase.Failed -> {
                     HisabakButton(
-                        text = stringResource(R.string.sync_try_again),
+                        text = stringResource(Res.string.sync_try_again),
                         onClick = onRetry,
                         fullWidth = true,
                     )
                     HisabakButton(
-                        text = stringResource(R.string.sync_close),
+                        text = stringResource(Res.string.sync_close),
                         onClick = onClose,
                         variant = ButtonVariant.Ghost,
                         fullWidth = true,
@@ -206,19 +208,19 @@ private fun CenterDisc(color: androidx.compose.ui.graphics.Color, content: @Comp
     ) { content() }
 }
 
-private fun titleRes(kind: SyncKind, phase: SyncPhase): Int = when (phase) {
-    SyncPhase.Running -> if (kind == SyncKind.BackUp) R.string.sync_backup_running_title else R.string.sync_restore_running_title
-    is SyncPhase.Done -> if (kind == SyncKind.BackUp) R.string.sync_backup_done_title else R.string.sync_restore_done_title
-    is SyncPhase.Failed -> if (kind == SyncKind.BackUp) R.string.sync_backup_failed_title else R.string.sync_restore_failed_title
+private fun titleRes(kind: SyncKind, phase: SyncPhase): StringResource = when (phase) {
+    SyncPhase.Running -> if (kind == SyncKind.BackUp) Res.string.sync_backup_running_title else Res.string.sync_restore_running_title
+    is SyncPhase.Done -> if (kind == SyncKind.BackUp) Res.string.sync_backup_done_title else Res.string.sync_restore_done_title
+    is SyncPhase.Failed -> if (kind == SyncKind.BackUp) Res.string.sync_backup_failed_title else Res.string.sync_restore_failed_title
 }
 
 @Composable
 private fun subtitle(kind: SyncKind, phase: SyncPhase): String = when (phase) {
     SyncPhase.Running -> stringResource(
-        if (kind == SyncKind.BackUp) R.string.sync_backup_running_sub else R.string.sync_restore_running_sub,
+        if (kind == SyncKind.BackUp) Res.string.sync_backup_running_sub else Res.string.sync_restore_running_sub,
     )
     is SyncPhase.Done ->
-        if (phase.restoredCount != null) stringResource(R.string.sync_restore_done_sub, phase.restoredCount)
-        else stringResource(R.string.sync_backup_done_sub)
+        if (phase.restoredCount != null) stringResource(Res.string.sync_restore_done_sub, localizedFormatArg(phase.restoredCount))
+        else stringResource(Res.string.sync_backup_done_sub)
     is SyncPhase.Failed -> stringResource(phase.error.messageRes())
 }

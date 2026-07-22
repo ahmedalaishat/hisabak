@@ -50,12 +50,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.hisabak.R
+import com.hisabak.shared.resources.*
+import org.jetbrains.compose.resources.StringResource
 import com.hisabak.core.domain.backup.AutoBackupPeriod
 import com.hisabak.core.domain.backup.BackupError
 import com.hisabak.ui.components.ButtonVariant
@@ -163,7 +164,7 @@ private fun BackupSettings(
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.sectionGap)) {
                     BenefitsList()
                     HisabakButton(
-                        text = stringResource(R.string.backup_turn_on),
+                        text = stringResource(Res.string.backup_turn_on),
                         onClick = {
                             onSetEnabled(true)
                             if (state.account == null) onConnectAccount()
@@ -176,7 +177,7 @@ private fun BackupSettings(
                     LastBackupCard(state = state)
 
                     HisabakButton(
-                        text = stringResource(R.string.backup_now),
+                        text = stringResource(Res.string.backup_now),
                         onClick = onBackupNow,
                         enabled = canBackupNow,
                         fullWidth = true,
@@ -185,9 +186,9 @@ private fun BackupSettings(
                     SurfaceCard(modifier = Modifier.fillMaxWidth(), contentPadding = 0.dp) {
                         SettingsRow(
                             icon = HugeIcons.Schedule,
-                            title = stringResource(R.string.backup_auto_title),
+                            title = stringResource(Res.string.backup_auto_title),
                             subtitle = if (state.period != AutoBackupPeriod.NEVER) {
-                                stringResource(R.string.backup_auto_hint)
+                                stringResource(Res.string.backup_auto_hint)
                             } else {
                                 null
                             },
@@ -197,8 +198,8 @@ private fun BackupSettings(
                         RowDivider()
                         SettingsRow(
                             icon = HugeIcons.Lock,
-                            title = stringResource(R.string.backup_encrypt),
-                            subtitle = stringResource(R.string.backup_encrypt_hint),
+                            title = stringResource(Res.string.backup_encrypt),
+                            subtitle = stringResource(Res.string.backup_encrypt_hint),
                         ) {
                             Switch(
                                 checked = state.encryptionEnabled || pendingEncrypt,
@@ -220,12 +221,12 @@ private fun BackupSettings(
                             RowDivider()
                             SettingsRow(
                                 icon = HugeIcons.Key,
-                                title = stringResource(R.string.backup_passphrase),
+                                title = stringResource(Res.string.backup_passphrase),
                                 subtitle = stringResource(
-                                    if (state.passphraseSet) R.string.backup_passphrase_set else R.string.backup_passphrase_not_set,
+                                    if (state.passphraseSet) Res.string.backup_passphrase_set else Res.string.backup_passphrase_not_set,
                                 ),
                                 value = stringResource(
-                                    if (state.passphraseSet) R.string.backup_change else R.string.backup_set,
+                                    if (state.passphraseSet) Res.string.backup_change else Res.string.backup_set,
                                 ),
                                 onClick = { showPassphraseSheet = true },
                             )
@@ -233,7 +234,7 @@ private fun BackupSettings(
                     }
 
                     Text(
-                        text = stringResource(R.string.backup_turn_off),
+                        text = stringResource(Res.string.backup_turn_off),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center,
@@ -251,16 +252,16 @@ private fun BackupSettings(
     if (showTurnOff) {
         AlertDialog(
             onDismissRequest = { showTurnOff = false },
-            title = { Text(stringResource(R.string.backup_turn_off_title)) },
-            text = { Text(stringResource(R.string.backup_turn_off_message)) },
+            title = { Text(stringResource(Res.string.backup_turn_off_title)) },
+            text = { Text(stringResource(Res.string.backup_turn_off_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     showTurnOff = false
                     onSetEnabled(false)
-                }) { Text(stringResource(R.string.backup_turn_off)) }
+                }) { Text(stringResource(Res.string.backup_turn_off)) }
             },
             dismissButton = {
-                TextButton(onClick = { showTurnOff = false }) { Text(stringResource(R.string.action_cancel)) }
+                TextButton(onClick = { showTurnOff = false }) { Text(stringResource(Res.string.action_cancel)) }
             },
         )
     }
@@ -287,14 +288,14 @@ private fun BackupSettings(
 
     backupPrompt?.let { prompt ->
         val titleRes = when (prompt) {
-            BackupPrompt.PassphraseChanged -> R.string.backup_pass_changed_title
-            BackupPrompt.EncryptionOn -> R.string.backup_enc_on_title
-            BackupPrompt.EncryptionOff -> R.string.backup_enc_off_title
+            BackupPrompt.PassphraseChanged -> Res.string.backup_pass_changed_title
+            BackupPrompt.EncryptionOn -> Res.string.backup_enc_on_title
+            BackupPrompt.EncryptionOff -> Res.string.backup_enc_off_title
         }
         val messageRes = when (prompt) {
-            BackupPrompt.PassphraseChanged -> R.string.backup_pass_changed_message
-            BackupPrompt.EncryptionOn -> R.string.backup_enc_on_message
-            BackupPrompt.EncryptionOff -> R.string.backup_enc_off_message
+            BackupPrompt.PassphraseChanged -> Res.string.backup_pass_changed_message
+            BackupPrompt.EncryptionOn -> Res.string.backup_enc_on_message
+            BackupPrompt.EncryptionOff -> Res.string.backup_enc_off_message
         }
         AlertDialog(
             onDismissRequest = { backupPrompt = null },
@@ -304,11 +305,11 @@ private fun BackupSettings(
                 TextButton(onClick = {
                     backupPrompt = null
                     onBackupNow()
-                }) { Text(stringResource(R.string.backup_now)) }
+                }) { Text(stringResource(Res.string.backup_now)) }
             },
             dismissButton = {
                 TextButton(onClick = { backupPrompt = null }) {
-                    Text(stringResource(R.string.backup_pass_changed_later))
+                    Text(stringResource(Res.string.backup_pass_changed_later))
                 }
             },
         )
@@ -343,14 +344,14 @@ private fun BackupHeader() {
             )
         }
         Text(
-            text = stringResource(R.string.backup_header_title),
+            text = stringResource(Res.string.backup_header_title),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = Spacing.s5),
         )
         Text(
-            text = stringResource(R.string.backup_header_subtitle),
+            text = stringResource(Res.string.backup_header_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -373,7 +374,7 @@ private fun LastBackupCard(state: BackupUiState) {
             val b = state.lastBackup
             if (b == null) {
                 Text(
-                    text = stringResource(R.string.backup_never),
+                    text = stringResource(Res.string.backup_never),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -386,12 +387,12 @@ private fun LastBackupCard(state: BackupUiState) {
                         ).toString()
                     }
                     Text(
-                        text = stringResource(R.string.backup_last_line, date),
+                        text = stringResource(Res.string.backup_last_line, date),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        text = stringResource(R.string.backup_size_line, Formatter.formatShortFileSize(context, b.sizeBytes)),
+                        text = stringResource(Res.string.backup_size_line, Formatter.formatShortFileSize(context, b.sizeBytes)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -406,18 +407,18 @@ private fun BenefitsList() {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s5)) {
         Benefit(
             HugeIcons.Lock,
-            stringResource(R.string.backup_point_encrypted_title),
-            stringResource(R.string.backup_point_encrypted_sub),
+            stringResource(Res.string.backup_point_encrypted_title),
+            stringResource(Res.string.backup_point_encrypted_sub),
         )
         Benefit(
             HugeIcons.CloudDownload,
-            stringResource(R.string.backup_point_restore_title),
-            stringResource(R.string.backup_point_restore_sub),
+            stringResource(Res.string.backup_point_restore_title),
+            stringResource(Res.string.backup_point_restore_sub),
         )
         Benefit(
             HugeIcons.Schedule,
-            stringResource(R.string.backup_point_auto_title),
-            stringResource(R.string.backup_point_auto_sub),
+            stringResource(Res.string.backup_point_auto_title),
+            stringResource(Res.string.backup_point_auto_sub),
         )
     }
 }
@@ -526,34 +527,34 @@ private fun PassphraseSheet(onDismiss: () -> Unit, onSave: (String) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(Spacing.s4),
         ) {
             Text(
-                stringResource(R.string.backup_passphrase_sheet_title),
+                stringResource(Res.string.backup_passphrase_sheet_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                stringResource(R.string.backup_passphrase_warning),
+                stringResource(Res.string.backup_passphrase_warning),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                stringResource(R.string.backup_passphrase_upcoming),
+                stringResource(Res.string.backup_passphrase_upcoming),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             PassphraseField(
                 value = passphrase,
                 onChange = { passphrase = it },
-                label = stringResource(R.string.backup_passphrase),
-                error = if (tooShort) stringResource(R.string.backup_passphrase_too_short) else null,
+                label = stringResource(Res.string.backup_passphrase),
+                error = if (tooShort) stringResource(Res.string.backup_passphrase_too_short) else null,
             )
             PassphraseField(
                 value = confirm,
                 onChange = { confirm = it },
-                label = stringResource(R.string.backup_passphrase_confirm),
-                error = if (mismatch) stringResource(R.string.backup_passphrase_mismatch) else null,
+                label = stringResource(Res.string.backup_passphrase_confirm),
+                error = if (mismatch) stringResource(Res.string.backup_passphrase_mismatch) else null,
             )
             HisabakButton(
-                text = stringResource(R.string.backup_passphrase_save),
+                text = stringResource(Res.string.backup_passphrase_save),
                 onClick = { onSave(passphrase) },
                 enabled = canSave,
                 fullWidth = true,
@@ -576,7 +577,7 @@ private fun PeriodSheet(
                 .padding(bottom = Spacing.sectionGap),
         ) {
             Text(
-                stringResource(R.string.backup_auto_sheet_title),
+                stringResource(Res.string.backup_auto_sheet_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = Spacing.pageMargin, vertical = Spacing.s3),
@@ -617,19 +618,19 @@ private fun PassphraseField(value: String, onChange: (String) -> Unit, label: St
     )
 }
 
-private fun AutoBackupPeriod.labelRes(): Int = when (this) {
-    AutoBackupPeriod.NEVER -> R.string.backup_auto_never
-    AutoBackupPeriod.DAILY -> R.string.backup_auto_daily
-    AutoBackupPeriod.WEEKLY -> R.string.backup_auto_weekly
-    AutoBackupPeriod.MONTHLY -> R.string.backup_auto_monthly
+private fun AutoBackupPeriod.labelRes(): StringResource = when (this) {
+    AutoBackupPeriod.NEVER -> Res.string.backup_auto_never
+    AutoBackupPeriod.DAILY -> Res.string.backup_auto_daily
+    AutoBackupPeriod.WEEKLY -> Res.string.backup_auto_weekly
+    AutoBackupPeriod.MONTHLY -> Res.string.backup_auto_monthly
 }
 
-internal fun BackupError.messageRes(): Int = when (this) {
-    BackupError.WrongPassphrase -> R.string.backup_err_wrong_passphrase
-    BackupError.Corrupt -> R.string.backup_err_corrupt
-    BackupError.Empty -> R.string.backup_err_empty
-    BackupError.AuthRequired -> R.string.backup_err_auth
-    BackupError.Network -> R.string.backup_err_network
-    BackupError.PassphraseRequired -> R.string.backup_err_no_passphrase
-    is BackupError.UnsupportedVersion -> R.string.backup_err_unsupported
+internal fun BackupError.messageRes(): StringResource = when (this) {
+    BackupError.WrongPassphrase -> Res.string.backup_err_wrong_passphrase
+    BackupError.Corrupt -> Res.string.backup_err_corrupt
+    BackupError.Empty -> Res.string.backup_err_empty
+    BackupError.AuthRequired -> Res.string.backup_err_auth
+    BackupError.Network -> Res.string.backup_err_network
+    BackupError.PassphraseRequired -> Res.string.backup_err_no_passphrase
+    is BackupError.UnsupportedVersion -> Res.string.backup_err_unsupported
 }

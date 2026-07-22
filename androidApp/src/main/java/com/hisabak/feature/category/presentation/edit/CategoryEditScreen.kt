@@ -31,11 +31,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hisabak.R
+import com.hisabak.shared.resources.*
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.category.presentation.CategoryStyle
 import com.hisabak.ui.components.BadgeTone
@@ -85,7 +85,7 @@ fun CategoryEditScreen(
             OutlinedTextField(
                 value = state.nameInput,
                 onValueChange = onNameChange,
-                label = { Text(stringResource(R.string.common_name)) },
+                label = { Text(stringResource(Res.string.common_name)) },
                 isError = state.nameError != null,
                 supportingText = state.nameError?.let { { Text(it) } },
                 singleLine = true,
@@ -93,13 +93,13 @@ fun CategoryEditScreen(
             )
 
             // Type picker
-            FormSection(label = stringResource(R.string.category_type_label)) {
+            FormSection(label = stringResource(Res.string.category_type_label)) {
                 SegmentedControl(
                     options = listOf(
-                        SegmentOption(CategoryType.INCOME, stringResource(R.string.category_type_income), BadgeTone.Income),
-                        SegmentOption(CategoryType.EXPENSES, stringResource(R.string.category_type_expenses), BadgeTone.Expense),
-                        SegmentOption(CategoryType.SAVINGS, stringResource(R.string.category_type_savings), BadgeTone.Savings),
-                        SegmentOption(CategoryType.INVESTMENT, stringResource(R.string.category_type_invest_short), BadgeTone.Investment),
+                        SegmentOption(CategoryType.INCOME, stringResource(Res.string.category_type_income), BadgeTone.Income),
+                        SegmentOption(CategoryType.EXPENSES, stringResource(Res.string.category_type_expenses), BadgeTone.Expense),
+                        SegmentOption(CategoryType.SAVINGS, stringResource(Res.string.category_type_savings), BadgeTone.Savings),
+                        SegmentOption(CategoryType.INVESTMENT, stringResource(Res.string.category_type_invest_short), BadgeTone.Investment),
                     ),
                     selected = state.type,
                     onSelect = onTypeChange,
@@ -112,11 +112,11 @@ fun CategoryEditScreen(
                 OutlinedTextField(
                     value = state.limitInput,
                     onValueChange = onLimitChange,
-                    label = { Text(stringResource(R.string.category_limit_label)) },
+                    label = { Text(stringResource(Res.string.category_limit_label)) },
                     prefix = { DirhamGlyph(size = 16.sp, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                     isError = state.limitError != null,
                     supportingText = {
-                        Text(state.limitError ?: stringResource(R.string.category_limit_hint))
+                        Text(state.limitError ?: stringResource(Res.string.category_limit_hint))
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -125,7 +125,7 @@ fun CategoryEditScreen(
             }
 
             // Color picker
-            FormSection(label = stringResource(R.string.category_color_label)) {
+            FormSection(label = stringResource(Res.string.category_color_label)) {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(0.dp),
@@ -141,7 +141,7 @@ fun CategoryEditScreen(
             }
 
             // Icon picker
-            FormSection(label = stringResource(R.string.category_icon_label)) {
+            FormSection(label = stringResource(Res.string.category_icon_label)) {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(0.dp),
@@ -158,9 +158,9 @@ fun CategoryEditScreen(
             }
 
             // Live preview
-            FormSection(label = stringResource(R.string.category_preview_label)) {
+            FormSection(label = stringResource(Res.string.category_preview_label)) {
                 LivePreviewTile(
-                    name = state.nameInput.ifBlank { stringResource(R.string.category_name_placeholder) },
+                    name = state.nameInput.ifBlank { stringResource(Res.string.category_name_placeholder) },
                     iconKey = state.icon,
                     colorKey = state.color,
                 )
@@ -177,7 +177,7 @@ fun CategoryEditScreen(
 
             // Actions
             HisabakButton(
-                text = stringResource(if (state.isSaving) R.string.action_saving else R.string.action_save),
+                text = stringResource(if (state.isSaving) Res.string.action_saving else Res.string.action_save),
                 onClick = onSave,
                 enabled = state.canSave,
                 variant = ButtonVariant.Primary,

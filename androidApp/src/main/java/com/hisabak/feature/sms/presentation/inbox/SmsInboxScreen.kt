@@ -31,11 +31,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hisabak.R
+import com.hisabak.shared.resources.*
 import com.hisabak.core.common.Money
 import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessageId
@@ -87,22 +87,22 @@ fun SmsInboxScreen(
                 SearchField(
                     value = state.search,
                     onValueChange = onSearchChange,
-                    placeholder = stringResource(R.string.sms_search_placeholder),
+                    placeholder = stringResource(Res.string.sms_search_placeholder),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            item { SectionHeader(title = stringResource(R.string.sms_recent_section)) }
+            item { SectionHeader(title = stringResource(Res.string.sms_recent_section)) }
             if (state.isLoading) {
                 item { SkeletonRowList(count = 5) }
             } else if (state.rows.isEmpty()) {
                 item {
                     EmptyStatePanel(
                         icon = HugeIcons.Inbox,
-                        title = stringResource(R.string.sms_empty_title),
+                        title = stringResource(Res.string.sms_empty_title),
                         subtitle = when {
-                            state.search.isNotBlank() -> stringResource(R.string.common_no_matches_subtitle, state.search)
-                            autoImportAvailable -> stringResource(R.string.sms_empty_auto)
-                            else -> stringResource(R.string.sms_empty_manual)
+                            state.search.isNotBlank() -> stringResource(Res.string.common_no_matches_subtitle, state.search)
+                            autoImportAvailable -> stringResource(Res.string.sms_empty_auto)
+                            else -> stringResource(Res.string.sms_empty_manual)
                         },
                     )
                 }
@@ -151,19 +151,19 @@ private fun AutoImportBanner(granted: Boolean, onEnable: () -> Unit) {
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
                 Text(
-                    stringResource(if (granted) R.string.sms_auto_active_title else R.string.sms_auto_disabled_title),
+                    stringResource(if (granted) Res.string.sms_auto_active_title else Res.string.sms_auto_disabled_title),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    stringResource(if (granted) R.string.sms_auto_active_body else R.string.sms_auto_disabled_body),
+                    stringResource(if (granted) Res.string.sms_auto_active_body else Res.string.sms_auto_disabled_body),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             if (!granted) {
                 HisabakButton(
-                    text = stringResource(R.string.sms_enable),
+                    text = stringResource(Res.string.sms_enable),
                     onClick = onEnable,
                     variant = ButtonVariant.Primary,
                 )
@@ -183,7 +183,7 @@ private fun PasteParseCard(
 ) {
     SurfaceCard(modifier = Modifier.fillMaxWidth()) {
         Text(
-            stringResource(R.string.sms_paste_title),
+            stringResource(Res.string.sms_paste_title),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -193,7 +193,7 @@ private fun PasteParseCard(
             onValueChange = onDraftChange,
             placeholder = {
                 Text(
-                    stringResource(R.string.sms_paste_placeholder),
+                    stringResource(Res.string.sms_paste_placeholder),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -233,7 +233,7 @@ private fun PasteParseCard(
                 Spacer(Modifier.width(10.dp))
             }
             HisabakButton(
-                text = stringResource(if (isProcessing) R.string.sms_parsing else R.string.sms_parse_import),
+                text = stringResource(if (isProcessing) Res.string.sms_parsing else Res.string.sms_parse_import),
                 onClick = onIngest,
                 variant = ButtonVariant.Secondary,
                 enabled = !isProcessing,
@@ -310,14 +310,14 @@ private fun SmsRowCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     PrimaryPillButton(
-                        text = stringResource(R.string.sms_import),
+                        text = stringResource(Res.string.sms_import),
                         onClick = onImport,
                         leadingIcon = HugeIcons.Download,
                     )
                     IconButton(onClick = onDelete, modifier = Modifier.size(Sizing.controlHeightSm)) {
                         Icon(
                             HugeIcons.DeleteOutline,
-                            contentDescription = stringResource(R.string.action_delete),
+                            contentDescription = stringResource(Res.string.action_delete),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp),
                         )
@@ -330,7 +330,7 @@ private fun SmsRowCard(
                 IconButton(onClick = onDelete, modifier = Modifier.size(Sizing.controlHeightSm)) {
                     Icon(
                         HugeIcons.DeleteOutline,
-                        contentDescription = stringResource(R.string.action_delete),
+                        contentDescription = stringResource(Res.string.action_delete),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp),
                     )

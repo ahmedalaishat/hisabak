@@ -14,10 +14,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hisabak.R
+import com.hisabak.shared.resources.*
 import com.hisabak.core.data.preferences.AppLocale
 import com.hisabak.core.domain.ThemeMode
 import com.hisabak.core.domain.security.AuthAvailability
@@ -47,8 +47,8 @@ fun SettingsRoute(
     // Hardware/credential support is fixed for a device; "none enrolled" still counts as supported
     // because we route the user to set a lock up.
     val appLockSupported = remember { authenticator.availability() != AuthAvailability.Unavailable }
-    val promptTitle = stringResource(R.string.app_lock_prompt_title)
-    val promptSubtitle = stringResource(R.string.app_lock_prompt_subtitle)
+    val promptTitle = stringResource(Res.string.app_lock_prompt_title)
+    val promptSubtitle = stringResource(Res.string.app_lock_prompt_subtitle)
 
     // After the user returns from system enrollment, enable the lock if a credential now exists.
     val enrollLauncher = rememberLauncherForActivityResult(

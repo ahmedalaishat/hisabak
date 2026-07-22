@@ -16,21 +16,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hisabak.R
+import com.hisabak.shared.resources.Res
+import com.hisabak.shared.resources.currency_dirham_description
+import com.hisabak.shared.resources.ic_dirham
 import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.HisabakType
+import com.hisabak.ui.theme.LocalHisabakFonts
 import com.hisabak.ui.theme.PillShape
 import com.hisabak.ui.theme.Spacing
-import com.hisabak.ui.theme.Tajawal
-import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.round
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 
 /*
  * Worked examples — these show how the HTML/React design-system primitives translate
@@ -53,8 +56,8 @@ fun DirhamGlyph(
 ) {
     val heightDp = with(LocalDensity.current) { size.toDp() }
     Icon(
-        painter = painterResource(R.drawable.ic_dirham),
-        contentDescription = stringResource(R.string.currency_dirham_description),
+        painter = painterResource(Res.drawable.ic_dirham),
+        contentDescription = stringResource(Res.string.currency_dirham_description),
         tint = tint,
         modifier = modifier
             .height(heightDp)
@@ -103,10 +106,11 @@ fun AmountText(
     // English, right in Arabic).
     val arabic = rememberIsArabic()
     // Geist Mono lacks Arabic-Indic glyphs — render Arabic figures in the Arabic UI face (Tajawal).
-    val numberStyle = HisabakType.amount.copy(
+    val amountStyle = HisabakType.amount
+    val numberStyle = amountStyle.copy(
         fontSize = size,
         fontWeight = weight,
-        fontFamily = if (arabic) Tajawal else HisabakType.amount.fontFamily,
+        fontFamily = if (arabic) LocalHisabakFonts.current.arabic else amountStyle.fontFamily,
     )
     val parts = compactAmountParts(abs(value), arabic)
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
@@ -137,7 +141,7 @@ fun MoneyText(
     val parts = compactAmountParts(amountMinor / 100.0, arabic)
     // Geist Mono has no Arabic-Indic glyphs, so Arabic figures fall back to the system font. Render
     // them in Tajawal (the Arabic UI face) instead, keeping tabular alignment and a consistent look.
-    val figureStyle = if (arabic) style.copy(fontFamily = Tajawal) else style
+    val figureStyle = if (arabic) style.copy(fontFamily = LocalHisabakFonts.current.arabic) else style
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         DirhamGlyph(size = style.fontSize * symbolScale, tint = color)
         Spacer(Modifier.width(3.dp))
@@ -160,25 +164,24 @@ fun MoneyText(
 /** The number and (possibly empty) magnitude suffix of a compact amount, kept apart so the
  *  composables can render them as separate Texts — Arabic-Indic digits (bidi class AN) plus an
  *  Arabic letter suffix would otherwise reorder inside one Text, flipping the visual order. */
-internal class CompactParts(val number: String, val suffix: String)
+class CompactParts(val number: String, val suffix: String)
 
-internal fun compactAmountParts(major: Double, arabic: Boolean): CompactParts {
+fun compactAmountParts(major: Double, arabic: Boolean): CompactParts {
     val a = abs(major)
     // Arabic uses Arabic-Indic digits (٠١٢…) and the one-letter abbreviations أ (ألف) / م (مليون),
-    // which fit the same footprint as K/M (the full words overflow). The number locale is pinned to
-    // [arabic] (from the Compose config), not the JVM default, so the digit script can't drift after
-    // a language switch; English pins to US so digits/separators stay Western on any device.
-    val loc = if (arabic) ARABIC_NUMBER_LOCALE else Locale.US
+    // which fit the same footprint as K/M (the full words overflow). The digit script is pinned to
+    // [arabic] (from the Compose locale), so it can't drift after a language switch; English keeps
+    // Western digits/separators on any device.
     return when {
-        a >= 1_000_000 -> CompactParts("%,.2f".format(loc, major / 1_000_000.0), if (arabic) "م" else "M")
-        a >= 1_000 -> CompactParts("%,.2f".format(loc, major / 1_000.0), if (arabic) "أ" else "K")
-        else -> CompactParts("%,.2f".format(loc, major), "")
+        a >= 1_000_000 -> CompactParts(formatGrouped2(major / 1_000_000.0, arabic), if (arabic) "م" else "M")
+        a >= 1_000 -> CompactParts(formatGrouped2(major / 1_000.0, arabic), if (arabic) "أ" else "K")
+        else -> CompactParts(formatGrouped2(major, arabic), "")
     }
 }
 
-internal fun compactAmount(
+fun compactAmount(
     major: Double,
-    arabic: Boolean = Locale.getDefault().language == "ar",
+    arabic: Boolean = Locale.current.language == "ar",
 ): String {
     val p = compactAmountParts(major, arabic)
     return when {
@@ -188,29 +191,87 @@ internal fun compactAmount(
     }
 }
 
-/** Arabic locale pinned to Arabic-Indic numerals (nu-arab) so amount digits are deterministic. */
-private val ARABIC_NUMBER_LOCALE: Locale = Locale.forLanguageTag("ar-u-nu-arab")
-
-internal fun compactAmountMinor(
+fun compactAmountMinor(
     amountMinor: Long,
-    arabic: Boolean = Locale.getDefault().language == "ar",
+    arabic: Boolean = Locale.current.language == "ar",
 ): String = compactAmount(amountMinor / 100.0, arabic)
 
-/** True when the UI is rendering in Arabic — read from the Compose config, not the JVM default. */
+/* Arabic-Indic separators (ICU's for ar): U+066C thousands, U+066B decimal. */
+private const val ARABIC_GROUP_SEPARATOR = '٬'
+private const val ARABIC_DECIMAL_SEPARATOR = '٫'
+
+/**
+ * Pure-Kotlin replacement for `"%,.2f".format(locale, value)`: two decimals (HALF_UP), grouped
+ * thousands, and Arabic-Indic digits + separators when [arabic]. Rounds on the shortest decimal
+ * representation ([Double.toString]) — the digits java.util.Formatter used — so output matches
+ * the previous JVM formatting.
+ */
+private fun formatGrouped2(value: Double, arabic: Boolean): String {
+    val (intDigits, fracDigits) = roundTo2(abs(value))
+    val out = buildString {
+        if (value < 0) append('-')
+        val n = intDigits.length
+        for (i in 0 until n) {
+            append(intDigits[i])
+            val remaining = n - 1 - i
+            if (remaining > 0 && remaining % 3 == 0) append(if (arabic) ARABIC_GROUP_SEPARATOR else ',')
+        }
+        append(if (arabic) ARABIC_DECIMAL_SEPARATOR else '.')
+        append(fracDigits)
+    }
+    return localizeDigits(out, arabic)
+}
+
+private fun roundTo2(value: Double): Pair<String, String> {
+    val repr = value.toString()
+    if ('E' in repr || 'e' in repr) {
+        // Scientific notation only appears from ~1e7 up — beyond any real amount after the K/M
+        // division — so plain cent rounding is fine here.
+        val cents = round(value * 100).toLong()
+        return (cents / 100).toString() to (cents % 100).toString().padStart(2, '0')
+    }
+    val dot = repr.indexOf('.')
+    var intPart = if (dot < 0) repr else repr.substring(0, dot)
+    val frac = if (dot < 0) "" else repr.substring(dot + 1)
+    val fracPart = when {
+        frac.length <= 2 -> frac.padEnd(2, '0')
+        frac[2] >= '5' -> {
+            val bumped = frac.substring(0, 2).toInt() + 1
+            if (bumped == 100) {
+                intPart = (intPart.toLong() + 1).toString()
+                "00"
+            } else {
+                bumped.toString().padStart(2, '0')
+            }
+        }
+        else -> frac.substring(0, 2)
+    }
+    return intPart to fracPart
+}
+
+/** True when the UI is rendering in Arabic — read from the Compose locale (which the in-app
+ *  language switch also applies to the process default). */
 @Composable
-internal fun rememberIsArabic(): Boolean =
-    androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "ar"
+fun rememberIsArabic(): Boolean = Locale.current.language == "ar"
 
 private val ARABIC_INDIC_DIGITS = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
 
 /** Maps Western digits to Arabic-Indic when [arabic], for numbers built with a fixed (non-locale)
  *  formatter (percentages, etc.) so they match the rest of the Arabic UI regardless of device. */
-internal fun localizeDigits(text: String, arabic: Boolean): String {
+fun localizeDigits(text: String, arabic: Boolean): String {
     if (!arabic) return text
     return buildString(text.length) {
         for (ch in text) append(if (ch in '0'..'9') ARABIC_INDIC_DIGITS[ch - '0'] else ch)
     }
 }
+
+/**
+ * A numeric format arg for CMP `stringResource`/`pluralStringResource`. CMP does plain string
+ * interpolation for `%1$d` (no locale-aware number formatting), so Arabic-Indic digits must be
+ * baked into the argument itself.
+ */
+@Composable
+fun localizedFormatArg(n: Int): String = localizeDigits(n.toString(), rememberIsArabic())
 
 /**
  * StatusChip — SMS parse state. Mirrors components/core/StatusChip.

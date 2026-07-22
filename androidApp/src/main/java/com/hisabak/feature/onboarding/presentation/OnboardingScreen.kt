@@ -34,11 +34,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.hisabak.BuildConfig
-import com.hisabak.R
+import com.hisabak.shared.resources.*
 import com.hisabak.ui.components.hisabakClickable
 import com.hisabak.ui.theme.Motion
 import com.hisabak.ui.theme.PillShape
@@ -82,7 +82,7 @@ fun OnboardingScreen(onFinish: () -> Unit) {
         Box(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = Spacing.s3)) {
             if (!isLast) {
                 Text(
-                    text = stringResource(R.string.onboarding_skip),
+                    text = stringResource(Res.string.onboarding_skip),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
@@ -132,7 +132,7 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                 ),
             ) {
                 Text(
-                    text = stringResource(if (isLast) R.string.onboarding_get_started else R.string.onboarding_next),
+                    text = stringResource(if (isLast) Res.string.onboarding_get_started else Res.string.onboarding_next),
                     style = MaterialTheme.typography.titleSmall,
                 )
             }

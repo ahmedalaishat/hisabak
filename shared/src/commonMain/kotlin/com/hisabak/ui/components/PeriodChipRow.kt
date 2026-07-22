@@ -9,8 +9,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import com.hisabak.R
+import com.hisabak.shared.resources.Res
+import com.hisabak.shared.resources.period_all_time
+import com.hisabak.shared.resources.period_last_month
+import com.hisabak.shared.resources.period_last_year
+import com.hisabak.shared.resources.period_this_month
+import com.hisabak.shared.resources.period_this_year
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.ui.theme.Spacing
 
@@ -45,10 +51,10 @@ fun PeriodChipRow(
 }
 
 /** String resource for a period chip label — UI-side so the shared enum stays platform-free. */
-private fun SummaryPeriod.labelRes(): Int = when (this) {
-    SummaryPeriod.CURRENT_MONTH -> R.string.period_this_month
-    SummaryPeriod.LAST_MONTH -> R.string.period_last_month
-    SummaryPeriod.CURRENT_YEAR -> R.string.period_this_year
-    SummaryPeriod.LAST_YEAR -> R.string.period_last_year
-    SummaryPeriod.ALL -> R.string.period_all_time
+private fun SummaryPeriod.labelRes(): StringResource = when (this) {
+    SummaryPeriod.CURRENT_MONTH -> Res.string.period_this_month
+    SummaryPeriod.LAST_MONTH -> Res.string.period_last_month
+    SummaryPeriod.CURRENT_YEAR -> Res.string.period_this_year
+    SummaryPeriod.LAST_YEAR -> Res.string.period_last_year
+    SummaryPeriod.ALL -> Res.string.period_all_time
 }

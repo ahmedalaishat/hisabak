@@ -35,13 +35,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Canvas
-import com.hisabak.R
+import com.hisabak.shared.resources.*
+import com.hisabak.ui.components.localizedFormatArg
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.ui.components.AmountText
@@ -91,11 +92,11 @@ fun CategoryListScreen(
     var pendingDelete by remember { mutableStateOf<CategoryRow?>(null) }
 
     val typeOptions: List<Pair<String, CategoryType?>> = listOf(
-        stringResource(R.string.common_all) to null,
-        stringResource(R.string.category_type_expenses) to CategoryType.EXPENSES,
-        stringResource(R.string.category_type_income) to CategoryType.INCOME,
-        stringResource(R.string.category_type_savings) to CategoryType.SAVINGS,
-        stringResource(R.string.category_type_investment) to CategoryType.INVESTMENT,
+        stringResource(Res.string.common_all) to null,
+        stringResource(Res.string.category_type_expenses) to CategoryType.EXPENSES,
+        stringResource(Res.string.category_type_income) to CategoryType.INCOME,
+        stringResource(Res.string.category_type_savings) to CategoryType.SAVINGS,
+        stringResource(Res.string.category_type_investment) to CategoryType.INVESTMENT,
     )
 
     LazyVerticalGrid(
@@ -117,11 +118,11 @@ fun CategoryListScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    stringResource(R.string.common_categories),
+                    stringResource(Res.string.common_categories),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                CreateActionButton(text = stringResource(R.string.category_new_title), onClick = onAdd)
+                CreateActionButton(text = stringResource(Res.string.category_new_title), onClick = onAdd)
             }
         }
 
@@ -129,7 +130,7 @@ fun CategoryListScreen(
             SearchField(
                 value = state.search,
                 onValueChange = onSearchChange,
-                placeholder = stringResource(R.string.category_search_placeholder),
+                placeholder = stringResource(Res.string.category_search_placeholder),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -149,14 +150,14 @@ fun CategoryListScreen(
             item(span = { GridItemSpan(maxLineSpan) }) {
                 EmptyStatePanel(
                     title = when {
-                        state.search.isNotBlank() -> stringResource(R.string.common_no_matches)
-                        state.typeFilter != null -> stringResource(R.string.category_empty_in_type)
-                        else -> stringResource(R.string.category_empty_title)
+                        state.search.isNotBlank() -> stringResource(Res.string.common_no_matches)
+                        state.typeFilter != null -> stringResource(Res.string.category_empty_in_type)
+                        else -> stringResource(Res.string.category_empty_title)
                     },
                     subtitle = if (state.search.isBlank())
-                        stringResource(R.string.category_empty_subtitle)
+                        stringResource(Res.string.category_empty_subtitle)
                     else
-                        stringResource(R.string.common_no_matches_subtitle, state.search),
+                        stringResource(Res.string.common_no_matches_subtitle, state.search),
                 )
             }
         } else {
@@ -182,20 +183,20 @@ fun CategoryListScreen(
         val count = row.transactionCount
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
-            title = { Text(stringResource(R.string.common_delete_title, row.name)) },
+            title = { Text(stringResource(Res.string.common_delete_title, row.name)) },
             text = {
                 Text(
                     if (count > 0)
-                        pluralStringResource(R.plurals.category_delete_body_count, count, count)
+                        pluralStringResource(Res.plurals.category_delete_body_count, count, localizedFormatArg(count))
                     else
-                        stringResource(R.string.category_delete_body_empty),
+                        stringResource(Res.string.category_delete_body_empty),
                 )
             },
             confirmButton = {
-                TextButton(onClick = { onDelete(row.id); pendingDelete = null }) { Text(stringResource(R.string.action_delete)) }
+                TextButton(onClick = { onDelete(row.id); pendingDelete = null }) { Text(stringResource(Res.string.action_delete)) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.action_cancel)) }
+                TextButton(onClick = { pendingDelete = null }) { Text(stringResource(Res.string.action_cancel)) }
             },
         )
     }
@@ -229,7 +230,7 @@ private fun CategoryTile(
             ) {
                 Icon(
                     HugeIcons.DeleteOutline,
-                    contentDescription = stringResource(R.string.common_delete_named, row.name),
+                    contentDescription = stringResource(Res.string.common_delete_named, row.name),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp),
                 )
@@ -300,7 +301,7 @@ private fun AddNewTile(onClick: () -> Unit) {
                 foreground = MaterialTheme.colorScheme.primary,
             )
             Text(
-                stringResource(R.string.category_add_new),
+                stringResource(Res.string.category_add_new),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -311,10 +312,10 @@ private fun AddNewTile(onClick: () -> Unit) {
 @Composable
 private fun CategoryType.displayName(): String = stringResource(
     when (this) {
-        CategoryType.INCOME -> R.string.category_type_income
-        CategoryType.EXPENSES -> R.string.category_type_expense
-        CategoryType.SAVINGS -> R.string.category_type_savings
-        CategoryType.INVESTMENT -> R.string.category_type_investment
+        CategoryType.INCOME -> Res.string.category_type_income
+        CategoryType.EXPENSES -> Res.string.category_type_expense
+        CategoryType.SAVINGS -> Res.string.category_type_savings
+        CategoryType.INVESTMENT -> Res.string.category_type_investment
     },
 )
 

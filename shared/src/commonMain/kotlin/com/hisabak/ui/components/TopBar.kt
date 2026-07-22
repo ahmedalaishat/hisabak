@@ -34,14 +34,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.hisabak.R
+import com.hisabak.shared.resources.Res
+import com.hisabak.shared.resources.action_back
+import com.hisabak.shared.resources.ic_launcher_background
+import com.hisabak.shared.resources.ic_launcher_foreground
+import com.hisabak.shared.resources.notifications_title
 import com.hisabak.ui.theme.Sizing
 import com.hisabak.ui.theme.Spacing
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 
 /** Detail screen top bar — back arrow + title only, no avatar or bell. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,7 +72,7 @@ fun DetailTopBar(
             ) {
                 Icon(
                     HugeIcons.ArrowBack,
-                    contentDescription = stringResource(R.string.action_back),
+                    contentDescription = stringResource(Res.string.action_back),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -115,12 +119,12 @@ fun HisabakTopBar(
                     .border(1.dp, MaterialTheme.colorScheme.outlineVariant, logoShape),
             ) {
                 Image(
-                    painter = painterResource(R.drawable.ic_launcher_background),
+                    painter = painterResource(Res.drawable.ic_launcher_background),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                 )
                 Image(
-                    painter = painterResource(R.drawable.ic_launcher_foreground),
+                    painter = painterResource(Res.drawable.ic_launcher_foreground),
                     contentDescription = "Hisabak",
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -152,7 +156,7 @@ fun HisabakTopBar(
                 ) {
                     Icon(
                         HugeIcons.Notifications,
-                        contentDescription = stringResource(R.string.notifications_title),
+                        contentDescription = stringResource(Res.string.notifications_title),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

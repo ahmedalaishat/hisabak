@@ -25,8 +25,14 @@ object AppLocale {
     }
 
     /** Wraps [base] so its resources resolve in the saved language; no-op when none is set.
-     *  Arabic pins the Arabic-Indic numbering system (nu-arab) so resource-formatted numbers
-     *  (percentages, counts, dates via `%d`/`%s`) render with Arabic digits, config-driven. */
+     *  Arabic pins the Arabic-Indic numbering system (nu-arab) so Android-resource-formatted
+     *  numbers (the notification strings' `%d`) render with Arabic digits, config-driven.
+     *
+     *  The [Locale.setDefault] call is load-bearing for Compose Multiplatform resources: CMP
+     *  resolves values/values-ar off the process default locale (`Locale.current` /
+     *  `Locale.getDefault()`), not this wrapped Context, so the in-app language switch must set
+     *  the default too. CMP's own `%1$d` interpolation is not locale-aware — Arabic-Indic digits
+     *  are baked into args via `localizedFormatArg` at the call sites instead. */
     fun wrap(base: Context): Context {
         val tag = getLanguageTag(base)
         if (tag.isEmpty()) return base

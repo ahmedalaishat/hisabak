@@ -127,12 +127,47 @@ Packages keep `com.hisabak.*` names so moves don't ripple through imports.
   (tests via the existing `FakeDriveAuthorizer`). Koin: shared modules (pure) +
   `expect fun platformModule()` (android/iOS actuals) + androidApp module (Firebase,
   GoogleDriveAuthorizer, AppLocale).
-- [ ] **PR 8 — Resources + theme + components → commonMain** *(riskiest UI PR)*: strings →
+- [x] **PR 8 — Resources + theme + components → commonMain** *(riskiest UI PR)*: strings →
   composeResources (values + values-ar, plurals); `R.string` → `Res.string` rewrite; bundled fonts
-  (DM Sans, Geist Mono, Tajawal — subset weights); theme/components/DonutChart; Vico →
-  `multiplatform-m3`; `Motion.kt` expect/actual. **Spike first:** CMP resource formatting vs the
-  Arabic `nu-arab` digit config. Mandatory manual EN+AR QA (RTL, Arabic-Indic digits, plurals,
+  (DM Sans, Geist Mono, Tajawal — subset weights); theme/components/DonutChart;
+  `Motion.kt` expect/actual (Vico stays the android artifact — the `multiplatform-m3` swap moves
+  to PR 9 with the dashboard). Mandatory manual EN+AR QA (RTL, Arabic-Indic digits, plurals,
   bidi amount rows) before merge.
+
+  **PR 8 spike findings (CMP resources 1.11.1, verified against the runtime/plugin sources):**
+  - *Locale resolution:* CMP resolves values/values-ar off the **process default locale** —
+    `androidx.compose.ui.text.intl.Locale.current` in composition, `java.util.Locale.getDefault()`
+    + `Resources.getSystem()` in `getSystemResourceEnvironment()` — **not** the wrapped Activity
+    context from `attachBaseContext`. `AppLocale.wrap` already calls `Locale.setDefault(locale)`,
+    which is now load-bearing for CMP (documented in `AppLocale`).
+  - *Format args:* CMP formatting is plain string interpolation —
+    `Regex("""%(\d+)\$[ds]""")` replaced with `arg.toString()`. Consequences: only positional
+    `%1$d`/`%1$s` work (bare `%d` is ignored), **no** locale-aware digit formatting (the `nu-arab`
+    numbering extension does nothing), and **no `%%` unescaping** (the shared strings now use a
+    literal `%`). Numeric args shown to users therefore go through the shared
+    `localizedFormatArg(n)` (Arabic-Indic digits baked into the arg); `compactAmountParts` was
+    rewritten in pure Kotlin to emit Arabic-Indic digits + `٬`/`٫` separators itself.
+    Escapes: CMP handles `\n`, `\t`, `\uXXXX`, `\\` but **not** `\'`/`\"` — quotes were unescaped
+    in the shared copies.
+  - *Arabic plurals:* CMP bundles full CLDR plural rules; `ar` maps to the 6-category rule list
+    (zero/one/two/few/many/other) with fallback to `other` — Arabic quantity selection works, so
+    all plurals moved to composeResources.
+  - *AGP KMP library gotcha:* `com.android.kotlin.multiplatform.library` needs
+    `androidResources.enable = true` on the `android` target or the CMP asset-copy task is left
+    unwired (`copyAndroidMainComposeResourcesToAndroidAssets` fails / resources missing from the
+    APK → runtime `MissingResourceException`).
+  - *Strings split:* 303 keys (299 strings + 4 plurals) moved to
+    `shared/src/commonMain/composeResources/values{,-ar}/`; 10 stayed in androidApp res (the
+    notification channel/content strings read via `Context.getString` outside Compose), plus the
+    flavor-generated `app_name`.
+  - *Fonts:* OFL static TTFs served by Google Fonts (css2 API → fonts.gstatic.com, the same
+    binaries the previous downloadable-fonts provider fetched), bundled in
+    `shared/src/commonMain/composeResources/font/` — DM Sans 400/500/600/700
+    (`fonts.gstatic.com/s/dmsans/v17/…`), Geist Mono 400/500/600
+    (`fonts.gstatic.com/s/geistmono/v6/…`; Bold styles nearest-match to 600 as before), Tajawal
+    400/500/700 (`fonts.gstatic.com/s/tajawal/v12/…`; Tajawal has no 600). ~576 KB total;
+    staging-debug APK grew ~1.4 MB (fonts + CMP resources runtime + string CVRs). The
+    `ui-text-google-fonts` dependency and `font_certs.xml` were removed.
 - [ ] **PR 9 (stackable per feature) — Screens + ViewModels → commonMain; iOS gate**:
   feature-by-feature (dashboard → transactions → category/brand/budget → settings/onboarding →
   sms → backup/restore); permission-launcher screens take callback params from the androidApp nav
