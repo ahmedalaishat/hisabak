@@ -1,8 +1,10 @@
 package com.hisabak.core.data.local
 
 import androidx.room.AutoMigration
+import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.RoomDatabaseConstructor
 import com.hisabak.feature.brand.data.local.BrandDao
 import com.hisabak.feature.brand.data.local.BrandEntity
 import com.hisabak.feature.category.data.local.CategoryDao
@@ -32,6 +34,7 @@ import com.hisabak.feature.transaction.data.local.TransactionEntity
     exportSchema = true,
     autoMigrations = [AutoMigration(from = 2, to = 3, spec = DropSyncColumnsSpec::class)],
 )
+@ConstructedBy(HisabakDatabaseConstructor::class)
 abstract class HisabakDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun categoryLimitDao(): CategoryLimitDao
@@ -47,4 +50,10 @@ abstract class HisabakDatabase : RoomDatabase() {
         /** Single source of truth for the Room schema version; also stamped into backup files. */
         const val SCHEMA_VERSION = 3
     }
+}
+
+// The Room compiler generates the per-platform `actual` implementations.
+@Suppress("NO_ACTUAL_FOR_EXPECT", "KotlinNoActualForExpect", "EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+expect object HisabakDatabaseConstructor : RoomDatabaseConstructor<HisabakDatabase> {
+    override fun initialize(): HisabakDatabase
 }

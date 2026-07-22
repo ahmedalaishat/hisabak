@@ -3,7 +3,8 @@ package com.hisabak.core.data.local
 import androidx.room.DeleteColumn
 import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.execSQL
 
 /**
  * v1 → v2: adds the notifications and category_limit_alerts tables for budget-limit alerts.
@@ -12,8 +13,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * entities; keep it in sync if those change.
  */
 val MIGRATION_1_2 = object : Migration(1, 2) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL(
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
             "CREATE TABLE IF NOT EXISTS `notifications` (" +
                 "`id` TEXT NOT NULL, " +
                 "`title` TEXT NOT NULL, " +
@@ -24,15 +25,15 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
                 "`isRead` INTEGER NOT NULL, " +
                 "PRIMARY KEY(`id`))",
         )
-        db.execSQL(
+        connection.execSQL(
             "CREATE INDEX IF NOT EXISTS `index_notifications_createdAtMillis` " +
                 "ON `notifications` (`createdAtMillis`)",
         )
-        db.execSQL(
+        connection.execSQL(
             "CREATE INDEX IF NOT EXISTS `index_notifications_isRead` " +
                 "ON `notifications` (`isRead`)",
         )
-        db.execSQL(
+        connection.execSQL(
             "CREATE TABLE IF NOT EXISTS `category_limit_alerts` (" +
                 "`categoryId` TEXT NOT NULL, " +
                 "`periodMonth` INTEGER NOT NULL, " +
@@ -48,26 +49,24 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
  * Registered as an AutoMigration in [HisabakDatabase] so Room generates the table rebuilds
  * (SQLite on minSdk 29 has no DROP COLUMN).
  */
-@DeleteColumn.Entries(
-    DeleteColumn(tableName = "categories", columnName = "updatedAtMillis"),
-    DeleteColumn(tableName = "categories", columnName = "isDirty"),
-    DeleteColumn(tableName = "categories", columnName = "deletedAtMillis"),
-    DeleteColumn(tableName = "categories", columnName = "serverId"),
-    DeleteColumn(tableName = "categories", columnName = "version"),
-    DeleteColumn(tableName = "brands", columnName = "updatedAtMillis"),
-    DeleteColumn(tableName = "brands", columnName = "isDirty"),
-    DeleteColumn(tableName = "brands", columnName = "deletedAtMillis"),
-    DeleteColumn(tableName = "brands", columnName = "serverId"),
-    DeleteColumn(tableName = "brands", columnName = "version"),
-    DeleteColumn(tableName = "transactions", columnName = "updatedAtMillis"),
-    DeleteColumn(tableName = "transactions", columnName = "isDirty"),
-    DeleteColumn(tableName = "transactions", columnName = "deletedAtMillis"),
-    DeleteColumn(tableName = "transactions", columnName = "serverId"),
-    DeleteColumn(tableName = "transactions", columnName = "version"),
-    DeleteColumn(tableName = "sms_messages", columnName = "updatedAtMillis"),
-    DeleteColumn(tableName = "sms_messages", columnName = "isDirty"),
-    DeleteColumn(tableName = "sms_messages", columnName = "deletedAtMillis"),
-    DeleteColumn(tableName = "sms_messages", columnName = "serverId"),
-    DeleteColumn(tableName = "sms_messages", columnName = "version"),
-)
+@DeleteColumn(tableName = "categories", columnName = "updatedAtMillis")
+@DeleteColumn(tableName = "categories", columnName = "isDirty")
+@DeleteColumn(tableName = "categories", columnName = "deletedAtMillis")
+@DeleteColumn(tableName = "categories", columnName = "serverId")
+@DeleteColumn(tableName = "categories", columnName = "version")
+@DeleteColumn(tableName = "brands", columnName = "updatedAtMillis")
+@DeleteColumn(tableName = "brands", columnName = "isDirty")
+@DeleteColumn(tableName = "brands", columnName = "deletedAtMillis")
+@DeleteColumn(tableName = "brands", columnName = "serverId")
+@DeleteColumn(tableName = "brands", columnName = "version")
+@DeleteColumn(tableName = "transactions", columnName = "updatedAtMillis")
+@DeleteColumn(tableName = "transactions", columnName = "isDirty")
+@DeleteColumn(tableName = "transactions", columnName = "deletedAtMillis")
+@DeleteColumn(tableName = "transactions", columnName = "serverId")
+@DeleteColumn(tableName = "transactions", columnName = "version")
+@DeleteColumn(tableName = "sms_messages", columnName = "updatedAtMillis")
+@DeleteColumn(tableName = "sms_messages", columnName = "isDirty")
+@DeleteColumn(tableName = "sms_messages", columnName = "deletedAtMillis")
+@DeleteColumn(tableName = "sms_messages", columnName = "serverId")
+@DeleteColumn(tableName = "sms_messages", columnName = "version")
 class DropSyncColumnsSpec : AutoMigrationSpec

@@ -34,17 +34,20 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   `testutil/FakeAnalytics`. **Strict no-PII:** events only carry booleans, enums, and coarse amount
   buckets — never raw amounts, names, notes, or SMS text. Screen views are reported manually from
   `MainActivity` (single-Activity Compose app, so Firebase's auto screen tracking doesn't fire).
-- **Storage:** Room (SQLite) — `Room*Repository` impls per feature's `data/`, entities/DAOs/
-  mappers in `data/local/`, and the database in `core/data/local/` (`HisabakDatabase`).
-  The Room schema is exported to `androidApp/schemas/` (committed); bump the DB version and add a
-  real `Migration` for any entity change — **release builds don't destructively fall back**
-  (debug builds do, for fast iteration).
+- **Storage:** Room **KMP** (SQLite) — entities/DAOs/mappers, `HisabakDatabase`
+  (`@ConstructedBy`), migrations, and the `Room*Repository` impls all live in
+  `shared/src/commonMain` (`core/data/local/` + per-feature `data/local/`); platform
+  `hisabakDatabaseBuilder(...)` functions in `shared/src/androidMain` (framework SQLite driver,
+  as before) and `shared/src/iosMain` (BundledSQLiteDriver, Documents dir). The `androidx.room`
+  Gradle plugin + per-target KSP run in `shared`; the schema is exported to `shared/schemas/`
+  (committed); bump the DB version and add a real `Migration` for any entity change —
+  **release builds don't destructively fall back** (debug builds do, for fast iteration).
 - **At-rest protection:** the database is plain (unencrypted) SQLite, relying on Android's
   file-based encryption of app-private storage; the live-device threat is App Lock's job. The
   app-level SQLCipher layer that versions ≤1.8.x used was **removed** (its Keystore-wrapped key was
   never auth-gated, so it added little over FBE). Databases carried over from those versions are
   decrypted once, in place, before Room opens (`DatabaseDecryptionMigration`,
-  `core/data/local/security/` — keys off the `SQLite format 3` header, unlocks with the legacy
+  `shared/src/androidMain` `core/data/local/security/` — keys off the `SQLite format 3` header, unlocks with the legacy
   passphrase from `KeystoreDatabaseKeyStore`, runs `sqlcipher_export`, verifies + atomically swaps,
   then clears the stored key; idempotent, retries on crash; loads the SQLCipher native lib only when
   an encrypted file is actually found). The `sqlcipher-android` dependency is retained **only** for
@@ -97,7 +100,7 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
     through a `PendingIntent` launched by the Route. **Cloud setup is required** — see
     `docs/google-drive-backup-setup.md` (OAuth client by package + SHA-1; no secret in the app).
   - **Engine (destination-agnostic):** `RoomBackupRepository` (snapshot + replace-all in one
-    `withTransaction`), `JsonBackupCodec` (kotlinx.serialization), `AesGcmBackupCrypto`
+    immediate write transaction), `JsonBackupCodec` (kotlinx.serialization), `AesGcmBackupCrypto`
     (passphrase→PBKDF2→AES-256-GCM; `isEncrypted` sniffs the `HSBK` magic so unencrypted backups
     restore without a passphrase), `GoogleDriveBackupRemote` (`BackupRemote` over Drive v3 REST via
     `HttpURLConnection`). `RunBackupUseCase` / `RestoreFromRemoteUseCase` orchestrate; encryption is

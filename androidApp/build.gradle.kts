@@ -4,7 +4,6 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.kotlin.serialization)
@@ -133,12 +132,6 @@ android {
     }
 }
 
-// Export the Room schema so migrations can be authored and validated against it. The generated
-// JSON under app/schemas/ is committed.
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
-}
-
 dependencies {
     implementation(project(":shared"))
     coreLibraryDesugaring(libs.desugar.jdk.libs)
@@ -158,13 +151,6 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
     implementation(libs.koin.compose.viewmodel)
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-    // Retained only to decrypt databases created by <=1.8.x (one-time migration); drop once the
-    // upgrade window closes.
-    implementation(libs.sqlcipher.android)
-    implementation(libs.androidx.sqlite)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.biometric)
     implementation(libs.kotlinx.serialization.json)
