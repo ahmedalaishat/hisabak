@@ -7,7 +7,7 @@ import com.hisabak.feature.budget.domain.Reoccurrence
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.core.common.DomainResult
 import com.hisabak.core.common.Money
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 class CreateBudgetUseCase(
     private val repository: BudgetRepository,

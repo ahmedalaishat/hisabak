@@ -6,7 +6,7 @@ import com.hisabak.core.presentation.ViewIntent
 import com.hisabak.core.presentation.ViewState
 import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessageId
-import java.time.Instant
+import kotlin.time.Instant
 
 data class SmsInboxRow(
     val id: SmsMessageId,

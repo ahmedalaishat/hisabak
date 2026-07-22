@@ -14,7 +14,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import java.time.Instant
+import kotlin.time.Instant
 
 /**
  * Listens for incoming SMS broadcasts and hands each body to [CaptureTransactionUseCase] as the
@@ -42,8 +42,8 @@ class IncomingSmsReceiver : BroadcastReceiver(), KoinComponent {
 
         val receivedAt = messages.firstOrNull()
             ?.timestampMillis
-            ?.let(Instant::ofEpochMilli)
-            ?: Instant.now()
+            ?.let(Instant::fromEpochMilliseconds)
+            ?: kotlin.time.Clock.System.now()
 
         val pending = goAsync()
         scope.launch {

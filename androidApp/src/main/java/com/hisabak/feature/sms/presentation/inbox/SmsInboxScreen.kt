@@ -57,8 +57,7 @@ import com.hisabak.ui.components.SurfaceCard
 import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.Sizing
 import com.hisabak.ui.theme.Spacing
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import com.hisabak.ui.format.formatInstant
 import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -346,7 +345,5 @@ internal fun formatMoney(money: Money): String {
     return "$sign${money.currency.code} ${compactAmount(abs(money.amountMinor) / 100.0)}"
 }
 
-internal fun formatDate(instant: java.time.Instant): String =
-    DateTimeFormatter.ofPattern("MMM d, yyyy HH:mm")
-        .withZone(ZoneId.systemDefault())
-        .format(instant)
+internal fun formatDate(instant: kotlin.time.Instant): String =
+    formatInstant(instant, "MMM d, yyyy HH:mm")

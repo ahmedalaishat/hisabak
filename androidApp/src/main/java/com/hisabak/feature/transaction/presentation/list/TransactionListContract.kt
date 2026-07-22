@@ -10,7 +10,7 @@ import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.transaction.domain.TransactionId
-import java.time.Instant
+import kotlin.time.Instant
 
 data class TransactionRow(
     val id: TransactionId,

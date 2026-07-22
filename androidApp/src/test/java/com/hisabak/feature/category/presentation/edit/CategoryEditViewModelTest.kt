@@ -22,7 +22,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import java.time.YearMonth
+import kotlinx.datetime.YearMonth
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CategoryEditViewModelTest {
@@ -79,7 +79,7 @@ class CategoryEditViewModelTest {
         val category = catRepo.current.single()
         assertEquals("Groceries", category.name)
         assertEquals(CategoryEditEffect.Saved, vm.effect.value)
-        assertEquals(aed(500_00), limitRepo.current.effectiveFor(category.id, YearMonth.of(2026, 6)))
+        assertEquals(aed(500_00), limitRepo.current.effectiveFor(category.id, YearMonth(2026, 6)))
 
         val event = analytics.logged.single() as AnalyticsEvent.CategoryCreated
         assertEquals("expenses", event.params["type"])

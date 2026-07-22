@@ -2,7 +2,7 @@ package com.hisabak.feature.sms.domain
 
 import com.hisabak.core.common.DomainResult
 import kotlinx.coroutines.flow.Flow
-import java.time.Instant
+import kotlin.time.Instant
 
 interface SmsRepository {
     fun observeAll(search: String? = null): Flow<List<SmsMessage>>

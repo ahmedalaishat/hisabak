@@ -1,7 +1,7 @@
 package com.hisabak.feature.sms.domain
 
 import com.hisabak.core.common.Money
-import java.time.Instant
+import kotlin.time.Instant
 
 data class ParsedSmsData(
     val brandName: String?,

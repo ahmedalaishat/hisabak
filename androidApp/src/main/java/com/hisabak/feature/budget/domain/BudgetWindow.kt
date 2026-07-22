@@ -1,8 +1,8 @@
 package com.hisabak.feature.budget.domain
 
 import com.hisabak.core.common.DateRange
-import java.time.LocalDate
-import java.time.temporal.ChronoUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.daysUntil
 
 data class BudgetWindow(val range: DateRange) {
     val start: LocalDate get() = range.start
@@ -10,11 +10,11 @@ data class BudgetWindow(val range: DateRange) {
     val totalDays: Long get() = range.totalDays
 
     fun remainingDays(today: LocalDate): Long =
-        if (today.isAfter(end)) 0L else ChronoUnit.DAYS.between(today, end) + 1
+        if (today > end) 0L else today.daysUntil(end) + 1L
 
     fun elapsedDays(today: LocalDate): Long = when {
-        today.isBefore(start) -> 0L
-        today.isAfter(end) -> totalDays
-        else -> ChronoUnit.DAYS.between(start, today)
+        today < start -> 0L
+        today > end -> totalDays
+        else -> start.daysUntil(today).toLong()
     }
 }

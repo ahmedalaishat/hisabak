@@ -63,10 +63,10 @@ import com.hisabak.ui.components.SegmentedControl
 import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.HisabakType
 import com.hisabak.ui.theme.Spacing
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import com.hisabak.ui.format.formatLocalDate
+import kotlin.time.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -201,13 +201,13 @@ fun TransactionEditScreen(
 
     if (state.showDatePicker) {
         val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = state.occurredAt.toEpochMilli(),
+            initialSelectedDateMillis = state.occurredAt.toEpochMilliseconds(),
         )
         DatePickerDialog(
             onDismissRequest = onDateDismiss,
             confirmButton = {
                 TextButton(onClick = {
-                    pickerState.selectedDateMillis?.let { onDateSelected(Instant.ofEpochMilli(it)) }
+                    pickerState.selectedDateMillis?.let { onDateSelected(Instant.fromEpochMilliseconds(it)) }
                         ?: onDateDismiss()
                 }) { Text(stringResource(R.string.action_ok)) }
             },
@@ -337,8 +337,5 @@ private val GroupedAmountTransformation = VisualTransformation { text ->
     )
 }
 
-private val dateFormatter: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("EEE, MMM d, yyyy", Locale.getDefault())
-
 private fun formatDate(instant: Instant): String =
-    dateFormatter.format(instant.atZone(ZoneId.systemDefault()).toLocalDate())
+    formatLocalDate(instant.toLocalDateTime(TimeZone.currentSystemDefault()).date, "EEE, MMM d, yyyy")

@@ -24,10 +24,10 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.days
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 class TransactionListViewModel(
     private val observeTransactions: ObserveTransactionsUseCase,
@@ -147,9 +147,9 @@ class TransactionListViewModel(
         categories: List<Category>,
         filters: Filters,
     ): Derived {
-        val zone = ZoneId.systemDefault()
+        val zone = TimeZone.currentSystemDefault()
         val now = clock.now()
-        val today = LocalDate.ofInstant(now, zone)
+        val today = now.toLocalDateTime(zone).date
         val brandsById = brands.associateBy { it.id }
         val categoriesById = categories.associateBy { it.id }
         fun categoryOf(tx: Transaction): Category? =
@@ -161,7 +161,7 @@ class TransactionListViewModel(
         var expenses = 0L
         txs.forEach { tx ->
             val inPeriod = periodRange == null ||
-                (!tx.occurredAt.isBefore(periodRange.first) && tx.occurredAt.isBefore(periodRange.second))
+                (tx.occurredAt >= periodRange.first && tx.occurredAt < periodRange.second)
             if (inPeriod) when (categoryOf(tx)?.type) {
                 CategoryType.INCOME -> income += abs(tx.amount.amountMinor)
                 CategoryType.EXPENSES -> expenses += abs(tx.amount.amountMinor)
@@ -171,7 +171,7 @@ class TransactionListViewModel(
 
         // List: search + brand + category + rolling date range.
         val list = filters.list
-        val from = list.dateRange.days?.let { now.minus(it, ChronoUnit.DAYS) }
+        val from = list.dateRange.days?.let { now - it.days }
         val listTxs = txs
             .filter { tx ->
                 val brand = brandsById[tx.brandId]
@@ -182,7 +182,7 @@ class TransactionListViewModel(
                 }
                 (list.brandFilter == null || tx.brandId == list.brandFilter) &&
                     matchesCategory &&
-                    (from == null || !tx.occurredAt.isBefore(from)) &&
+                    (from == null || tx.occurredAt >= from) &&
                     (filters.search.isBlank() ||
                         brand?.name?.contains(filters.search, ignoreCase = true) == true ||
                         tx.note?.contains(filters.search, ignoreCase = true) == true)

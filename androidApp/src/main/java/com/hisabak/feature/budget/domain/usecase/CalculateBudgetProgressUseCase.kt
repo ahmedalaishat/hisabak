@@ -4,7 +4,7 @@ import com.hisabak.feature.budget.domain.Budget
 import com.hisabak.feature.budget.domain.BudgetProgress
 import com.hisabak.feature.budget.domain.BudgetRepository
 import com.hisabak.core.common.Clock
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 class CalculateBudgetProgressUseCase(
     private val repository: BudgetRepository,

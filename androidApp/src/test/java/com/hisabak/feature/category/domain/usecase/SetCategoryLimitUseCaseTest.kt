@@ -9,7 +9,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.time.YearMonth
+import kotlinx.datetime.YearMonth
 
 class SetCategoryLimitUseCaseTest {
 
@@ -22,9 +22,9 @@ class SetCategoryLimitUseCaseTest {
         useCase(CategoryId("c1"), aed(500_00))
 
         val limit = repo.current.single()
-        assertEquals(YearMonth.of(2026, 6), limit.effectiveFrom)
+        assertEquals(YearMonth(2026, 6), limit.effectiveFrom)
         assertEquals(aed(500_00), limit.amount)
-        assertEquals(aed(500_00), repo.current.effectiveFor(CategoryId("c1"), YearMonth.of(2026, 6)))
+        assertEquals(aed(500_00), repo.current.effectiveFor(CategoryId("c1"), YearMonth(2026, 6)))
     }
 
     @Test
@@ -32,6 +32,6 @@ class SetCategoryLimitUseCaseTest {
         useCase(CategoryId("c1"), null)
 
         assertNull(repo.current.single().amount)
-        assertNull(repo.current.effectiveFor(CategoryId("c1"), YearMonth.of(2026, 6)))
+        assertNull(repo.current.effectiveFor(CategoryId("c1"), YearMonth(2026, 6)))
     }
 }

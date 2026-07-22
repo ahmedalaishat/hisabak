@@ -90,7 +90,7 @@ Packages keep `com.hisabak.*` names so moves don't ripple through imports.
   consistency updates: `.claude/hooks/run-tests.sh` → `./gradlew unitTests`,
   `.github/workflows/{test,release,distribute}.yml` (`app/` → `androidApp/` paths + task),
   CLAUDE.md, README, `docs/testing.md`, `docs/cd.md`, `.claude/skills/{git-workflow,feature}`.
-- [ ] **PR 3 — kotlinx-datetime swap in place** *(risky, semantic)*: rewrite the ~50 `java.time`
+- [x] **PR 3 — kotlinx-datetime swap in place** *(risky, semantic)*: rewrite the ~50 `java.time`
   files (Instant/LocalDate/TimeZone/YearMonth/daysUntil/Format); add the `LocalizedDateFormatter`
   port; Room TypeConverters; add boundary tests (month ends, DST) first; schema JSON diff must be
   empty.

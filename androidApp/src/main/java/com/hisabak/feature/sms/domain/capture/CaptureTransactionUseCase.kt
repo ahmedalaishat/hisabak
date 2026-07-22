@@ -7,7 +7,7 @@ import com.hisabak.feature.notification.domain.CategoryLimitMonitor
 import com.hisabak.feature.notification.domain.TransactionRecordedNotifier
 import com.hisabak.feature.sms.domain.usecase.IngestSmsUseCase
 import com.hisabak.feature.transaction.domain.Transaction
-import java.time.Instant
+import kotlin.time.Instant
 
 /**
  * The single funnel every capture source flows through. It parses + persists the raw message

@@ -11,9 +11,17 @@ import com.hisabak.feature.category.domain.CategoryLimit
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.transaction.domain.Transaction
 import com.hisabak.feature.transaction.domain.TransactionId
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.ZoneId
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.atTime
+import kotlinx.datetime.number
+import kotlinx.datetime.onDay
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.yearMonth
 import kotlin.random.Random
 
 /**
@@ -26,8 +34,8 @@ import kotlin.random.Random
  */
 class SeedData(clock: Clock, private val currency: Currency) {
     private val now = clock.now()
-    private val zone = ZoneId.systemDefault()
-    private val today = LocalDate.ofInstant(now, zone)
+    private val zone = TimeZone.currentSystemDefault()
+    private val today = now.toLocalDateTime(zone).date
 
     private val groceries = Category(CategoryId.new(), "Groceries", CategoryType.EXPENSES, color = "green", icon = "cart")
     private val salary = Category(CategoryId.new(), "Salary", CategoryType.INCOME, color = "blue", icon = "briefcase")
@@ -59,66 +67,66 @@ class SeedData(clock: Clock, private val currency: Currency) {
 
     val categoryLimits: List<CategoryLimit> = listOf(
         // Groceries: AED 3,000/mo, bumped to 3,500 in Sep 2025 (a stepped limit line).
-        CategoryLimit(groceries.id, Money(300_000, currency), YearMonth.of(2024, 1)),
-        CategoryLimit(groceries.id, Money(350_000, currency), YearMonth.of(2025, 9)),
+        CategoryLimit(groceries.id, Money(300_000, currency), YearMonth(2024, 1)),
+        CategoryLimit(groceries.id, Money(350_000, currency), YearMonth(2025, 9)),
         // Dining: AED 2,500/mo, introduced in 2025 (earlier months show a gap).
-        CategoryLimit(dining.id, Money(250_000, currency), YearMonth.of(2025, 1)),
+        CategoryLimit(dining.id, Money(250_000, currency), YearMonth(2025, 1)),
         // Shopping: AED 3,000/mo from the start (occasionally exceeded — exercises the alerts).
-        CategoryLimit(shopping.id, Money(300_000, currency), YearMonth.of(2024, 1)),
+        CategoryLimit(shopping.id, Money(300_000, currency), YearMonth(2024, 1)),
     )
 
     private fun generate(): List<Transaction> {
         val rnd = Random(seed = 42)
         val out = mutableListOf<Transaction>()
-        var month = YearMonth.of(2024, 1)
-        val endMonth = YearMonth.from(today)
+        var month = YearMonth(2024, 1)
+        val endMonth = today.yearMonth
 
         fun add(brandId: BrandId, amountMinor: Long, date: LocalDate, note: String?) {
-            if (date.isAfter(today)) return
+            if (date > today) return
             out += tx(brandId, amountMinor, date, note)
         }
 
-        while (!month.isAfter(endMonth)) {
-            val len = month.lengthOfMonth()
+        while (month <= endMonth) {
+            val len = month.numberOfDays
 
             // Salary on the 25th (~AED 55k), plus a quarterly bonus.
-            add(acme.id, 5_500_000L + rnd.nextInt(0, 700_000), month.atDay(minOf(25, len)), "Monthly salary")
-            if (month.monthValue % 3 == 0) {
-                add(acme.id, 2_000_000L + rnd.nextInt(0, 800_000), month.atDay(minOf(25, len)), "Quarterly bonus")
+            add(acme.id, 5_500_000L + rnd.nextInt(0, 700_000), month.onDay(minOf(25, len)), "Monthly salary")
+            if (month.month.number % 3 == 0) {
+                add(acme.id, 2_000_000L + rnd.nextInt(0, 800_000), month.onDay(minOf(25, len)), "Quarterly bonus")
             }
 
             // Monthly transfer to savings (~AED 12k) and investment contribution (~AED 8k).
-            add(vault.id, 1_200_000L + rnd.nextInt(0, 400_000), month.atDay(minOf(26, len)), "Monthly savings")
-            add(sarwa.id, 800_000L + rnd.nextInt(0, 500_000), month.atDay(minOf(27, len)), "Investment contribution")
+            add(vault.id, 1_200_000L + rnd.nextInt(0, 400_000), month.onDay(minOf(26, len)), "Monthly savings")
+            add(sarwa.id, 800_000L + rnd.nextInt(0, 500_000), month.onDay(minOf(27, len)), "Investment contribution")
 
             // Weekly groceries (~AED 300–800).
             for (week in 0..3) {
                 val store = if (rnd.nextBoolean()) wholeFoods else traderJoes
-                add(store.id, (30_000 + rnd.nextInt(0, 50_000)).toLong(), month.atDay(minOf(3 + week * 7, len)), "Weekly groceries")
+                add(store.id, (30_000 + rnd.nextInt(0, 50_000)).toLong(), month.onDay(minOf(3 + week * 7, len)), "Weekly groceries")
             }
 
             // Coffee a few mornings a week (~AED 25–55).
             for (day in listOf(2, 9, 16, 23)) {
-                add(starbucks.id, (2_500 + rnd.nextInt(0, 3_000)).toLong(), month.atDay(minOf(day, len)), "Morning coffee")
+                add(starbucks.id, (2_500 + rnd.nextInt(0, 3_000)).toLong(), month.onDay(minOf(day, len)), "Morning coffee")
             }
 
             // Dinners out at nicer spots (~AED 350–950).
             for (day in listOf(8, 22)) {
-                add(nobu.id, (35_000 + rnd.nextInt(0, 60_000)).toLong(), month.atDay(minOf(day, len)), "Dinner")
+                add(nobu.id, (35_000 + rnd.nextInt(0, 60_000)).toLong(), month.onDay(minOf(day, len)), "Dinner")
             }
 
             // Rides through the month (~AED 60–300).
             for (day in listOf(5, 12, 19, 27)) {
-                add(uber.id, (6_000 + rnd.nextInt(0, 24_000)).toLong(), month.atDay(minOf(day, len)), null)
+                add(uber.id, (6_000 + rnd.nextInt(0, 24_000)).toLong(), month.onDay(minOf(day, len)), null)
             }
 
             // Shopping once or twice a month (~AED 500–3,000).
-            add(appleStore.id, (50_000 + rnd.nextInt(0, 250_000)).toLong(), month.atDay(minOf(10, len)), "Shopping")
+            add(appleStore.id, (50_000 + rnd.nextInt(0, 250_000)).toLong(), month.onDay(minOf(10, len)), "Shopping")
             if (rnd.nextBoolean()) {
-                add(appleStore.id, (40_000 + rnd.nextInt(0, 160_000)).toLong(), month.atDay(minOf(20, len)), "Shopping")
+                add(appleStore.id, (40_000 + rnd.nextInt(0, 160_000)).toLong(), month.onDay(minOf(20, len)), "Shopping")
             }
 
-            month = month.plusMonths(1)
+            month = month.plus(1, DateTimeUnit.MONTH)
         }
         return out
     }
@@ -129,6 +137,6 @@ class SeedData(clock: Clock, private val currency: Currency) {
             amount = Money(amountMinor, currency),
             brandId = brandId,
             note = note,
-            occurredAt = date.atTime(12, 0).atZone(zone).toInstant(),
+            occurredAt = date.atTime(12, 0).toInstant(zone),
         )
 }

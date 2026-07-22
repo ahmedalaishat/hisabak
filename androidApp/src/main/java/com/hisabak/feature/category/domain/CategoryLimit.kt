@@ -1,7 +1,7 @@
 package com.hisabak.feature.category.domain
 
 import com.hisabak.core.common.Money
-import java.time.YearMonth
+import kotlinx.datetime.YearMonth
 
 /**
  * A monthly spending cap for a category, effective from [effectiveFrom] onward until a later
@@ -17,6 +17,6 @@ data class CategoryLimit(
 /** The limit in effect for [categoryId] during [month], or `null` if none applied by then. */
 fun List<CategoryLimit>.effectiveFor(categoryId: CategoryId, month: YearMonth): Money? =
     asSequence()
-        .filter { it.categoryId == categoryId && !it.effectiveFrom.isAfter(month) }
+        .filter { it.categoryId == categoryId && it.effectiveFrom <= month }
         .maxByOrNull { it.effectiveFrom }
         ?.amount

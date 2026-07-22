@@ -5,20 +5,23 @@ import com.hisabak.core.common.Money
 import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsParser
 import com.hisabak.feature.sms.domain.SmsTemplate
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import kotlin.time.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
+import kotlinx.datetime.toInstant
 
 /**
  * Reads the field map produced by [RegexSmsTemplateDetector] and builds a [ParsedSmsData].
  * Handles amount normalization (strip thousands separators), multi-format date parsing,
- * and combines `date` + `time` placeholders into a single [java.time.Instant].
+ * and combines `date` + `time` placeholders into a single [Instant].
  */
 class TemplateSmsParser(
     private val defaultCurrency: Currency,
-    private val zone: ZoneId = ZoneId.systemDefault(),
+    private val zone: TimeZone = TimeZone.currentSystemDefault(),
 ) : SmsParser {
 
     override fun parse(body: String, template: SmsTemplate): ParsedSmsData {
@@ -42,7 +45,7 @@ class TemplateSmsParser(
     private fun parseAmount(raw: String): Money? =
         Money.parseMajor(raw.replace(",", ""), defaultCurrency)
 
-    private fun parseDateTime(date: String?, time: String?): java.time.Instant? {
+    private fun parseDateTime(date: String?, time: String?): Instant? {
         if (date.isNullOrBlank()) return null
         val normalised = date.replace('/', '-').trim()
 
@@ -54,24 +57,41 @@ class TemplateSmsParser(
             TIME_FORMATS.firstNotNullOfOrNull { fmt ->
                 runCatching { LocalTime.parse(t, fmt) }.getOrNull()
             }
-        } ?: LocalTime.MIDNIGHT
+        } ?: LocalTime(0, 0)
 
-        return LocalDateTime.of(parsedDate, parsedTime).atZone(zone).toInstant()
+        return LocalDateTime(parsedDate, parsedTime).toInstant(zone)
     }
 
     private companion object {
+        // Accepted bank-SMS date shapes: dd-MM-yyyy, d-M-yyyy, yyyy-MM-dd, dd-MM-yy, d-M-yy.
+        // Two-digit years map to the 2000–2099 window.
         val DATE_FORMATS = listOf(
-            DateTimeFormatter.ofPattern("dd-MM-yyyy"),
-            DateTimeFormatter.ofPattern("d-M-yyyy"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd"),
-            DateTimeFormatter.ofPattern("dd-MM-yy"),
-            DateTimeFormatter.ofPattern("d-M-yy"),
+            LocalDate.Format {
+                day(); char('-'); monthNumber(); char('-'); year()
+            },
+            LocalDate.Format {
+                day(Padding.NONE); char('-'); monthNumber(Padding.NONE); char('-'); year()
+            },
+            LocalDate.Format {
+                year(); char('-'); monthNumber(); char('-'); day()
+            },
+            LocalDate.Format {
+                day(); char('-'); monthNumber(); char('-'); yearTwoDigits(baseYear = 2000)
+            },
+            LocalDate.Format {
+                day(Padding.NONE); char('-'); monthNumber(Padding.NONE); char('-'); yearTwoDigits(baseYear = 2000)
+            },
         )
+        // Mirrors: HH:mm:ss, HH:mm, h:mm a, h:mma.
         val TIME_FORMATS = listOf(
-            DateTimeFormatter.ofPattern("HH:mm:ss"),
-            DateTimeFormatter.ofPattern("HH:mm"),
-            DateTimeFormatter.ofPattern("h:mm a"),
-            DateTimeFormatter.ofPattern("h:mma"),
+            LocalTime.Format { hour(); char(':'); minute(); char(':'); second() },
+            LocalTime.Format { hour(); char(':'); minute() },
+            LocalTime.Format {
+                amPmHour(Padding.NONE); char(':'); minute(); char(' '); amPmMarker("AM", "PM")
+            },
+            LocalTime.Format {
+                amPmHour(Padding.NONE); char(':'); minute(); amPmMarker("AM", "PM")
+            },
         )
     }
 }

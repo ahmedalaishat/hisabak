@@ -17,8 +17,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.time.Instant
-import java.time.ZoneOffset
+import kotlin.time.Instant
+import kotlinx.datetime.TimeZone
 
 class SmsTransactionProcessorTest {
 
@@ -29,7 +29,7 @@ class SmsTransactionProcessorTest {
 
     private fun processor(patterns: List<String>) = SmsTransactionProcessor(
         detector = RegexSmsTemplateDetector(patterns),
-        parser = TemplateSmsParser(defaultCurrency = Currency.AED, zone = ZoneOffset.UTC),
+        parser = TemplateSmsParser(defaultCurrency = Currency.AED, zone = TimeZone.UTC),
         findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo),
         transactionRepository = transactionRepo,
         smsRepository = smsRepo,

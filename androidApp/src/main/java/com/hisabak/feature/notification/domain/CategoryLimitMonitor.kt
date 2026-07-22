@@ -22,8 +22,12 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.time.YearMonth
-import java.time.ZoneId
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.number
+import kotlinx.datetime.plus
+import kotlinx.datetime.yearMonth
 
 /**
  * Watches transactions and limits and, when an expense category's current-month spend crosses a
@@ -80,16 +84,16 @@ class CategoryLimitMonitor(
     private suspend fun runEvaluate(inputs: Inputs) = evalMutex.withLock { evaluate(inputs) }
 
     private suspend fun evaluate(inputs: Inputs) {
-        val zone = ZoneId.systemDefault()
-        val month = YearMonth.from(clock.today(zone))
-        val periodMonth = month.year * 100 + month.monthValue
-        val monthStart = month.atDay(1).atStartOfDay(zone).toInstant()
-        val monthEnd = month.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant()
+        val zone = TimeZone.currentSystemDefault()
+        val month = clock.today(zone).yearMonth
+        val periodMonth = month.year * 100 + month.month.number
+        val monthStart = month.firstDay.atStartOfDayIn(zone)
+        val monthEnd = month.plus(1, DateTimeUnit.MONTH).firstDay.atStartOfDayIn(zone)
 
         val categoryOfBrand = inputs.brands.associate { it.id to it.categoryId }
         val spentByCategory = HashMap<CategoryId, Long>()
         for (tx in inputs.transactions) {
-            if (tx.occurredAt.isBefore(monthStart) || !tx.occurredAt.isBefore(monthEnd)) continue
+            if (tx.occurredAt < monthStart || tx.occurredAt >= monthEnd) continue
             val categoryId = categoryOfBrand[tx.brandId] ?: continue
             spentByCategory[categoryId] = (spentByCategory[categoryId] ?: 0L) + tx.amount.amountMinor
         }

@@ -8,7 +8,7 @@ import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsRepository
 import com.hisabak.feature.sms.domain.SmsTransactionProcessor
 import com.hisabak.feature.transaction.domain.Transaction
-import java.time.Instant
+import kotlin.time.Instant
 
 class IngestSmsUseCase(
     private val smsRepository: SmsRepository,

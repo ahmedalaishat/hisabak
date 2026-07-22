@@ -5,14 +5,14 @@ import com.hisabak.core.common.Money
 import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.transaction.domain.Transaction
 import com.hisabak.feature.transaction.domain.TransactionId
-import java.time.Instant
+import kotlin.time.Instant
 
 fun TransactionEntity.toDomain(): Transaction = Transaction(
     id = TransactionId(id),
     amount = Money(amountMinor, Currency(currency)),
     brandId = BrandId(brandId),
     note = note,
-    occurredAt = Instant.ofEpochMilli(occurredAtMillis),
+    occurredAt = Instant.fromEpochMilliseconds(occurredAtMillis),
     sourceSmsId = sourceSmsId,
 )
 
@@ -22,6 +22,6 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     currency = amount.currency.code,
     brandId = brandId.value,
     note = note,
-    occurredAtMillis = occurredAt.toEpochMilli(),
+    occurredAtMillis = occurredAt.toEpochMilliseconds(),
     sourceSmsId = sourceSmsId,
 )

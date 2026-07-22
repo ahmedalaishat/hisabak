@@ -2,7 +2,7 @@ package com.hisabak.feature.notification.data.local
 
 import com.hisabak.feature.notification.domain.Notification
 import com.hisabak.feature.notification.domain.NotificationId
-import java.time.Instant
+import kotlin.time.Instant
 
 fun NotificationEntity.toDomain(): Notification = Notification(
     id = NotificationId(id),
@@ -10,7 +10,7 @@ fun NotificationEntity.toDomain(): Notification = Notification(
     message = message,
     type = type,
     categoryId = categoryId,
-    createdAt = Instant.ofEpochMilli(createdAtMillis),
+    createdAt = Instant.fromEpochMilliseconds(createdAtMillis),
     isRead = isRead,
 )
 
@@ -20,6 +20,6 @@ fun Notification.toEntity(): NotificationEntity = NotificationEntity(
     message = message,
     type = type,
     categoryId = categoryId,
-    createdAtMillis = createdAt.toEpochMilli(),
+    createdAtMillis = createdAt.toEpochMilliseconds(),
     isRead = isRead,
 )

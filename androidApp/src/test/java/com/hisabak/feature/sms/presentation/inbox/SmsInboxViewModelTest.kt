@@ -31,7 +31,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
-import java.time.ZoneOffset
+import kotlinx.datetime.TimeZone
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SmsInboxViewModelTest {
@@ -45,7 +45,7 @@ class SmsInboxViewModelTest {
     private val transactionRepo = FakeTransactionRepository()
     private val notifier = RecordingNotifier()
     private val detector = RegexSmsTemplateDetector(listOf("Purchase of AED {amount} at {brand} done"))
-    private val parser = TemplateSmsParser(Currency.AED, ZoneOffset.UTC)
+    private val parser = TemplateSmsParser(Currency.AED, TimeZone.UTC)
 
     private val ingest = IngestSmsUseCase(
         smsRepository = smsRepo,

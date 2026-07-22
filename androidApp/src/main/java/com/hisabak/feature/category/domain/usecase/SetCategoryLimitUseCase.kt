@@ -4,7 +4,7 @@ import com.hisabak.core.common.Clock
 import com.hisabak.core.common.Money
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.CategoryLimitRepository
-import java.time.YearMonth
+import kotlinx.datetime.yearMonth
 
 /**
  * Sets (or clears, with a `null` [amount]) a category's monthly limit effective from the
@@ -15,6 +15,6 @@ class SetCategoryLimitUseCase(
     private val clock: Clock,
 ) {
     suspend operator fun invoke(categoryId: CategoryId, amount: Money?) {
-        repository.setLimit(categoryId, amount, YearMonth.from(clock.today()))
+        repository.setLimit(categoryId, amount, clock.today().yearMonth)
     }
 }

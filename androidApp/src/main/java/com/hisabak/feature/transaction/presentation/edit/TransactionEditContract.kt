@@ -5,14 +5,14 @@ import com.hisabak.core.presentation.ViewIntent
 import com.hisabak.core.presentation.ViewState
 import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.category.domain.CategoryType
-import java.time.Instant
+import kotlin.time.Instant
 
 data class TransactionEditUiState(
     val amountInput: String = "",
     val selectedBrandId: BrandId? = null,
     val brandOptions: List<BrandOption> = emptyList(),
     val noteInput: String = "",
-    val occurredAt: Instant = Instant.EPOCH,
+    val occurredAt: Instant = Instant.fromEpochMilliseconds(0),
     val selectedType: CategoryType = CategoryType.EXPENSES,
     val showDatePicker: Boolean = false,
     val isLoading: Boolean = false,

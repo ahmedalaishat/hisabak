@@ -11,8 +11,9 @@ import com.hisabak.core.domain.backup.AutoBackupPeriod
 import com.hisabak.core.domain.backup.AutoBackupScheduler
 import com.hisabak.core.domain.backup.autoBackupInterval
 import com.hisabak.core.domain.backup.delayUntilHour
-import java.time.ZonedDateTime
+import kotlin.time.Clock
 import kotlin.time.toJavaDuration
+import kotlinx.datetime.TimeZone
 
 /** Android [AutoBackupScheduler] backed by WorkManager periodic work (persists across restarts). */
 class WorkManagerAutoBackupScheduler(private val context: Context) : AutoBackupScheduler {
@@ -27,7 +28,10 @@ class WorkManagerAutoBackupScheduler(private val context: Context) : AutoBackupS
         // Bias the first run to the next ~02:00 local so backups happen overnight (WorkManager keeps
         // it inexact — Doze/batching can still shift it).
         val request = PeriodicWorkRequestBuilder<BackupWorker>(interval.toJavaDuration())
-            .setInitialDelay(delayUntilHour(ZonedDateTime.now(), AUTO_BACKUP_HOUR).toJavaDuration())
+            .setInitialDelay(
+                delayUntilHour(Clock.System.now(), TimeZone.currentSystemDefault(), AUTO_BACKUP_HOUR)
+                    .toJavaDuration(),
+            )
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
         workManager.enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)

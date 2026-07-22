@@ -70,11 +70,16 @@ import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.PillShape
 import com.hisabak.ui.theme.Sizing
 import com.hisabak.ui.theme.Spacing
-import java.time.Duration
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import com.hisabak.ui.format.formatInstant
+import com.hisabak.ui.format.formatLocalDate
+import kotlin.time.Clock
+import kotlin.time.Instant
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.todayIn
+import kotlinx.datetime.toLocalDateTime
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -111,9 +116,9 @@ fun TransactionListScreen(
     var openFilter by remember { mutableStateOf<FilterTarget?>(null) }
 
     // Rows arrive newest-first; group them by day for date-headed cards (LinkedHashMap keeps order).
-    val zone = remember { ZoneId.systemDefault() }
+    val zone = remember { TimeZone.currentSystemDefault() }
     val dayGroups = remember(state.rows) {
-        state.rows.groupBy { it.occurredAt.atZone(zone).toLocalDate() }.entries.toList()
+        state.rows.groupBy { it.occurredAt.toLocalDateTime(zone).date }.entries.toList()
     }
 
     LazyColumn(
@@ -411,13 +416,13 @@ private fun DayHeader(date: LocalDate) {
 
 @Composable
 private fun dayLabel(date: LocalDate): String {
-    val today = LocalDate.now()
+    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
     return when (date) {
         today -> stringResource(R.string.time_today)
-        today.minusDays(1) -> stringResource(R.string.time_yesterday)
+        today.minus(1, DateTimeUnit.DAY) -> stringResource(R.string.time_yesterday)
         else -> {
             val pattern = if (date.year == today.year) "MMM d" else "MMM d, yyyy"
-            DateTimeFormatter.ofPattern(pattern).format(date)
+            formatLocalDate(date, pattern)
         }
     }
 }
@@ -504,21 +509,18 @@ internal fun formatMoney(money: Money): String {
     return "$sign${money.currency.code} $major.${minor.toString().padStart(2, '0')}"
 }
 
-internal fun formatDate(instant: Instant): String =
-    DateTimeFormatter.ofPattern("MMM d, yyyy")
-        .withZone(ZoneId.systemDefault())
-        .format(instant)
+internal fun formatDate(instant: Instant): String = formatInstant(instant, "MMM d, yyyy")
 
 @Composable
 private fun formatRelative(instant: Instant): String {
-    val now = Instant.now()
-    val diff = Duration.between(instant, now)
+    val now = Clock.System.now()
+    val diff = now - instant
     return when {
-        diff.isNegative -> formatDate(instant)
-        diff.toHours() < 1 -> stringResource(R.string.time_minutes_ago, diff.toMinutes().coerceAtLeast(1).toInt())
-        diff.toHours() < 24 -> stringResource(R.string.time_hours_ago, diff.toHours().toInt())
-        diff.toDays() == 1L -> stringResource(R.string.time_yesterday)
-        diff.toDays() < 7 -> stringResource(R.string.time_days_ago, diff.toDays().toInt())
+        diff.isNegative() -> formatDate(instant)
+        diff.inWholeHours < 1 -> stringResource(R.string.time_minutes_ago, diff.inWholeMinutes.coerceAtLeast(1).toInt())
+        diff.inWholeHours < 24 -> stringResource(R.string.time_hours_ago, diff.inWholeHours.toInt())
+        diff.inWholeDays == 1L -> stringResource(R.string.time_yesterday)
+        diff.inWholeDays < 7 -> stringResource(R.string.time_days_ago, diff.inWholeDays.toInt())
         else -> formatDate(instant)
     }
 }

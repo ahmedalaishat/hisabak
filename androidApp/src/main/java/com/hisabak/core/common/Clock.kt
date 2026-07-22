@@ -1,15 +1,16 @@
 package com.hisabak.core.common
 
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
+import kotlin.time.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 interface Clock {
     fun now(): Instant
-    fun today(zone: ZoneId = ZoneId.systemDefault()): LocalDate = now().atZone(zone).toLocalDate()
+    fun today(zone: TimeZone = TimeZone.currentSystemDefault()): LocalDate =
+        now().toLocalDateTime(zone).date
 }
 
-class SystemClock(private val zone: ZoneId = ZoneId.systemDefault()) : Clock {
-    override fun now(): Instant = Instant.now()
-    override fun today(zone: ZoneId): LocalDate = Instant.now().atZone(zone).toLocalDate()
+class SystemClock : Clock {
+    override fun now(): Instant = kotlin.time.Clock.System.now()
 }

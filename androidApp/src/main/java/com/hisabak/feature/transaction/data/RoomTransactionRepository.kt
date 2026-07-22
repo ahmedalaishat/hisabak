@@ -22,8 +22,8 @@ class RoomTransactionRepository(
         dao.observeFiltered(
             search = filter.search?.takeIf(String::isNotBlank),
             brandId = filter.brandId?.value,
-            dateFromMillis = filter.dateFrom?.toEpochMilli(),
-            dateToMillis = filter.dateTo?.toEpochMilli(),
+            dateFromMillis = filter.dateFrom?.toEpochMilliseconds(),
+            dateToMillis = filter.dateTo?.toEpochMilliseconds(),
         ).map { rows -> rows.map { it.toDomain() } }
 
     override suspend fun getPage(
@@ -33,8 +33,8 @@ class RoomTransactionRepository(
     ): DomainResult<PagedTransactions> {
         val search = filter.search?.takeIf(String::isNotBlank)
         val brandId = filter.brandId?.value
-        val from = filter.dateFrom?.toEpochMilli()
-        val to = filter.dateTo?.toEpochMilli()
+        val from = filter.dateFrom?.toEpochMilliseconds()
+        val to = filter.dateTo?.toEpochMilliseconds()
         val offset = ((page - 1) * perPage).coerceAtLeast(0)
         val rows = dao.pageFiltered(search, brandId, from, to, perPage, offset)
         val total = dao.countFiltered(search, brandId, from, to)
