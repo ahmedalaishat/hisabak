@@ -30,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -92,6 +93,8 @@ import com.hisabak.ui.components.DetailTopBar
 import com.hisabak.ui.components.HisabakBottomNav
 import com.hisabak.ui.components.HisabakTopBar
 import com.hisabak.ui.components.clearFocusOnTap
+import com.hisabak.ui.format.AndroidLocalizedDateFormatter
+import com.hisabak.ui.format.LocalDateFormatter
 import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.Motion
 import org.koin.android.ext.android.inject
@@ -117,60 +120,65 @@ class MainActivity : FragmentActivity() {
         enableEdgeToEdge()
         handleFocusIntent(intent)
         setContent {
-            val preferences = koinInject<AppPreferences>()
-            val themeMode by preferences.themeMode.collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
-            val darkTheme = when (themeMode) {
-                ThemeMode.LIGHT -> false
-                ThemeMode.DARK -> true
-                ThemeMode.SYSTEM -> isSystemInDarkTheme()
-            }
-            // Keep the system-bar icons legible against the app's resolved theme rather than the
-            // system uiMode that enableEdgeToEdge() keys off — otherwise picking Light while the
-            // device is in Dark (or switching theme in-app) leaves light icons on a light bar.
-            val view = LocalView.current
-            SideEffect {
-                val controller = WindowCompat.getInsetsController(window, view)
-                controller.isAppearanceLightStatusBars = !darkTheme
-                controller.isAppearanceLightNavigationBars = !darkTheme
-            }
-            HisabakTheme(darkTheme = darkTheme) {
-                val onboardingCompleted by preferences.onboardingCompleted
-                    .collectAsStateWithLifecycle(initialValue = null)
-                val restoreOffered by preferences.restoreOffered
-                    .collectAsStateWithLifecycle(initialValue = null)
-                // First-launch flow: onboarding → one-time restore-from-Drive page (skippable) → app.
-                val stage = when {
-                    onboardingCompleted == null -> LaunchStage.Loading
-                    onboardingCompleted == false -> LaunchStage.Onboarding
-                    restoreOffered == null -> LaunchStage.Loading
-                    restoreOffered == false -> LaunchStage.Restore
-                    else -> LaunchStage.App
+            // Shared screens format dates/sizes through this port; Android backs it with
+            // java.time + DateUtils so output matches the pre-KMP behavior exactly.
+            val dateFormatter = remember { AndroidLocalizedDateFormatter(this) }
+            CompositionLocalProvider(LocalDateFormatter provides dateFormatter) {
+                val preferences = koinInject<AppPreferences>()
+                val themeMode by preferences.themeMode.collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
+                val darkTheme = when (themeMode) {
+                    ThemeMode.LIGHT -> false
+                    ThemeMode.DARK -> true
+                    ThemeMode.SYSTEM -> isSystemInDarkTheme()
                 }
-                AnimatedContent(
-                    targetState = stage,
-                    transitionSpec = {
-                        (slideInHorizontally(tween(Motion.Duration.Slow, easing = Motion.Easing.Standard)) { it } +
-                            fadeIn(tween(Motion.Duration.Base))) togetherWith
-                            (slideOutHorizontally(tween(Motion.Duration.Slow, easing = Motion.Easing.Standard)) { -it / 6 } +
-                                fadeOut(tween(Motion.Duration.Fast)))
-                    },
-                    label = "launchStage",
-                ) { current ->
-                    when (current) {
-                        LaunchStage.Loading -> Box(
-                            Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-                        )
-                        LaunchStage.Onboarding -> {
-                            val analytics = koinInject<Analytics>()
-                            LaunchedEffect(Unit) { analytics.setCurrentScreen("onboarding") }
-                            OnboardingRoute()
+                // Keep the system-bar icons legible against the app's resolved theme rather than the
+                // system uiMode that enableEdgeToEdge() keys off — otherwise picking Light while the
+                // device is in Dark (or switching theme in-app) leaves light icons on a light bar.
+                val view = LocalView.current
+                SideEffect {
+                    val controller = WindowCompat.getInsetsController(window, view)
+                    controller.isAppearanceLightStatusBars = !darkTheme
+                    controller.isAppearanceLightNavigationBars = !darkTheme
+                }
+                HisabakTheme(darkTheme = darkTheme) {
+                    val onboardingCompleted by preferences.onboardingCompleted
+                        .collectAsStateWithLifecycle(initialValue = null)
+                    val restoreOffered by preferences.restoreOffered
+                        .collectAsStateWithLifecycle(initialValue = null)
+                    // First-launch flow: onboarding → one-time restore-from-Drive page (skippable) → app.
+                    val stage = when {
+                        onboardingCompleted == null -> LaunchStage.Loading
+                        onboardingCompleted == false -> LaunchStage.Onboarding
+                        restoreOffered == null -> LaunchStage.Loading
+                        restoreOffered == false -> LaunchStage.Restore
+                        else -> LaunchStage.App
+                    }
+                    AnimatedContent(
+                        targetState = stage,
+                        transitionSpec = {
+                            (slideInHorizontally(tween(Motion.Duration.Slow, easing = Motion.Easing.Standard)) { it } +
+                                fadeIn(tween(Motion.Duration.Base))) togetherWith
+                                (slideOutHorizontally(tween(Motion.Duration.Slow, easing = Motion.Easing.Standard)) { -it / 6 } +
+                                    fadeOut(tween(Motion.Duration.Fast)))
+                        },
+                        label = "launchStage",
+                    ) { current ->
+                        when (current) {
+                            LaunchStage.Loading -> Box(
+                                Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+                            )
+                            LaunchStage.Onboarding -> {
+                                val analytics = koinInject<Analytics>()
+                                LaunchedEffect(Unit) { analytics.setCurrentScreen("onboarding") }
+                                OnboardingRoute()
+                            }
+                            LaunchStage.Restore -> {
+                                val analytics = koinInject<Analytics>()
+                                LaunchedEffect(Unit) { analytics.setCurrentScreen("restore") }
+                                RestoreRoute()
+                            }
+                            LaunchStage.App -> AppLockGate { HisabakNav() }
                         }
-                        LaunchStage.Restore -> {
-                            val analytics = koinInject<Analytics>()
-                            LaunchedEffect(Unit) { analytics.setCurrentScreen("restore") }
-                            RestoreRoute()
-                        }
-                        LaunchStage.App -> AppLockGate { HisabakNav() }
                     }
                 }
             }

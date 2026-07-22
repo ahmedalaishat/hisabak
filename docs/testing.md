@@ -21,12 +21,14 @@ Reports: `androidApp/build/reports/tests/testProdDebugUnitTest/index.html` and
 ## Where tests live
 
 - **`shared/src/commonTest/`** — tests for everything in `shared/commonMain` (domain
-  entities/use cases, SMS parsing, backup engine policy, seed data). Written with
-  **kotlin-test** (`kotlin.test.Test`, `assertEquals`, `assertFailsWith`, …) so they can
-  also compile for the iOS targets; they run on the JVM via `:shared:testAndroidHostTest`.
-- **`androidApp/src/test/`** — ViewModel tests and JVM/Android-bound tests
-  (`AesGcmBackupCrypto`, `DatabaseDecryptionMigration`, `BaseViewModel`, `compactAmount`,
-  `BackupUseCasesTest` which drives the JVM crypto impl). These stay on **JUnit4**.
+  entities/use cases, SMS parsing, backup engine policy, seed data, **and all ViewModel
+  tests**). Written with **kotlin-test** (`kotlin.test.Test`, `assertEquals`,
+  `assertFailsWith`, …) so they also compile for the iOS targets (test names must avoid
+  characters Kotlin/Native rejects, e.g. commas); they run on the JVM via
+  `:shared:testAndroidHostTest`.
+- **`androidApp/src/test/`** — only the JVM-bound tests remain (`AesGcmBackupCryptoTest`,
+  `DatabaseDecryptionMigrationTest`, `BackupUseCasesTest` which drives the JVM crypto
+  impl). These stay on **JUnit4**.
 
 ## What's covered
 
@@ -57,15 +59,15 @@ They are plain Kotlin — no JUnit — so they compile for every target.
   over a mocking framework; build the real use case around a fake repo.
 - **`TestData.kt`** — terse builders (`brand()`, `category()`, `transaction()`, …) with
   sensible defaults.
+- **`FakeBackupCrypto`** — a pure-Kotlin stand-in for the JVM-only `AesGcmBackupCrypto`
+  with the same observable contract (`HSBK` magic, round-trip, wrong-passphrase error),
+  so the backup/restore ViewModel tests run in `commonTest`.
 
-Two helpers stay in `androidApp/src/test/java/com/hisabak/testutil/` because they are
-JVM/Android-bound:
-
-- **`MainDispatcherRule`** — a JUnit4 `TestWatcher` that swaps `Dispatchers.Main` for a
-  `TestDispatcher` so `viewModelScope` coroutines are controllable. Use
-  `advanceUntilIdle()` after sending intents.
-- **`FakeDriveAuthorizer`** — the `DriveAuthorizer` contract still references
-  `android.content.Intent` (until the PR 7 contract redesign).
+ViewModel tests extend **`MainDispatcherTest`**
+(`shared/src/commonTest/kotlin/com/hisabak/testutil/`) — the multiplatform successor to
+the JUnit4 `MainDispatcherRule`: `@BeforeTest`/`@AfterTest` swap `Dispatchers.Main` for a
+`TestDispatcher` so `viewModelScope` coroutines are controllable. Use
+`advanceUntilIdle()` after sending intents.
 
 ### Notes
 

@@ -1,0 +1,31 @@
+name: iOS compile
+
+on:
+  # PRs only, and only when shared/KMP-relevant files change: this job exists to keep the iOS
+  # targets compiling (Phase A gate), not to test app code — androidApp-only changes can't break it.
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'shared/**'
+      - 'testutil/**'
+      - 'gradle/**'
+      - '*.gradle.kts'
+
+jobs:
+  compile:
+    name: Kotlin/Native iOS compile
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Compile iOS simulator target (main + test)
+        run: ./gradlew :shared:compileKotlinIosSimulatorArm64 :shared:compileTestKotlinIosSimulatorArm64 --no-daemon

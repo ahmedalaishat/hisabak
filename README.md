@@ -133,7 +133,7 @@ What's next, roughly in order:
 - **DI:** Koin
 - **Async:** Coroutines + Flow
 - **State:** ViewModel + `collectAsStateWithLifecycle`
-- **Charts:** Vico
+- **Charts:** Vico (multiplatform)
 - **Crash reporting & analytics:** Firebase Crashlytics + Analytics (release builds only;
   disabled in debug; analytics events carry no personal or financial data)
 
@@ -141,10 +141,11 @@ What's next, roughly in order:
 
 ## 🏗️ Architecture
 
-Three Gradle modules — **`shared`** (Kotlin Multiplatform: the domain layer, pure Kotlin,
-compiles for Android and iOS), **`androidApp`** (the Android app: UI, storage, platform
-integrations), and **`testutil`** (shared test fakes) — with the ongoing KMP migration moving
-more of the app into `shared` ([migration plan](docs/kmp-migration.md)).
+Three Gradle modules — **`shared`** (Kotlin Multiplatform: domain, data (Room/DataStore),
+ViewModels, and the Compose Multiplatform UI; compiles for Android and iOS), **`androidApp`**
+(a thin Android shell: navigation, platform integrations, permission/consent glue), and
+**`testutil`** (shared test fakes). Phase A of the KMP migration is complete
+([migration plan](docs/kmp-migration.md)).
 
 Feature-by-layer, with clean architecture inside each feature:
 

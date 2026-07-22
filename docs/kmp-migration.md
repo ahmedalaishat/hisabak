@@ -168,14 +168,39 @@ Packages keep `com.hisabak.*` names so moves don't ripple through imports.
     400/500/700 (`fonts.gstatic.com/s/tajawal/v12/…`; Tajawal has no 600). ~576 KB total;
     staging-debug APK grew ~1.4 MB (fonts + CMP resources runtime + string CVRs). The
     `ui-text-google-fonts` dependency and `font_certs.xml` were removed.
-- [ ] **PR 9 (stackable per feature) — Screens + ViewModels → commonMain; iOS gate**:
-  feature-by-feature (dashboard → transactions → category/brand/budget → settings/onboarding →
-  sms → backup/restore); permission-launcher screens take callback params from the androidApp nav
-  layer; complete the iosMain stub set; add an `ios-compile.yml` CI job (`macos-14`,
-  `:shared:compileKotlinIosSimulatorArm64`, path-filtered to `shared/**`).
+- [x] **PR 9 — Screens + ViewModels → commonMain; iOS gate**: every feature's Screens,
+  Contracts, buses, and ViewModels (+ `ManageRoute`/`ManageViewModel`) moved to
+  `shared/commonMain` (packages unchanged); only five **thin Routes** stayed androidApp-side for
+  launchers/Intents (`SmsInboxRoute` + `OnboardingRoute` permission launchers, `SettingsRoute`
+  enroll-credential launcher + FragmentActivity biometric wiring + `AppLocale`/`recreate()`,
+  `BackupRoute`/`RestoreRoute` Drive-consent IntentSender launchers). Date display went behind
+  the **`LocalizedDateFormatter` port** (`ui/format/`, `LocalDateFormatter` CompositionLocal;
+  android impl wraps java.time/DateUtils/Formatter, pure-kotlinx `BasicLocalizedDateFormatter`
+  default doubles as the iOS Phase A behavior); `DateFormats.kt` was absorbed. Build flags went
+  behind a common `AppConfig(seedData, smsAutoCapture, isDebug, versionCode)` built from
+  `BuildConfig` in androidApp. `BiometricAvailability` interface extracted
+  (`core/domain/security/`); Vico swapped to `multiplatform-m3` **2.5.2** (charts in commonMain;
+  the swap forced **compileSdk 36.1 → 37**); Koin split into `sharedModules`
+  (`di/SharedModules.kt`) + androidApp `platformModule`/`analyticsModule` + a complete
+  `iosMain` stub set (`di/IosPlatformModule.kt`, `core/platform/IosStubs.kt`, all
+  `TODO(Phase-B)`; DB + DataStore real). `MainViewController` placeholder added
+  (`shared/iosMain`); `ios-compile.yml` CI job added (`macos-14`, main + test iOS compile,
+  path-filtered). All ViewModel tests moved to `shared/commonTest` on kotlin-test
+  (`MainDispatcherTest` base replaces the JUnit4 rule; `FakeBackupCrypto` replaces the JVM
+  `AesGcmBackupCrypto` in VM tests) — 191 tests preserved (172 shared + 19 androidApp
+  JVM-bound).
 
-**Phase A exit criteria:** `./gradlew unitTests` green · staging app fully functional (manual QA
-in EN + AR) · `:shared:compileKotlinIosSimulatorArm64` green in CI · docs/skills/CI consistent.
+**Phase A exit criteria — met:** `./gradlew unitTests` green (191) ·
+`:shared:compileKotlinIosSimulatorArm64` + `:shared:compileTestKotlinIosSimulatorArm64` green
+(CI job `ios-compile.yml`) · staging build assembles (final emulator QA in EN + AR runs on the
+PR) · docs/skills/CI consistent.
+
+**Remaining for Phase B:** Xcode `iosApp` target consuming `MainViewController`; multiplatform
+Navigation 3 (nav/, MainActivity scaffolding are still androidx-only); real iOS actuals for
+every `TODO(Phase-B)` stub (Keychain passphrase store, CryptoKit AES-GCM, LocalAuthentication,
+BGTaskScheduler, Ktor Drive remote + ASWebAuthenticationSession OAuth, analytics/notifier,
+locale-aware `LocalizedDateFormatter`, real `AppConfig.versionCode`); iOS locale/digit strategy;
+App Store setup.
 
 ## Verification per PR
 
