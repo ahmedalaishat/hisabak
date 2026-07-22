@@ -16,10 +16,15 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
 - **Language:** Kotlin
 - **UI:** Jetpack Compose + Material 3
 - **Architecture:** Clean Architecture per feature (domain / data / presentation)
-- **DI:** Koin
+- **DI:** Koin, split by platform: the pure modules (use cases, repos, DAOs, ViewModels via the
+  multiplatform `viewModel {}` DSL) live in `shared/commonMain` — `di/SharedModules.kt` exposes
+  `sharedModules` — and each platform adds its bindings on top: androidApp's
+  `di/PlatformModule.kt` (+ `AnalyticsModule`) via `appModules`, iOS's
+  `shared/src/iosMain/.../di/IosPlatformModule.kt` (Phase A stubs, DB/DataStore real).
 - **Async:** Kotlin Coroutines + Flow
 - **State:** ViewModel + `collectAsStateWithLifecycle`
-- **Charts:** Vico
+- **Charts:** Vico (`com.patrykandpatrick.vico:multiplatform-m3`; charts in
+  `shared/commonMain` — `feature/dashboard/presentation/components/VicoCharts.kt`)
 - **Crash reporting:** Firebase Crashlytics. Wired via the `google-services` + `firebase-crashlytics`
   Gradle plugins (config in `androidApp/google-services.json`, project `hisabak-finance-tracking`).
   Collection is gated on `!BuildConfig.DEBUG` in `HisabakApp` — **on in release, off in debug** —
@@ -82,12 +87,16 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
 - **Platform:** Android only, portrait, edge-to-edge. `minSdk 29`.
 - **Dates & times: use kotlinx-datetime** (`kotlin.time.Instant`, `kotlinx.datetime.LocalDate` /
   `YearMonth` / `TimeZone`), **not `java.time`** — the code is KMP-bound and java.time doesn't
-  exist on iOS. The single sanctioned `java.time` site is `ui/format/DateFormats.kt`
-  (locale-aware display formatting; becomes the `LocalizedDateFormatter` port when screens move
-  to `shared`). Core-library desugaring stays enabled in `androidApp`
-  (`isCoreLibraryDesugaringEnabled` + `desugar_jdk_libs`) for that formatter path — API-34+
-  java.time additions like `LocalDate.ofInstant` throw `NoSuchMethodError` on older devices
-  without it (caused the v1.5.0 launch crash).
+  exist on iOS. Locale-aware display formatting goes through the **`LocalizedDateFormatter`
+  port** (`shared/commonMain` `ui/format/LocalizedDateFormatter.kt`): shared screens read it via
+  the `LocalDateFormatter` CompositionLocal, `MainActivity` provides
+  `AndroidLocalizedDateFormatter` (androidApp `ui/format/` — the single sanctioned `java.time` +
+  `DateUtils`/`Formatter` site), and the composition default is the pure-kotlinx
+  `BasicLocalizedDateFormatter` (English names, also the iOS Phase A behavior). Core-library
+  desugaring stays enabled in `androidApp` (`isCoreLibraryDesugaringEnabled` +
+  `desugar_jdk_libs`) for that formatter path — API-34+ java.time additions like
+  `LocalDate.ofInstant` throw `NoSuchMethodError` on older devices without it (caused the
+  v1.5.0 launch crash).
 - **App lock:** optional biometric/device-credential gate (Settings → Security, `appLockEnabled`
   pref). `androidx.biometric` `BiometricPrompt` with `BIOMETRIC_STRONG or DEVICE_CREDENTIAL` (PIN
   fallback, no custom PIN UI). **`MainActivity` is a `FragmentActivity`** — required by
@@ -122,33 +131,42 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
     `BackupViewModel` (period/enable changes) and `HisabakApp` on launch. The passphrase is
     Keystore-stored (non-auth-gated) so encrypted auto-backups run unattended. Passkeys were rejected
     (need WebAuthn PRF + a server).
-- **CMP migration (active):** the app is migrating to **Kotlin Multiplatform + Compose
-  Multiplatform** — plan and PR sequence in `docs/kmp-migration.md` (Phase A: KMP structure with
-  stub iOS actuals, Android stays the only shipping app; Phase B: real iOS). The pure-Android line
-  is frozen on the **`android` branch** (v1.9.0) as a reference. Until the restructure lands, the
-  standing rules hold: keep platform APIs (`Context`, `FragmentActivity`, `BiometricPrompt`,
-  Keystore) out of domain/shared code, keep state/business logic as pure Kotlin, and keep
-  Composables on multiplatform-safe APIs.
+- **CMP migration:** the app is **Kotlin Multiplatform + Compose Multiplatform** — plan and PR
+  sequence in `docs/kmp-migration.md`. **Phase A is complete**: all common code (domain, data,
+  ViewModels, Compose UI) lives in `shared/commonMain`, the iOS targets compile against stub
+  platform bindings (grep `TODO(Phase-B)`), and Android stays the only shipping app. Phase B
+  (real iOS app, multiplatform Nav3, real iOS actuals) is next. The pure-Android line is frozen
+  on the **`android` branch** (v1.9.0) as a reference. The standing rules hold: keep platform
+  APIs (`Context`, `FragmentActivity`, `BiometricPrompt`, Keystore) out of `commonMain`, keep
+  state/business logic as pure Kotlin, and keep Composables on multiplatform-safe APIs.
 
 ---
 
 ## Project Structure
 
-Three Gradle modules (KMP restructure in progress — see `docs/kmp-migration.md`):
+Three Gradle modules (Phase A of the KMP migration is complete — see `docs/kmp-migration.md`):
 
-- **`androidApp/`** — the Android application (`com.android.application`, prod/staging
-  flavors, signing, Firebase). Holds the Android-bound code (Room, DataStore, Keystore,
-  platform services, all Compose UI/ViewModels for now); it shrinks as the migration
-  moves code into `shared`.
+- **`androidApp/`** — a **thin Android shell** (`com.android.application`, prod/staging
+  flavors, signing, Firebase): `MainActivity`, `HisabakApp`, `nav/`, `security/AppLock.kt`,
+  the platform glue (SMS capture, `SystemNotifier`, WorkManager, Keystore stores,
+  `GoogleDriveAuthorizer`/`GoogleDriveBackupRemote`, `AesGcmBackupCrypto`,
+  `FirebaseAnalyticsClient`, `BiometricAuthenticator`, `AppLocale`,
+  `AndroidLocalizedDateFormatter`), the Koin platform bindings (`di/PlatformModule.kt`),
+  and the **thin Routes** that need launchers/Intents (`SmsInboxRoute`, `OnboardingRoute`,
+  `SettingsRoute`, `BackupRoute`, `RestoreRoute`). Everything else is in `shared`.
 - **`shared/`** — the KMP library (`org.jetbrains.kotlin.multiplatform` +
   `com.android.kotlin.multiplatform.library`; android + iosArm64 + iosSimulatorArm64,
-  static `Shared` framework). `commonMain` holds the pure-Kotlin core: `core/common`,
-  `core/domain`, every `feature/*/domain`, the SMS parsing engine, `JsonBackupCodec`,
-  seed/starter data. Source sets: `commonMain` / `androidMain` / `iosMain` +
+  static `Shared` framework). `commonMain` holds the whole app minus the platform glue:
+  domain + data (Room, DataStore), the SMS parsing engine, theme/components/icons/CMP
+  resources, **all feature Screens + ViewModels** (plus the Routes with no platform
+  touchpoints), the Vico charts, and the pure Koin modules (`di/SharedModules.kt`).
+  `iosMain` has the stub platform bindings (`di/IosPlatformModule.kt`,
+  `core/platform/IosStubs.kt`, all `TODO(Phase-B)`) and the `MainViewController`
+  placeholder entry point. Source sets: `commonMain` / `androidMain` / `iosMain` +
   `commonTest` (kotlin-test) / `androidHostTest` (JUnit4).
 - **`testutil/`** — a small KMP library with the shared test fakes
-  (`com.hisabak.testutil`: `TestClock`, `TestData`, `Fake*`), used by both
-  `shared/commonTest` and `androidApp/src/test` (KMP has no multiplatform
+  (`com.hisabak.testutil`: `TestClock`, `TestData`, `Fake*` incl. `FakeBackupCrypto`),
+  used by both `shared/commonTest` and `androidApp/src/test` (KMP has no multiplatform
   test-fixtures yet).
 
 Package layout (unchanged by the migration — files move between modules, packages stay):

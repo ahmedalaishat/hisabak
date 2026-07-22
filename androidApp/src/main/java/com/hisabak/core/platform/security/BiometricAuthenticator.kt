@@ -8,6 +8,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.hisabak.core.domain.security.AuthAvailability
+import com.hisabak.core.domain.security.BiometricAvailability
 
 /**
  * Android glue around [BiometricPrompt]. The allowed authenticators are biometric **or** the device
@@ -16,9 +17,9 @@ import com.hisabak.core.domain.security.AuthAvailability
  * migration this is the Android implementation behind the platform-agnostic [AuthAvailability] /
  * `shouldLock` domain layer.
  */
-class BiometricAuthenticator(private val context: Context) {
+class BiometricAuthenticator(private val context: Context) : BiometricAvailability {
 
-    fun availability(): AuthAvailability =
+    override fun availability(): AuthAvailability =
         when (BiometricManager.from(context).canAuthenticate(ALLOWED)) {
             BiometricManager.BIOMETRIC_SUCCESS -> AuthAvailability.Available
             BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> AuthAvailability.NoneEnrolled

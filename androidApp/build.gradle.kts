@@ -39,10 +39,9 @@ if (requireReleaseSigning && !hasReleaseSigning) {
 
 android {
     namespace = "com.hisabak"
+    // 37: Vico's multiplatform 2.5.x android artifacts require compiling against API 37.
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     defaultConfig {
@@ -159,7 +158,6 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)
-    implementation(libs.vico.compose.m3)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)

@@ -7,9 +7,8 @@ below directly — never hand-write CSS or port JSX.
 
 App theme: `shared/src/commonMain/kotlin/com/hisabak/ui/theme/` · shared components:
 `shared/src/commonMain/kotlin/com/hisabak/ui/components/` (Compose Multiplatform — keep them
-multiplatform-safe) · charts: Vico charts stay in
-`androidApp/src/main/java/com/hisabak/feature/dashboard/presentation/components/` (VicoCharts.kt);
-the pure-Canvas `DonutChart` lives in
+multiplatform-safe) · charts: the Vico charts (`VicoCharts.kt`, on
+`com.patrykandpatrick.vico:multiplatform-m3`) and the pure-Canvas `DonutChart` both live in
 `shared/src/commonMain/kotlin/com/hisabak/feature/dashboard/presentation/components/`.
 
 Wrap UI in `HisabakTheme { … }`. Read finance colors via `HisabakTheme.colors`; standard

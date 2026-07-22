@@ -23,7 +23,8 @@ kotlin {
 
     android {
         namespace = "com.hisabak.shared"
-        compileSdk = 36
+        // 37: Vico's multiplatform 2.5.x android artifacts require compiling against API 37.
+        compileSdk = 37
         minSdk = 29
         // CMP resources ride into the app as Android assets; without this the variant has no
         // assets source and Res lookups crash at runtime with MissingResourceException.
@@ -52,6 +53,12 @@ kotlin {
             api(libs.jetbrains.compose.material3)
             api(libs.jetbrains.lifecycle.runtime.compose)
             api(libs.jetbrains.lifecycle.viewmodel.compose)
+            // api: androidApp's Koin modules extend sharedModules and its Routes use koinViewModel.
+            api(libs.koin.core)
+            api(libs.koin.core.viewmodel)
+            api(libs.koin.compose)
+            api(libs.koin.compose.viewmodel)
+            implementation(libs.vico.multiplatform.m3)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
