@@ -18,6 +18,16 @@ on the plain JVM (no emulator, no Robolectric).
 Reports: `androidApp/build/reports/tests/testProdDebugUnitTest/index.html` and
 `shared/build/reports/tests/testAndroidHostTest/index.html`.
 
+## Where tests live
+
+- **`shared/src/commonTest/`** — tests for everything in `shared/commonMain` (domain
+  entities/use cases, SMS parsing, backup engine policy, seed data). Written with
+  **kotlin-test** (`kotlin.test.Test`, `assertEquals`, `assertFailsWith`, …) so they can
+  also compile for the iOS targets; they run on the JVM via `:shared:testAndroidHostTest`.
+- **`androidApp/src/test/`** — ViewModel tests and JVM/Android-bound tests
+  (`AesGcmBackupCrypto`, `DatabaseDecryptionMigration`, `BaseViewModel`, `compactAmount`,
+  `BackupUseCasesTest` which drives the JVM crypto impl). These stay on **JUnit4**.
+
 ## What's covered
 
 | Area | Tests |
@@ -33,18 +43,29 @@ Reports: `androidApp/build/reports/tests/testProdDebugUnitTest/index.html` and
 | Misc use cases (find-or-create brand, reassign, set limit) | `*/domain/usecase/*Test` |
 | ViewModels (validation, create/update, list actions) | `*/presentation/**/*ViewModelTest` |
 
-## How it's wired (`src/test/java/com/hisabak/testutil/`)
+## How it's wired (the `:testutil` KMP module)
+
+The shared fakes live in the **`:testutil`** module
+(`testutil/src/commonMain/kotlin/com/hisabak/testutil/`) so both `shared/commonTest`
+and `androidApp/src/test` can use them (KMP has no multiplatform test-fixtures yet).
+They are plain Kotlin — no JUnit — so they compile for every target.
 
 - **`TestClock`** — a `Clock` with a fixed, mutable instant (UTC) so time-dependent
   logic is deterministic.
-- **`MainDispatcherRule`** — swaps `Dispatchers.Main` for a `TestDispatcher` so
-  `viewModelScope` coroutines are controllable. Use `advanceUntilIdle()` after sending
-  intents.
 - **`FakeRepositories.kt`** — in-memory, `StateFlow`-backed fakes for every repository
-  interface, plus `RecordingNotifier` and `FakeCategoryLimitAlertDao`. Prefer these over
-  a mocking framework; build the real use case around a fake repo.
+  interface, plus `RecordingNotifier` and `FakeCategoryLimitAlertStore`. Prefer these
+  over a mocking framework; build the real use case around a fake repo.
 - **`TestData.kt`** — terse builders (`brand()`, `category()`, `transaction()`, …) with
   sensible defaults.
+
+Two helpers stay in `androidApp/src/test/java/com/hisabak/testutil/` because they are
+JVM/Android-bound:
+
+- **`MainDispatcherRule`** — a JUnit4 `TestWatcher` that swaps `Dispatchers.Main` for a
+  `TestDispatcher` so `viewModelScope` coroutines are controllable. Use
+  `advanceUntilIdle()` after sending intents.
+- **`FakeDriveAuthorizer`** — the `DriveAuthorizer` contract still references
+  `android.content.Intent` (until the PR 7 contract redesign).
 
 ### Notes
 

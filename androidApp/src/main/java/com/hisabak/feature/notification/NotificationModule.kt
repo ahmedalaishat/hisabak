@@ -1,6 +1,8 @@
 package com.hisabak.feature.notification
 
+import com.hisabak.feature.notification.data.RoomCategoryLimitAlertStore
 import com.hisabak.feature.notification.data.RoomNotificationRepository
+import com.hisabak.feature.notification.domain.CategoryLimitAlertStore
 import com.hisabak.feature.notification.domain.CategoryLimitMonitor
 import com.hisabak.feature.notification.domain.NotificationRepository
 import com.hisabak.feature.notification.domain.NotificationStrings
@@ -18,6 +20,7 @@ val notificationModule = module {
     single<NotificationRepository> { RoomNotificationRepository(dao = get()) }
     single { SystemNotifier(androidContext()) } bind Notifier::class
     single<NotificationStrings> { AndroidNotificationStrings(androidContext()) }
+    single<CategoryLimitAlertStore> { RoomCategoryLimitAlertStore(dao = get()) }
 
     single {
         CategoryLimitMonitor(
@@ -26,7 +29,7 @@ val notificationModule = module {
             categories = get(),
             limits = get(),
             notifications = get(),
-            alertDao = get(),
+            alertStore = get(),
             systemNotifier = get(),
             currency = get(),
             clock = get(),
