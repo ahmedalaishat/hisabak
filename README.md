@@ -141,6 +141,11 @@ What's next, roughly in order:
 
 ## 🏗️ Architecture
 
+Three Gradle modules — **`shared`** (Kotlin Multiplatform: the domain layer, pure Kotlin,
+compiles for Android and iOS), **`androidApp`** (the Android app: UI, storage, platform
+integrations), and **`testutil`** (shared test fakes) — with the ongoing KMP migration moving
+more of the app into `shared` ([migration plan](docs/kmp-migration.md)).
+
 Feature-by-layer, with clean architecture inside each feature:
 
 ```
