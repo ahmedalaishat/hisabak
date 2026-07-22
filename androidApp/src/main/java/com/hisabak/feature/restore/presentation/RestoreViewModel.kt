@@ -1,10 +1,10 @@
 package com.hisabak.feature.restore.presentation
 
-import android.content.Intent
-import android.content.IntentSender
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hisabak.core.data.backup.AuthorizeOutcome
+import com.hisabak.core.data.backup.ConsentRequest
+import com.hisabak.core.data.backup.ConsentResult
 import com.hisabak.core.data.backup.DriveAuthorizer
 import com.hisabak.core.domain.AppPreferences
 import com.hisabak.core.domain.analytics.Analytics
@@ -52,19 +52,21 @@ class RestoreViewModel(
     private val _state = MutableStateFlow(RestoreUiState())
     val state: StateFlow<RestoreUiState> = _state.asStateFlow()
 
-    fun connect(onNeedConsent: (IntentSender) -> Unit) {
+    fun connect(onNeedConsent: (ConsentRequest) -> Unit) {
         viewModelScope.launch {
             when (val outcome = authorizer.authorize()) {
                 is AuthorizeOutcome.Granted -> onConnected(outcome.account)
-                is AuthorizeOutcome.NeedsConsent -> onNeedConsent(outcome.intentSender)
-                AuthorizeOutcome.Failed -> _state.update { it.copy(message = RestoreMessage.Failed(BackupError.AuthRequired)) }
+                is AuthorizeOutcome.NeedsConsent -> onNeedConsent(outcome.request)
+                AuthorizeOutcome.Unavailable,
+                AuthorizeOutcome.Failed,
+                -> _state.update { it.copy(message = RestoreMessage.Failed(BackupError.AuthRequired)) }
             }
         }
     }
 
-    fun onConsentResult(data: Intent?) {
+    fun onConsentResult(result: ConsentResult?) {
         viewModelScope.launch {
-            when (val outcome = authorizer.resultFrom(data)) {
+            when (val outcome = authorizer.resultFrom(result)) {
                 is AuthorizeOutcome.Granted -> onConnected(outcome.account)
                 else -> _state.update { it.copy(message = RestoreMessage.Failed(BackupError.AuthRequired)) }
             }

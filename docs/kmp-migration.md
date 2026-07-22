@@ -120,7 +120,7 @@ Packages keep `com.hisabak.*` names so moves don't ripple through imports.
   moved to `shared` androidMain.
 - [x] **PR 6 — DataStore/preferences → commonMain**: `expect` store-path provider (android
   `filesDir`, iOS Documents dir). `AppLocale` stays androidApp.
-- [ ] **PR 7 — DriveAuthorizer contract redesign + Koin split**: remove the `Intent`/`IntentSender`
+- [x] **PR 7 — DriveAuthorizer contract redesign** (Koin `platformModule()` split deferred to PR 9, where the ViewModel moves make the platform boundary real): remove the `Intent`/`IntentSender`
   leak — `NeedsConsent` carries an opaque common `ConsentRequest`; an android-side
   `DriveConsentLauncher` in androidApp does the IntentSender launch; `resultFrom(Intent?)` moves
   into the android impl; add `AuthorizeOutcome.Unavailable`. Backup/Restore VMs + Routes reworked
