@@ -36,5 +36,5 @@ jobs:
           appId: 1:469916556187:android:bb6a22afa66dde1b80df3e
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           groups: qa
-          file: app/build/outputs/apk/staging/release/app-staging-release.apk
+          file: androidApp/build/outputs/apk/staging/release/androidApp-staging-release.apk
           releaseNotes: ${{ github.event.head_commit.message || format('Manual staging build {0}', github.sha) }}

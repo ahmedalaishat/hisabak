@@ -73,7 +73,7 @@ release-ready before starting. Do this from `develop` once it holds everything f
    - MINOR — new, backward-compatible features (the usual bump here).
    - MAJOR — breaking changes / big reworks.
 
-2. **Bump the version** in `app/build.gradle.kts` → `defaultConfig`:
+2. **Bump the version** in `androidApp/build.gradle.kts` → `defaultConfig`:
    - `versionName = "X.Y.Z"`
    - `versionCode` += 1 (must increase every release).
 
@@ -114,7 +114,7 @@ release-ready before starting. Do this from `develop` once it holds everything f
 
 7. **Verify**: `git tag` shows the new tag on `main`. Pushing the tag triggers `release.yml`,
    which builds the **publishable** prod artifact with `-PrequireReleaseSigning` (release-signed;
-   the flag makes a missing keystore a hard failure). A local `./gradlew :app:assembleProdRelease`
+   the flag makes a missing keystore a hard failure). A local `./gradlew :androidApp:assembleProdRelease`
    is only a smoke build — it's debug-signed unless a release keystore is configured, so don't
    ship it. Optionally install and smoke-test that local build.
 

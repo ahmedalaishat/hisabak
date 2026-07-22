@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.hisabak.core.platform.PlatformTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-07-22T07:50:57.565Z" hostname="AEADLT46481.local" time="0.012">
+  <properties/>
+  <testcase name="platform name is not blank" classname="com.hisabak.core.platform.PlatformTest" time="0.01"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

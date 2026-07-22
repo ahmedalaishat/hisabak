@@ -166,7 +166,7 @@ template parser, budget/limit logic, and ViewModel state) that run on the plain 
 emulator needed:
 
 ```bash
-./gradlew testProdDebugUnitTest
+./gradlew unitTests
 ```
 
 Quality is enforced, not just hoped for:

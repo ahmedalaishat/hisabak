@@ -21,7 +21,7 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
 - **State:** ViewModel + `collectAsStateWithLifecycle`
 - **Charts:** Vico
 - **Crash reporting:** Firebase Crashlytics. Wired via the `google-services` + `firebase-crashlytics`
-  Gradle plugins (config in `app/google-services.json`, project `hisabak-finance-tracking`).
+  Gradle plugins (config in `androidApp/google-services.json`, project `hisabak-finance-tracking`).
   Collection is gated on `!BuildConfig.DEBUG` in `HisabakApp` — **on in release, off in debug** —
   so local runs never reach the dashboard. Reports carry no financial/personal data; the
   privacy policy (`docs/privacy.html`) discloses it.
@@ -36,7 +36,7 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   `MainActivity` (single-Activity Compose app, so Firebase's auto screen tracking doesn't fire).
 - **Storage:** Room (SQLite) — `Room*Repository` impls per feature's `data/`, entities/DAOs/
   mappers in `data/local/`, and the database in `core/data/local/` (`HisabakDatabase`).
-  The Room schema is exported to `app/schemas/` (committed); bump the DB version and add a
+  The Room schema is exported to `androidApp/schemas/` (committed); bump the DB version and add a
   real `Migration` for any entity change — **release builds don't destructively fall back**
   (debug builds do, for fast iteration).
 - **At-rest protection:** the database is plain (unencrypted) SQLite, relying on Android's
@@ -115,6 +115,18 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
 ---
 
 ## Project Structure
+
+Two Gradle modules (KMP restructure in progress — see `docs/kmp-migration.md`):
+
+- **`androidApp/`** — the Android application (`com.android.application`, prod/staging
+  flavors, signing, Firebase). Today it still holds nearly all code; it shrinks as the
+  migration moves code into `shared`.
+- **`shared/`** — the KMP library (`org.jetbrains.kotlin.multiplatform` +
+  `com.android.kotlin.multiplatform.library`; android + iosArm64 + iosSimulatorArm64,
+  static `Shared` framework). Source sets: `commonMain` / `androidMain` / `iosMain` +
+  `commonTest` (kotlin-test) / `androidHostTest` (JUnit4).
+
+Package layout (unchanged by the migration — files move between modules, packages stay):
 
 ```
 com.hisabak
@@ -304,12 +316,12 @@ Each component has a `.prompt.md` (what/when + usage) and `.d.ts` (props) — re
 
 JVM unit tests guard the domain logic and ViewModels. Full guide: `docs/testing.md`.
 
-- Run `./gradlew testProdDebugUnitTest`. **Keep the suite green before finishing any change.**
+- Run `./gradlew unitTests`. **Keep the suite green before finishing any change.**
   A Stop hook (`.claude/settings.json` → `.claude/hooks/run-tests.sh`) runs this
   automatically whenever Kotlin files changed and blocks on failure.
 - **New feature → new tests.** When you add or change a use case, repository, ViewModel,
   or any business logic, add or update its test **in the same change**.
-- Tests live in `app/src/test/…` mirroring `main`. Reuse the harness in
+- Tests live in `androidApp/src/test/…` mirroring `main`. Reuse the harness in
   `com.hisabak.testutil` (`TestClock`, `MainDispatcherRule`, `Fake*` repositories,
   `TestData`) rather than a mocking framework; build the real use case around a fake repo.
 - Currently out of scope (no tests required): Compose UI, Room DAOs, navigation.

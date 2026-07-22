@@ -79,11 +79,11 @@ Packages keep `com.hisabak.*` names so moves don't ripple through imports.
 ## PR sequence (each leaves develop green + releasable)
 
 - [x] **Step 0 (not a PR)** — `android` reference branch created from `ee44969` (v1.9.0) and pushed.
-- [ ] **PR 0 — Dead-code cleanup + this plan doc** *(low risk)*: delete `feature/metrics/` +
+- [x] **PR 0 — Dead-code cleanup + this plan doc** (#90) *(low risk)*: delete `feature/metrics/` +
   `feature/user/`; document the migration + the `android` branch.
-- [ ] **PR 1 — Toolchain bump on current structure** *(risky, isolated)*: Kotlin 2.4.10, KSP, Room,
+- [x] **PR 1 — Toolchain bump on current structure** (#91) *(risky, isolated)*: Kotlin 2.4.10, KSP, Room,
   coroutines/serialization bumps as required. No file moves. Full suite + staging build.
-- [ ] **PR 2 — Restructure** *(mechanical but wide)*: `git mv app androidApp`; create `shared`
+- [x] **PR 2 — Restructure** *(mechanical but wide)*: `git mv app androidApp`; create `shared`
   (android + iOS targets, wizard-style `Platform` expect/actual sample, empty iosMain from day
   one); root aggregate task `unitTests` (`:androidApp:testProdDebugUnitTest` +
   `:shared:testAndroidHostTest` — verify the exact AGP-generated host-test task name). Same-PR
