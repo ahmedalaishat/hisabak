@@ -104,9 +104,13 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
     `BackupViewModel` (period/enable changes) and `HisabakApp` on launch. The passphrase is
     Keystore-stored (non-auth-gated) so encrypted auto-backups run unattended. Passkeys were rejected
     (need WebAuthn PRF + a server).
-- **CMP-bound:** the app is planned to migrate to **Compose Multiplatform**. Keep platform APIs
-  (`Context`, `FragmentActivity`, `BiometricPrompt`, Keystore) out of domain/shared code, keep
-  state/business logic as pure Kotlin, and keep Composables on multiplatform-safe APIs.
+- **CMP migration (active):** the app is migrating to **Kotlin Multiplatform + Compose
+  Multiplatform** — plan and PR sequence in `docs/kmp-migration.md` (Phase A: KMP structure with
+  stub iOS actuals, Android stays the only shipping app; Phase B: real iOS). The pure-Android line
+  is frozen on the **`android` branch** (v1.9.0) as a reference. Until the restructure lands, the
+  standing rules hold: keep platform APIs (`Context`, `FragmentActivity`, `BiometricPrompt`,
+  Keystore) out of domain/shared code, keep state/business logic as pure Kotlin, and keep
+  Composables on multiplatform-safe APIs.
 
 ---
 

@@ -107,6 +107,9 @@ Everything below is built and shipping today:
 
 What's next, roughly in order:
 
+- [ ] 📱 **iOS app (Kotlin Multiplatform)** — the codebase is being restructured into KMP +
+  Compose Multiplatform ([migration plan](docs/kmp-migration.md)); the pure-Android line is
+  preserved on the [`android` branch](../../tree/android).
 - [ ] 🛎️ **Notification capture** — read bank transaction notifications to capture spending without
   the SMS permission (works in the Play build).
 - [ ] 💱 **Multi-currency** — track transactions and balances across more than one currency.
