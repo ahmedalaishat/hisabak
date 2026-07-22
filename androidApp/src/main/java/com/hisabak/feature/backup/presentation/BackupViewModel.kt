@@ -1,11 +1,11 @@
 package com.hisabak.feature.backup.presentation
 
-import android.content.Intent
-import android.content.IntentSender
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hisabak.core.common.Clock
 import com.hisabak.core.data.backup.AuthorizeOutcome
+import com.hisabak.core.data.backup.ConsentRequest
+import com.hisabak.core.data.backup.ConsentResult
 import com.hisabak.core.data.backup.DriveAuthorizer
 import com.hisabak.core.domain.AppPreferences
 import com.hisabak.core.domain.analytics.Analytics
@@ -157,19 +157,21 @@ class BackupViewModel(
     }
 
     /** Begins the account connect flow; [onNeedConsent] launches the consent UI for a result. */
-    fun connect(onNeedConsent: (IntentSender) -> Unit) {
+    fun connect(onNeedConsent: (ConsentRequest) -> Unit) {
         viewModelScope.launch {
             when (val outcome = authorizer.authorize()) {
                 is AuthorizeOutcome.Granted -> connected(outcome.account)
-                is AuthorizeOutcome.NeedsConsent -> onNeedConsent(outcome.intentSender)
-                AuthorizeOutcome.Failed -> fail(BackupError.AuthRequired)
+                is AuthorizeOutcome.NeedsConsent -> onNeedConsent(outcome.request)
+                AuthorizeOutcome.Unavailable,
+                AuthorizeOutcome.Failed,
+                -> fail(BackupError.AuthRequired)
             }
         }
     }
 
-    fun onConsentResult(data: Intent?) {
+    fun onConsentResult(result: ConsentResult?) {
         viewModelScope.launch {
-            when (val outcome = authorizer.resultFrom(data)) {
+            when (val outcome = authorizer.resultFrom(result)) {
                 is AuthorizeOutcome.Granted -> connected(outcome.account)
                 else -> fail(BackupError.AuthRequired)
             }
