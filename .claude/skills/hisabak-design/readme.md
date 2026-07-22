@@ -93,6 +93,6 @@ Each component dir has `<Name>.jsx` + `<Name>.d.ts` + `<Name>.prompt.md`, and on
 
 **Skill** — `SKILL.md` (Agent-Skills compatible).
 
-**Jetpack Compose (source of truth)** — these tokens are already translated into the Android app and live there, not in this skill. See `app/src/main/java/com/hisabak/ui/theme/` (`Color.kt`, `Type.kt`, `Shape.kt`, `Motion.kt`, `HisabakTheme.kt`) and shared components in `ui/components/`. For production UI, use those directly; **`compose-bridge.md`** in this skill maps each token/component here to its Kotlin counterpart. The HTML/CSS kit is for throwaway visual mockups only. The repo-root `CLAUDE.md` carries the design rules for Claude Code working in the app codebase.
+**Jetpack Compose (source of truth)** — these tokens are already translated into the Android app and live there, not in this skill. See `androidApp/src/main/java/com/hisabak/ui/theme/` (`Color.kt`, `Type.kt`, `Shape.kt`, `Motion.kt`, `HisabakTheme.kt`) and shared components in `ui/components/`. For production UI, use those directly; **`compose-bridge.md`** in this skill maps each token/component here to its Kotlin counterpart. The HTML/CSS kit is for throwaway visual mockups only. The repo-root `CLAUDE.md` carries the design rules for Claude Code working in the app codebase.
 
 > Namespace for `@dsCard` HTML and UI-kit screens: `window.HisabakDesignSystem_aa2548`.

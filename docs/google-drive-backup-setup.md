@@ -25,7 +25,7 @@ In the [Google Cloud Console](https://console.cloud.google.com/) for the project
 
 Get the SHA-1 with:
 ```bash
-./gradlew :app:signingReport     # SHA1 per variant
+./gradlew :androidApp:signingReport     # SHA1 per variant
 ```
 **Debug builds are signed with the release keystore** when one is configured (`keystore.properties`),
 so `prodDebug` and `prodRelease` share the **same SHA-1** — register that one fingerprint and both
@@ -34,7 +34,7 @@ debug keystore; register that SHA-1 instead.)
 
 ## 4. (If using google-services.json) refresh it
 Adding OAuth clients  doesn't require app code changes, but if you regenerate
-`app/google-services.json` from Firebase, keep the existing Firebase config intact.
+`androidApp/google-services.json` from Firebase, keep the existing Firebase config intact.
 
 ## Verify
 Build a debug variant on a device/emulator signed with a registered SHA-1, sign in with a **test

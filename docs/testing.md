@@ -7,11 +7,16 @@ on the plain JVM (no emulator, no Robolectric).
 ## Running
 
 ```bash
-./gradlew testProdDebugUnitTest        # run the unit suite
-./gradlew testProdDebugUnitTest --tests "com.hisabak.feature.*"   # a subset
+./gradlew unitTests                    # run the whole unit suite (androidApp + shared)
+./gradlew :androidApp:testProdDebugUnitTest --tests "com.hisabak.feature.*"   # a subset
 ```
 
-Report: `app/build/reports/tests/testProdDebugUnitTest/index.html`.
+`unitTests` is a root aggregate task: `:androidApp:testProdDebugUnitTest` plus
+`:shared:testAndroidHostTest` (which runs the KMP module's `commonTest` +
+`androidHostTest` sources on the JVM).
+
+Reports: `androidApp/build/reports/tests/testProdDebugUnitTest/index.html` and
+`shared/build/reports/tests/testAndroidHostTest/index.html`.
 
 ## What's covered
 

@@ -28,12 +28,12 @@ durable anchors that make that fast; the checks themselves come from whatever yo
 |---|---|
 | Package (prod) | `com.hisabak` |
 | Package (staging) | `com.hisabak.staging` — labeled "Hisabak STG" |
-| Primary build | **prod debug** — `./gradlew :app:installProdDebug` |
-| SMS-broadcast build | **staging** — `./gradlew :app:installStagingDebug` (prod is SMS-free) |
+| Primary build | **prod debug** — `./gradlew :androidApp:installProdDebug` |
+| SMS-broadcast build | **staging** — `./gradlew :androidApp:installStagingDebug` (prod is SMS-free) |
 | Launcher | `com.hisabak/.MainActivity` |
 | Bottom-nav tabs | Dashboard · Transactions · SMS · Manage · Settings |
 | Capture entry point | `com.hisabak/.feature.sms.platform.CaptureActivity` (exported; `ACTION_SEND` + `ACTION_PROCESS_TEXT`, `text/plain`) |
-| Bank-SMS templates | `app/src/main/java/com/hisabak/feature/sms/domain/DefaultSmsTemplates.kt` (e.g. `Purchase of AED {amount} with {card} at {brand},`) |
+| Bank-SMS templates | `androidApp/src/main/java/com/hisabak/feature/sms/domain/DefaultSmsTemplates.kt` (e.g. `Purchase of AED {amount} with {card} at {brand},`) |
 | Emulators (AVDs) | `Pixel_10_Pro`, `Pixel_6_Pro_Rooted` |
 
 ## Get a handle
@@ -52,7 +52,7 @@ until [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1"
 
 ```bash
 adb uninstall com.hisabak >/dev/null 2>&1   # ignore "not installed"
-./gradlew :app:installProdDebug
+./gradlew :androidApp:installProdDebug
 adb shell am start -n com.hisabak/.MainActivity
 ```
 

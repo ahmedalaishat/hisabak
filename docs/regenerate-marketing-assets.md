@@ -17,7 +17,7 @@ app (this is a public repo; capturing real data would leak it).
 ```bash
 S=emulator-5554
 # Staging build (SEED_DATA=true). Pin to the emulator so it never hits a physical device:
-./gradlew :app:assembleStagingDebug
+./gradlew :androidApp:assembleStagingDebug
 adb -s $S install -r app/build/outputs/apk/staging/debug/app-staging-debug.apk
 
 adb -s $S shell cmd uimode night yes                          # dark theme

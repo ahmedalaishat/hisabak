@@ -23,5 +23,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Hisabak"
-include(":app")
+include(":androidApp")
+include(":shared")
  

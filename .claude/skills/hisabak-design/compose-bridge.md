@@ -5,9 +5,9 @@ CSS tokens and React/HTML components in this skill are the *spec and mockup kit*
 maps each one to the real Kotlin it became. When building production UI, use the Kotlin
 below directly — never hand-write CSS or port JSX.
 
-App theme: `app/src/main/java/com/hisabak/ui/theme/` · shared components:
-`app/src/main/java/com/hisabak/ui/components/` · charts:
-`app/src/main/java/com/hisabak/feature/dashboard/presentation/components/`.
+App theme: `androidApp/src/main/java/com/hisabak/ui/theme/` · shared components:
+`androidApp/src/main/java/com/hisabak/ui/components/` · charts:
+`androidApp/src/main/java/com/hisabak/feature/dashboard/presentation/components/`.
 
 Wrap UI in `HisabakTheme { … }`. Read finance colors via `HisabakTheme.colors`; standard
 roles via `MaterialTheme.colorScheme`. Never hardcode hex.

@@ -41,7 +41,7 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           ./gradlew bundleProdRelease assembleProdRelease --no-daemon -PrequireReleaseSigning
-          cp app/build/outputs/apk/prod/release/app-prod-release.apk "hisabak-${{ github.ref_name }}.apk"
+          cp androidApp/build/outputs/apk/prod/release/androidApp-prod-release.apk "hisabak-${{ github.ref_name }}.apk"
 
       - name: Generate Play release notes from CHANGELOG
         run: ./scripts/changelog-to-whatsnew.sh
@@ -51,7 +51,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.hisabak
-          releaseFiles: app/build/outputs/bundle/prodRelease/app-prod-release.aab
+          releaseFiles: androidApp/build/outputs/bundle/prodRelease/androidApp-prod-release.aab
           tracks: internal
           status: completed
           whatsNewDirectory: distribution/whatsnew
