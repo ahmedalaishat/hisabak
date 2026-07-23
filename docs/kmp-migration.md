@@ -295,10 +295,18 @@ simulators); CI keeps the compile + app-build gates.
   dual-form plurals. SMS shape confirmed: manual paste/share only, matching the Android Play
   build (`MANUAL_PASTE` deliberately doesn't notify). `TODO(Phase-B)` audit → only
   `NoopAnalytics` remains (B6).
-- [ ] **PR B6 — Firebase on iOS + app icon**: Crashlytics/Analytics via the gitlive KMP
-  wrappers **or** keep the no-op (decision pending). ~~Real 1024pt app icon~~ — done (#109):
-  rendered full-bleed from the `docs/app-icon.svg` geometry via a CoreGraphics script,
-  replacing the wizard placeholder from B1.
+- [x] **PR B6 — Firebase on iOS + app icon**: **Crashlytics-only, natively in Swift** —
+  decided against the gitlive KMP wrappers (a community layer in the Kotlin dependency matrix
+  for little gain; platform SDKs stay in the platform layer, like the CryptoKit bridge).
+  `firebase-ios-sdk` via SPM, `FirebaseApp.configure()` guarded on `GoogleService-Info.plist`
+  presence in `iOSApp.init` (collection off in debug / on in release — Android parity;
+  `FirebaseCrashlyticsCollectionEnabled=false` in Info.plist as the pre-runtime default), and a
+  symbol-upload phase that no-ops without the plist. Event analytics stays the `NoopAnalytics`
+  on iOS deliberately — revisit (gitlive) when iOS has real users and a question to answer.
+  The plist comes from registering an iOS app (`com.hisabak`) in the Firebase console — it is
+  committed like androidApp's google-services.json (not a secret, ships in the bundle).
+  App icon done (#109): rendered full-bleed from the `docs/app-icon.svg` geometry via a
+  CoreGraphics script, replacing the wizard placeholder from B1.
 - [ ] **PR B7 — App Store setup** *(user-gated: needs the Apple Developer account)*: signing
   (`TEAM_ID`), privacy manifest + nutrition labels, launch screen, TestFlight lane in CI.
 
