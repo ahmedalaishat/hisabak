@@ -296,7 +296,9 @@ simulators); CI keeps the compile + app-build gates.
   build (`MANUAL_PASTE` deliberately doesn't notify). `TODO(Phase-B)` audit → only
   `NoopAnalytics` remains (B6).
 - [ ] **PR B6 — Firebase on iOS + app icon**: Crashlytics/Analytics via the gitlive KMP
-  wrappers **or** keep the no-op (decide then); real 1024pt app icon.
+  wrappers **or** keep the no-op (decision pending). ~~Real 1024pt app icon~~ — done (#109):
+  rendered full-bleed from the `docs/app-icon.svg` geometry via a CoreGraphics script,
+  replacing the wizard placeholder from B1.
 - [ ] **PR B7 — App Store setup** *(user-gated: needs the Apple Developer account)*: signing
   (`TEAM_ID`), privacy manifest + nutrition labels, launch screen, TestFlight lane in CI.
 
