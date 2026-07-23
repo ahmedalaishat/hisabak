@@ -183,7 +183,7 @@ progress — see `docs/kmp-migration.md`):
   shell whose `ContentView` wraps `MainViewController()` from the static `Shared` framework,
   built by the `embedAndSignAppleFrameworkForXcode` script phase. Config in
   `iosApp/Configuration/Config.xcconfig` (bundle id `com.hisabak`, `TEAM_ID` empty — simulator
-  only until App Store setup). Build headlessly with
+  only until App Store setup; `GOOGLE_OAUTH_CLIENT_ID` for Drive backup, blank = unavailable). Build headlessly with
   `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17'`.
 
 Package layout (unchanged by the migration — files move between modules, packages stay):

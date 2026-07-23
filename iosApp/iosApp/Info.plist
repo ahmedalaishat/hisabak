@@ -22,5 +22,9 @@
 	<array>
 		<string>fetch</string>
 	</array>
+	<!-- iOS OAuth client id for Google Drive backup (docs/google-drive-backup-setup.md §5).
+	     Set GOOGLE_OAUTH_CLIENT_ID in Configuration/Config.xcconfig; blank = Drive unavailable. -->
+	<key>GoogleOAuthClientID</key>
+	<string>$(GOOGLE_OAUTH_CLIENT_ID)</string>
 </dict>
 </plist>
