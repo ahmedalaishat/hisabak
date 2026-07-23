@@ -63,7 +63,8 @@ class IosDriveAuthorizer : DriveAuthorizer {
     private var cachedTokenExpiresAtMillis: Long = 0
 
     private val clientId: String? =
-        NSBundle.mainBundle.objectForInfoDictionaryKey("GoogleOAuthClientID") as? String
+        (NSBundle.mainBundle.objectForInfoDictionaryKey("GoogleOAuthClientID") as? String)
+            ?.takeIf { it.isNotBlank() }
 
     override suspend fun authorize(): AuthorizeOutcome {
         val client = clientId ?: return AuthorizeOutcome.Unavailable
