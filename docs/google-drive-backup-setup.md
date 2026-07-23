@@ -46,3 +46,22 @@ appears in that account's Drive App Data (not visible in the normal Drive UI).
   (the encryption passphrase is stored separately, Keystore-encrypted).
 - Revoking access in the Google account settings invalidates backups' authorization; the app will
   prompt to reconnect.
+
+## 5. iOS client (Phase B)
+
+The iOS app authorizes with **ASWebAuthenticationSession + PKCE** (no Play Services, no client
+secret). One-time setup in the same GCP project:
+
+1. **APIs & Services → Credentials → Create credentials → OAuth client ID → iOS.**
+   Bundle ID: `com.hisabak`. (No SHA-1 — iOS clients key off the bundle id.)
+2. Copy the client id (`NNNN-xxxx.apps.googleusercontent.com`) into
+   `iosApp/iosApp/Info.plist` under the key **`GoogleOAuthClientID`**.
+   Until the key exists, the app reports Drive as unavailable ("Connect a Google account"
+   stays inert) — everything else about backup still works.
+3. The OAuth redirect uses the **reversed client id** as a custom URL scheme
+   (`com.googleusercontent.apps.NNNN-xxxx:/oauth2redirect`); ASWebAuthenticationSession
+   handles the callback directly, so no CFBundleURLTypes entry is needed.
+
+The refresh token is stored in the iOS Keychain; access tokens are refreshed silently per
+Drive call. Backups written by either platform restore on the other — the encrypted format
+is identical (verified by `tools/crypto-interop/run.sh`).

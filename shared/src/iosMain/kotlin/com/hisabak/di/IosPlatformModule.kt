@@ -5,6 +5,12 @@ package com.hisabak.di
 import com.hisabak.core.common.AppConfig
 import com.hisabak.core.data.backup.DataStoreBackupAccountStore
 import com.hisabak.core.data.backup.DriveAuthorizer
+import com.hisabak.core.data.backup.GcmCipher
+import com.hisabak.core.data.backup.IosAesGcmBackupCrypto
+import com.hisabak.core.data.backup.IosAutoBackupScheduler
+import com.hisabak.core.data.backup.IosDriveAuthorizer
+import com.hisabak.core.data.backup.IosDriveBackupRemote
+import com.hisabak.core.data.backup.IosKeychainBackupPassphraseStore
 import com.hisabak.core.data.local.hisabakDatabaseBuilder
 import com.hisabak.core.data.preferences.APP_PREFS_STORE
 import com.hisabak.core.data.preferences.AppPreferencesDataStore
@@ -19,16 +25,11 @@ import com.hisabak.core.domain.backup.BackupPassphraseStore
 import com.hisabak.core.domain.backup.BackupRemote
 import com.hisabak.core.domain.security.BiometricAvailability
 import com.hisabak.core.platform.NoopAnalytics
-import com.hisabak.core.platform.NoopAutoBackupScheduler
-import com.hisabak.core.platform.UnavailableDriveAuthorizer
 import com.hisabak.core.platform.security.IosBiometricAuthenticator
-import com.hisabak.feature.notification.platform.IosNotificationStrings
-import com.hisabak.feature.notification.platform.IosNotifier
-import com.hisabak.core.platform.UnsupportedBackupCrypto
-import com.hisabak.core.platform.UnsupportedBackupPassphraseStore
-import com.hisabak.core.platform.UnsupportedBackupRemote
 import com.hisabak.feature.notification.domain.NotificationStrings
 import com.hisabak.feature.notification.domain.Notifier
+import com.hisabak.feature.notification.platform.IosNotificationStrings
+import com.hisabak.feature.notification.platform.IosNotifier
 import kotlin.experimental.ExperimentalNativeApi
 import kotlin.native.Platform
 import org.koin.core.module.Module
@@ -42,11 +43,11 @@ private fun bundleBuildNumber(): Int =
         ?.toIntOrNull() ?: 0
 
 /**
- * iOS bindings for every platform port androidApp binds natively. Database, DataStore, the
- * notifier, and the biometric availability check are real (tier 1); the backup ports remain
- * Phase A stubs — see `core/platform/IosStubs`. TODO(Phase-B): tier 2 (backup) in PR B4.
+ * iOS bindings for every platform port androidApp binds natively. Everything is real except
+ * [Analytics] (no-op pending the B6 Firebase decision). [gcmCipher] is the Swift CryptoKit
+ * bridge injected at startup — AES-GCM is the one primitive Kotlin/Native can't reach.
  */
-val iosPlatformModule: Module = module {
+fun iosPlatformModule(gcmCipher: GcmCipher): Module = module {
     single {
         AppConfig(
             seedData = false,
@@ -65,14 +66,14 @@ val iosPlatformModule: Module = module {
     single<Analytics> { NoopAnalytics() }
     single<Notifier> { IosNotifier() }
     single<NotificationStrings> { IosNotificationStrings() }
-    single<AutoBackupScheduler> { NoopAutoBackupScheduler() }
+    single<AutoBackupScheduler> { IosAutoBackupScheduler() }
     single<BiometricAvailability> { IosBiometricAuthenticator() }
 
-    single<BackupCrypto> { UnsupportedBackupCrypto() }
-    single<BackupPassphraseStore> { UnsupportedBackupPassphraseStore() }
+    single<BackupCrypto> { IosAesGcmBackupCrypto(gcmCipher) }
+    single<BackupPassphraseStore> { IosKeychainBackupPassphraseStore() }
     single<BackupAccountStore> {
         DataStoreBackupAccountStore(preferencesDataStore(BACKUP_ACCOUNT_STORE))
     }
-    single<DriveAuthorizer> { UnavailableDriveAuthorizer() }
-    single<BackupRemote> { UnsupportedBackupRemote() }
+    single<DriveAuthorizer> { IosDriveAuthorizer() }
+    single<BackupRemote> { IosDriveBackupRemote(get()) }
 }

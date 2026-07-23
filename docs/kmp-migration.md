@@ -270,10 +270,20 @@ simulators); CI keeps the compile + app-build gates.
   import → snackbar + dashboard uncategorized card, data survives a simulator reboot,
   localized SMS timestamps, app-lock toggle correctly gated. Face ID prompt itself is not
   headlessly testable (simctl has no biometric enrollment control).
-- [ ] **PR B4 — iOS actuals, tier 2 (backup)**: Keychain passphrase/account stores, AES-GCM
-  `BackupCrypto` (CommonCrypto/CryptoKit — must round-trip with the Android format),
-  `BackupRemote` over `NSURLSession`, Google OAuth via `ASWebAuthenticationSession`,
-  auto-backup via `BGTaskScheduler`.
+- [x] **PR B4 — iOS actuals, tier 2 (backup)**: `IosAesGcmBackupCrypto` keeps the whole HSBK
+  file format + PBKDF2 (CommonCrypto — `platform.CoreCrypto` in K/N) in Kotlin and delegates
+  only AES-256-GCM to a Swift `CryptoKitGcmCipher` injected via `startIosApp(gcmCipher)`
+  (CryptoKit is Swift-only; no exceptions cross the bridge — `open` returns nil on a bad tag).
+  Cross-platform interop is verified by `tools/crypto-interop/run.sh` (JVM reference ↔ Swift
+  reference round-trips, non-ASCII passphrase). `IosKeychainBackupPassphraseStore` (generic
+  password, AfterFirstUnlock, reactive `isSet`), `IosDriveBackupRemote` (NSURLSession port of
+  the Drive v3 REST calls), `IosDriveAuthorizer` (ASWebAuthenticationSession + PKCE, refresh
+  token in the Keychain, consent inline — no NeedsConsent hop; **requires an iOS OAuth client
+  id in Info.plist under `GoogleOAuthClientID`**, absent → Unavailable), and
+  `IosAutoBackupScheduler` (BGTaskScheduler app-refresh, registered from `iOSApp.swift`'s init;
+  best-effort vs WorkManager, each run resubmits the next). `iOSApp.swift` now owns startup
+  (BGTaskScheduler registration must precede end of launch). Remaining user step: create the
+  iOS OAuth client in the GCP project (see `docs/google-drive-backup-setup.md`).
 - [ ] **PR B5 — iOS feature shape**: no SMS capture exists on iOS — gate the SMS tab and
   capture affordances off `AppConfig.smsAutoCapture` (manual entry + simulated samples
   remain); audit remaining `TODO(Phase-B)` stubs to zero or explicit accepted no-ops

@@ -7,5 +7,13 @@
 	<!-- Without this, LocalAuthentication silently skips Face ID and falls back to the passcode. -->
 	<key>NSFaceIDUsageDescription</key>
 	<string>Hisabak uses Face ID to unlock the app.</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.hisabak.autobackup</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 </dict>
 </plist>

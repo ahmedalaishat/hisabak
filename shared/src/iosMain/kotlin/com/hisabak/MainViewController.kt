@@ -10,11 +10,11 @@ import com.hisabak.ui.format.IosLocalizedDateFormatter
 import com.hisabak.ui.format.LocalDateFormatter
 import platform.UIKit.UIViewController
 
-/** Xcode entry point: the shared app shell with the iOS platform slots. Tier-1 actuals are
- *  live (NSDateFormatter dates, LocalAuthentication app lock, UNUserNotificationCenter);
- *  the backup seams stay inert until PR B4. */
+/** Xcode entry point: the shared app shell with the iOS platform slots. `iOSApp.swift`'s init
+ *  calls [startIosApp] (with the Swift CryptoKit bridge) before this — BGTaskScheduler
+ *  registration has to precede the end of app launch. */
 fun MainViewController(): UIViewController {
-    startIosApp()
+    requireIosAppStarted()
     return ComposeUIViewController {
         val dateFormatter = remember { IosLocalizedDateFormatter() }
         CompositionLocalProvider(LocalDateFormatter provides dateFormatter) {
