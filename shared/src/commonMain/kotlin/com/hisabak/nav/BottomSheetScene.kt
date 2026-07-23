@@ -20,6 +20,10 @@ import androidx.navigation3.scene.SceneStrategyScope
 
 private const val BOTTOM_SHEET_KEY = "com.hisabak.nav.bottomSheet"
 
+/** True for entries rendered inside the modal bottom sheet (they keep the sheet's own surface). */
+internal fun isBottomSheet(metadata: Map<String, Any>): Boolean =
+    metadata.containsKey(BOTTOM_SHEET_KEY)
+
 /** An [OverlayScene] that renders an [entry] within a [ModalBottomSheet]. */
 @OptIn(ExperimentalMaterial3Api::class)
 internal data class BottomSheetScene<T : Any>(

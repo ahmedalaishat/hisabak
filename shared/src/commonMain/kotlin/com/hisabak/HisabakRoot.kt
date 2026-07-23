@@ -1,6 +1,8 @@
 package com.hisabak
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -26,6 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
 import com.hisabak.core.domain.AppPreferences
@@ -366,13 +369,19 @@ private fun HisabakNav(slots: PlatformSlots) {
             }
         }
 
-        // Transitions are set per-entry (see fullScreenTransition() on the full-screen children),
-        // not globally: a global NavDisplay transition fights the bottom sheet's own open/close
-        // animation. So the transaction add/edit sheet and bottom-nav tab switches keep the defaults,
-        // while pushing/popping full-screen children slides + fades.
+        // Child-screen transitions are set per-entry (see fullScreenTransition()); the container
+        // level pins tab switches to a cross-fade on every platform — the JB iOS default is a
+        // UIKit-style push, which reads as hierarchy between sibling tabs (and was where the
+        // see-through-transition artifact surfaced before entries got opaque backgrounds).
+        val crossFade: AnimatedContentTransitionScope<Scene<NavKey>>.() -> ContentTransform = {
+            fadeIn(tween(Motion.Duration.Base)) togetherWith fadeOut(tween(Motion.Duration.Base))
+        }
         NavDisplay(
             entries = navigationState.toEntries(entryProvider),
             onBack = { navigator.goBack() },
+            transitionSpec = crossFade,
+            popTransitionSpec = crossFade,
+            predictivePopTransitionSpec = { _ -> crossFade() },
             sceneStrategies = listOf(bottomSheetStrategy, SinglePaneSceneStrategy()),
             modifier = Modifier
                 .fillMaxSize()
