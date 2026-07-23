@@ -330,4 +330,10 @@
         <item quantity="many">تصبح علاماتها بلا فئة ولن تُصنَّف %1$d معاملة بعد الآن. لا يُحذف شيء.</item>
         <item quantity="other">تصبح علاماتها بلا فئة ولن تُصنَّف %1$d معاملة بعد الآن. لا يُحذف شيء.</item>
     </plurals>
+    <string name="notification_tx_recorded_title">تم تسجيل المعاملة</string>
+    <string name="notification_tx_recorded">%1$s لدى %2$s · %3$s</string>
+    <string name="notification_tx_recorded_uncategorized">%1$s لدى %2$s · غير مُصنَّف — اضغط لإضافة فئة</string>
+    <string name="notification_budget_reached_title">تم بلوغ ميزانية %1$s</string>
+    <string name="notification_budget_level_title">%1$s عند %2$d% من الميزانية</string>
+    <string name="notification_budget_message">أُنفق %1$s من %2$s هذا الشهر.</string>
 </resources>

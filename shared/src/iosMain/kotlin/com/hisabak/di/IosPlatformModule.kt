@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalNativeApi::class)
+
 package com.hisabak.di
 
 import com.hisabak.core.common.AppConfig
@@ -18,32 +20,39 @@ import com.hisabak.core.domain.backup.BackupRemote
 import com.hisabak.core.domain.security.BiometricAvailability
 import com.hisabak.core.platform.NoopAnalytics
 import com.hisabak.core.platform.NoopAutoBackupScheduler
-import com.hisabak.core.platform.NoopNotificationStrings
-import com.hisabak.core.platform.NoopNotifier
-import com.hisabak.core.platform.UnavailableBiometricAvailability
 import com.hisabak.core.platform.UnavailableDriveAuthorizer
+import com.hisabak.core.platform.security.IosBiometricAuthenticator
+import com.hisabak.feature.notification.platform.IosNotificationStrings
+import com.hisabak.feature.notification.platform.IosNotifier
 import com.hisabak.core.platform.UnsupportedBackupCrypto
 import com.hisabak.core.platform.UnsupportedBackupPassphraseStore
 import com.hisabak.core.platform.UnsupportedBackupRemote
 import com.hisabak.feature.notification.domain.NotificationStrings
 import com.hisabak.feature.notification.domain.Notifier
+import kotlin.experimental.ExperimentalNativeApi
+import kotlin.native.Platform
 import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.module
+import platform.Foundation.NSBundle
+
+/** CFBundleVersion — the iOS counterpart of Android's versionCode. */
+private fun bundleBuildNumber(): Int =
+    (NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleVersion") as? String)
+        ?.toIntOrNull() ?: 0
 
 /**
- * iOS bindings for every platform port androidApp binds natively. Database + DataStore are real
- * (bundled SQLite driver / Documents dir); the rest are Phase A stubs — see `core/platform/IosStubs`.
- * TODO(Phase-B): replace the stubs with real implementations.
+ * iOS bindings for every platform port androidApp binds natively. Database, DataStore, the
+ * notifier, and the biometric availability check are real (tier 1); the backup ports remain
+ * Phase A stubs — see `core/platform/IosStubs`. TODO(Phase-B): tier 2 (backup) in PR B4.
  */
 val iosPlatformModule: Module = module {
     single {
         AppConfig(
             seedData = false,
             smsAutoCapture = false,
-            isDebug = false,
-            // TODO(Phase-B): read the real build number from the iOS bundle.
-            versionCode = 0,
+            isDebug = Platform.isDebugBinary,
+            versionCode = bundleBuildNumber(),
         )
     }
 
@@ -54,10 +63,10 @@ val iosPlatformModule: Module = module {
     } bind AppPreferences::class
 
     single<Analytics> { NoopAnalytics() }
-    single<Notifier> { NoopNotifier() }
-    single<NotificationStrings> { NoopNotificationStrings() }
+    single<Notifier> { IosNotifier() }
+    single<NotificationStrings> { IosNotificationStrings() }
     single<AutoBackupScheduler> { NoopAutoBackupScheduler() }
-    single<BiometricAvailability> { UnavailableBiometricAvailability() }
+    single<BiometricAvailability> { IosBiometricAuthenticator() }
 
     single<BackupCrypto> { UnsupportedBackupCrypto() }
     single<BackupPassphraseStore> { UnsupportedBackupPassphraseStore() }
