@@ -14,6 +14,9 @@ import com.hisabak.shared.resources.Res
 import com.hisabak.shared.resources.app_lock_prompt_title
 import org.jetbrains.compose.resources.stringResource
 import com.hisabak.feature.settings.presentation.LANGUAGE_ARABIC
+import platform.Foundation.NSURL
+import platform.UIKit.UIApplication
+import platform.UIKit.UIApplicationOpenSettingsURLString
 import com.hisabak.feature.backup.presentation.BackupScreen
 import com.hisabak.feature.backup.presentation.BackupViewModel
 import com.hisabak.feature.onboarding.presentation.OnboardingScreen
@@ -31,10 +34,11 @@ import com.hisabak.feature.sms.presentation.inbox.formatMoney
 import com.hisabak.core.domain.ThemeMode
 import org.koin.compose.viewmodel.koinViewModel
 
-// iOS counterparts of androidApp's thin Routes. The platform affordances they wrap on Android
-// (permission launchers, Drive consent IntentSenders, biometric enrollment) don't exist here yet,
-// so each wires the shared Screen to its ViewModel with those seams inert. TODO(Phase-B): replace
-// the inert seams tier by tier (B3 locale/biometrics, B4 Drive consent + backup).
+// iOS counterparts of androidApp's thin Routes. Android's launcher/IntentSender affordances map
+// to their iOS equivalents inline: biometrics via LocalAuthentication (B3), Drive consent via
+// ASWebAuthenticationSession inside DriveAuthorizer.authorize() (B4), and language via the iOS
+// per-app language setting. SMS auto-capture has no iOS equivalent — manual paste/share only,
+// matching the Android Play build (smsAutoCapture=false).
 
 /** No SMS capture exists on iOS, so the final onboarding CTA just completes. */
 @Composable
@@ -42,7 +46,8 @@ internal fun IosOnboardingRoute(viewModel: OnboardingViewModel = koinViewModel()
     OnboardingScreen(onFinish = viewModel::complete)
 }
 
-/** The stub DriveAuthorizer reports Unavailable, so connect never asks for consent. */
+/** Drive consent runs inline in `DriveAuthorizer.authorize()` (ASWebAuthenticationSession),
+ *  so the NeedsConsent callback never fires on iOS. */
 @Composable
 internal fun IosRestoreRoute(viewModel: RestoreViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -89,9 +94,10 @@ internal fun IosSmsInboxRoute(
     )
 }
 
-/** The app lock rides LocalAuthentication; language display follows the device locale (CMP
- *  resolves strings off it) — an in-app switch is a later Phase-B decision, so changing it is
- *  inert for now. */
+/** The app lock rides LocalAuthentication. Language follows the iOS per-app language setting
+ *  (`CFBundleLocalizations` declares en+ar, so iOS offers the picker natively); tapping the
+ *  other language deep-links to the app's page in the Settings app, and iOS relaunches the
+ *  app with the new locale — CMP resolves strings off it. */
 @Composable
 internal fun IosSettingsRoute(
     onOpenBackup: () -> Unit,
@@ -115,7 +121,15 @@ internal fun IosSettingsRoute(
         appLockEnabled = appLockEnabled,
         appLockSupported = appLockSupported,
         onThemeChange = viewModel::setThemeMode,
-        onLanguageChange = {},
+        onLanguageChange = { tag ->
+            if (tag != language) {
+                UIApplication.sharedApplication.openURL(
+                    NSURL(string = UIApplicationOpenSettingsURLString)!!,
+                    options = emptyMap<Any?, Any>(),
+                    completionHandler = null,
+                )
+            }
+        },
         onAppLockChange = { wantEnabled ->
             // Same rule as Android: turning the lock ON or OFF both require a successful auth,
             // so it can't be flipped by someone holding an unlocked phone; if the device can no

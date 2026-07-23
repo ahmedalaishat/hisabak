@@ -10,6 +10,7 @@ import com.hisabak.di.APPLICATION_SCOPE
 import com.hisabak.di.iosPlatformModule
 import com.hisabak.di.sharedModules
 import com.hisabak.feature.notification.domain.CategoryLimitMonitor
+import com.hisabak.feature.notification.platform.installNotificationTapHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -31,6 +32,7 @@ fun startIosApp(gcmCipher: GcmCipher) {
     val koin = KoinPlatform.getKoin()
     val appScope = koin.get<CoroutineScope>(APPLICATION_SCOPE)
     registerAutoBackupTask(appScope)
+    installNotificationTapHandler()
     val seeder = koin.get<DatabaseSeeder>()
     val config = koin.get<AppConfig>()
     appScope.launch {
