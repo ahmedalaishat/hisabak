@@ -20,7 +20,8 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   multiplatform `viewModel {}` DSL) live in `shared/commonMain` — `di/SharedModules.kt` exposes
   `sharedModules` — and each platform adds its bindings on top: androidApp's
   `di/PlatformModule.kt` (+ `AnalyticsModule`) via `appModules`, iOS's
-  `shared/src/iosMain/.../di/IosPlatformModule.kt` (Phase A stubs, DB/DataStore real).
+  `shared/src/iosMain/.../di/IosPlatformModule.kt` (DB/DataStore/notifier/biometrics/dates
+  real since Phase B tier 1; the backup ports are still `TODO(Phase-B)` stubs).
 - **Async:** Kotlin Coroutines + Flow
 - **State:** ViewModel + `collectAsStateWithLifecycle`
 - **Charts:** Vico (`com.patrykandpatrick.vico:multiplatform-m3`; charts in
@@ -91,8 +92,9 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   port** (`shared/commonMain` `ui/format/LocalizedDateFormatter.kt`): shared screens read it via
   the `LocalDateFormatter` CompositionLocal, `MainActivity` provides
   `AndroidLocalizedDateFormatter` (androidApp `ui/format/` — the single sanctioned `java.time` +
-  `DateUtils`/`Formatter` site), and the composition default is the pure-kotlinx
-  `BasicLocalizedDateFormatter` (English names, also the iOS Phase A behavior). Core-library
+  `DateUtils`/`Formatter` site), iOS provides `IosLocalizedDateFormatter` (iosMain —
+  NSDateFormatter/NSRelativeDateTimeFormatter/NSByteCountFormatter), and the composition
+  default is the pure-kotlinx `BasicLocalizedDateFormatter` (English names). Core-library
   desugaring stays enabled in `androidApp` (`isCoreLibraryDesugaringEnabled` +
   `desugar_jdk_libs`) for that formatter path — API-34+ java.time additions like
   `LocalDate.ofInstant` throw `NoSuchMethodError` on older devices without it (caused the

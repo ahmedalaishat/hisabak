@@ -254,11 +254,22 @@ simulators); CI keeps the compile + app-build gates.
   (CMP 1.11.x references iOS 26 UIKit symbols — `UIViewLayoutRegion`), so it runs on
   `macos-26`; the compile job moved off deprecated `macos-14` to `macos-15`.
   Exit: all five tabs browsable on the simulator with stub platform behavior.
-- [ ] **PR B3 — iOS actuals, tier 1 (local UX)**: `LocalizedDateFormatter` over
-  `NSDateFormatter` (+ the Arabic/locale digit strategy), motion-scale from
-  `UIAccessibility`, `BiometricAuthenticator` over LocalAuthentication,
-  notifications over `UNUserNotificationCenter`, app-lock gate on the iOS root,
-  real `AppConfig` values from the bundle.
+- [x] **PR B3 — iOS actuals, tier 1 (local UX)**: `IosLocalizedDateFormatter`
+  (NSDateFormatter localized templates + NSRelativeDateTimeFormatter + NSByteCountFormatter,
+  provided from `MainViewController`; language follows the device locale — CMP resolves
+  strings off it, so no in-app switch yet), `Motion.ios` honors Reduce Motion,
+  `IosBiometricAuthenticator` (LAContext, `LAPolicyDeviceOwnerAuthentication` = biometric +
+  passcode fallback) behind `BiometricAvailability` + `IosAppLockGate` on the shared
+  `shouldLock` (JB lifecycle maps app background/foreground to ON_STOP/ON_START), and the
+  Settings toggle auths on both enable and disable; `IosNotifier` over
+  `UNUserNotificationCenter` (+ authorization request via the notification-permission slot)
+  with `IosNotificationStrings` reading the 6 notification strings newly added to the shared
+  composeResources (`runBlocking` CMP `getString` — callers are off-main; CMP has no `%%`
+  unescape, so `%2$d%` is a literal percent); `AppConfig` reads `CFBundleVersion` +
+  `Platform.isDebugBinary`. Simulator QA: permission alert fires, SMS paste → parse →
+  import → snackbar + dashboard uncategorized card, data survives a simulator reboot,
+  localized SMS timestamps, app-lock toggle correctly gated. Face ID prompt itself is not
+  headlessly testable (simctl has no biometric enrollment control).
 - [ ] **PR B4 — iOS actuals, tier 2 (backup)**: Keychain passphrase/account stores, AES-GCM
   `BackupCrypto` (CommonCrypto/CryptoKit — must round-trip with the Android format),
   `BackupRemote` over `NSURLSession`, Google OAuth via `ASWebAuthenticationSession`,

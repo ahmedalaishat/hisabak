@@ -5,8 +5,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.hisabak.core.domain.security.AuthAvailability
+import com.hisabak.core.platform.security.IosBiometricAuthenticator
 import com.hisabak.core.presentation.LaunchedViewEffectHandler
+import com.hisabak.shared.resources.Res
+import com.hisabak.shared.resources.app_lock_prompt_title
+import org.jetbrains.compose.resources.stringResource
+import com.hisabak.feature.settings.presentation.LANGUAGE_ARABIC
 import com.hisabak.feature.backup.presentation.BackupScreen
 import com.hisabak.feature.backup.presentation.BackupViewModel
 import com.hisabak.feature.onboarding.presentation.OnboardingScreen
@@ -82,7 +89,9 @@ internal fun IosSmsInboxRoute(
     )
 }
 
-/** Language switching and the app lock are Phase-B3 seams; both render as fixed/unsupported. */
+/** The app lock rides LocalAuthentication; language display follows the device locale (CMP
+ *  resolves strings off it) — an in-app switch is a later Phase-B decision, so changing it is
+ *  inert for now. */
 @Composable
 internal fun IosSettingsRoute(
     onOpenBackup: () -> Unit,
@@ -93,14 +102,32 @@ internal fun IosSettingsRoute(
     val appLockEnabled by viewModel.appLockEnabled.collectAsStateWithLifecycle(initialValue = false)
     val passphraseReminderVisible by viewModel.passphraseReminderVisible.collectAsStateWithLifecycle(initialValue = false)
 
+    val authenticator = remember { IosBiometricAuthenticator() }
+    // Fixed for a device session, same as Android: "none enrolled" still counts as supported.
+    val appLockSupported = remember { authenticator.availability() != AuthAvailability.Unavailable }
+    val promptTitle = stringResource(Res.string.app_lock_prompt_title)
+
+    val language = if (Locale.current.language == LANGUAGE_ARABIC) LANGUAGE_ARABIC else LANGUAGE_ENGLISH
+
     SettingsScreen(
         themeMode = themeMode,
-        language = LANGUAGE_ENGLISH,
+        language = language,
         appLockEnabled = appLockEnabled,
-        appLockSupported = false,
+        appLockSupported = appLockSupported,
         onThemeChange = viewModel::setThemeMode,
         onLanguageChange = {},
-        onAppLockChange = {},
+        onAppLockChange = { wantEnabled ->
+            // Same rule as Android: turning the lock ON or OFF both require a successful auth,
+            // so it can't be flipped by someone holding an unlocked phone; if the device can no
+            // longer authenticate, allow the change (consistent with the unlock-time bypass).
+            if (authenticator.availability() != AuthAvailability.Available) {
+                if (!wantEnabled) viewModel.setAppLockEnabled(false)
+            } else {
+                authenticator.authenticate(promptTitle) { ok ->
+                    if (ok) viewModel.setAppLockEnabled(wantEnabled)
+                }
+            }
+        },
         onOpenBackup = onOpenBackup,
         passphraseReminderVisible = passphraseReminderVisible,
         onConfirmRemembered = viewModel::confirmPassphraseRemembered,
