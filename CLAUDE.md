@@ -20,8 +20,10 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   multiplatform `viewModel {}` DSL) live in `shared/commonMain` — `di/SharedModules.kt` exposes
   `sharedModules` — and each platform adds its bindings on top: androidApp's
   `di/PlatformModule.kt` (+ `AnalyticsModule`) via `appModules`, iOS's
-  `shared/src/iosMain/.../di/IosPlatformModule.kt` (DB/DataStore/notifier/biometrics/dates
-  real since Phase B tier 1; the backup ports are still `TODO(Phase-B)` stubs).
+  `shared/src/iosMain/.../di/IosPlatformModule.kt` (everything real since Phase B tiers 1–2
+  except `Analytics`, still a no-op pending the B6 Firebase decision; the module is a
+  `fun iosPlatformModule(gcmCipher)` — the Swift CryptoKit bridge is injected from
+  `iOSApp.swift` via `startIosApp`).
 - **Async:** Kotlin Coroutines + Flow
 - **State:** ViewModel + `collectAsStateWithLifecycle`
 - **Charts:** Vico (`com.patrykandpatrick.vico:multiplatform-m3`; charts in
