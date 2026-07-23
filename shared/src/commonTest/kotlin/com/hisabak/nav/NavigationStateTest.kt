@@ -80,7 +80,7 @@ class NavigationStateTest {
     }
 
     @Test
-    fun `stacksInUse is home only on the home tab, home plus current elsewhere`() {
+    fun `stacksInUse is home only on the home tab and home plus current elsewhere`() {
         val state = state()
         val navigator = Navigator(state)
 
