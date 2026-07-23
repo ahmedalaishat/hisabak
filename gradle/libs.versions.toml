@@ -10,15 +10,19 @@ kotlin = "2.4.10"
 composeBom = "2026.02.01"
 composeMultiplatform = "1.11.1"
 jbMaterial3 = "1.11.0-alpha07"
-jbLifecycle = "2.10.0"
+jbLifecycle = "2.11.0"
 coroutines = "1.10.2"
 lifecycleCompose = "2.8.7"
-koin = "4.0.3"
+# 4.2.x: koin-compose-viewmodel 4.0.x hits a K/N IrLinkageError against JB lifecycle 2.11
+# (private LocalViewModelStoreOwner backing-field access) — fine on JVM, fatal on iOS.
+koin = "4.2.2"
 room = "2.8.4"
 ksp = "2.3.10"
 vico = "2.5.2"
-nav3Core = "1.0.0"
-lifecycleViewmodelNav3 = "2.10.0-rc01"
+# androidx nav3 runtime is multiplatform (iOS klibs published); the NavDisplay/scene layer's
+# multiplatform artifact is JetBrains' navigation3-ui, which wraps androidx navigation3-ui 1.1.1.
+nav3Core = "1.1.4"
+jbNav3Ui = "1.1.1"
 turbine = "1.2.0"
 datastore = "1.1.1"
 googleServices = "4.5.0"
@@ -64,8 +68,8 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 vico-multiplatform-m3 = { group = "com.patrykandpatrick.vico", name = "multiplatform-m3", version.ref = "vico" }
 androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "nav3Core" }
-androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "nav3Core" }
-androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNav3" }
+jetbrains-navigation3-ui = { group = "org.jetbrains.androidx.navigation3", name = "navigation3-ui", version.ref = "jbNav3Ui" }
+jetbrains-lifecycle-viewmodel-navigation3 = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "jbLifecycle" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }

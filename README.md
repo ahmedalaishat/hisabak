@@ -128,7 +128,7 @@ What's next, roughly in order:
 
 - **Language:** Kotlin
 - **UI:** Jetpack Compose + Material 3
-- **Navigation:** Jetpack Navigation 3
+- **Navigation:** Navigation 3 (multiplatform: androidx runtime + JetBrains UI artifacts)
 - **Persistence:** Room (local, offline-first)
 - **DI:** Koin
 - **Async:** Coroutines + Flow
@@ -142,8 +142,8 @@ What's next, roughly in order:
 ## 🏗️ Architecture
 
 Three Gradle modules — **`shared`** (Kotlin Multiplatform: domain, data (Room/DataStore),
-ViewModels, and the Compose Multiplatform UI; compiles for Android and iOS), **`androidApp`**
-(a thin Android shell: navigation, platform integrations, permission/consent glue), and
+ViewModels, navigation, and the Compose Multiplatform UI; compiles for Android and iOS),
+**`androidApp`** (a thin Android shell: platform integrations, permission/consent glue), and
 **`testutil`** (shared test fakes) — plus **`iosApp`**, the Xcode project that runs the shared
 UI on the iOS simulator. Phase A of the KMP migration is complete and Phase B (real iOS app)
 is in progress ([migration plan](docs/kmp-migration.md)).
@@ -168,7 +168,7 @@ and SMS-imported transactions are both covered through a single path.
 
 ## 🧪 Testing & quality
 
-The domain logic and ViewModels are covered by **191 JVM unit tests** (money math, the SMS
+The domain logic and ViewModels are covered by **197 JVM unit tests** (money math, the SMS
 template parser, budget/limit logic, and ViewModel state) that run on the plain JVM — no
 emulator needed:
 

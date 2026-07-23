@@ -1,25 +1,25 @@
 package com.hisabak
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeUIViewController
-import com.hisabak.ui.theme.HisabakTheme
 import platform.UIKit.UIViewController
 
-/** Xcode entry point for the Phase B `iosApp`. Placeholder root — a real multiplatform nav host
- *  (JB Navigation 3) replaces it in Phase B. TODO(Phase-B) */
-fun MainViewController(): UIViewController = ComposeUIViewController {
-    HisabakTheme {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(
-                text = "Hisabak iOS: TODO(Phase-B) nav",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
+/** Xcode entry point: the shared app shell with the iOS platform slots. The default slot values
+ *  cover the seams iOS doesn't fill yet (app lock pass-through, no notification-permission ask,
+ *  no system-bar styling), and `LocalDateFormatter` falls back to `BasicLocalizedDateFormatter`.
+ *  TODO(Phase-B): real slots arrive tier by tier (B3 local UX, B4 backup). */
+fun MainViewController(): UIViewController {
+    startIosApp()
+    return ComposeUIViewController {
+        HisabakRoot(
+            PlatformSlots(
+                onboarding = { IosOnboardingRoute() },
+                restore = { IosRestoreRoute() },
+                smsInbox = { modifier -> IosSmsInboxRoute(modifier = modifier) },
+                settings = { onOpenBackup, modifier ->
+                    IosSettingsRoute(onOpenBackup = onOpenBackup, modifier = modifier)
+                },
+                backup = { modifier -> IosBackupRoute(modifier = modifier) },
+            ),
+        )
     }
 }
