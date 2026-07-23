@@ -134,8 +134,10 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
 - **CMP migration:** the app is **Kotlin Multiplatform + Compose Multiplatform** — plan and PR
   sequence in `docs/kmp-migration.md`. **Phase A is complete**: all common code (domain, data,
   ViewModels, Compose UI) lives in `shared/commonMain`, the iOS targets compile against stub
-  platform bindings (grep `TODO(Phase-B)`), and Android stays the only shipping app. Phase B
-  (real iOS app, multiplatform Nav3, real iOS actuals) is next. The pure-Android line is frozen
+  platform bindings (grep `TODO(Phase-B)`), and Android stays the only shipping app. **Phase B
+  is in progress** (real iOS app, multiplatform Nav3, real iOS actuals — PR plan at the end of
+  `docs/kmp-migration.md`): the Xcode **`iosApp/`** builds and runs the `Shared` framework's
+  `MainViewController()` on the iOS simulator. The pure-Android line is frozen
   on the **`android` branch** (v1.9.0) as a reference. The standing rules hold: keep platform
   APIs (`Context`, `FragmentActivity`, `BiometricPrompt`, Keystore) out of `commonMain`, keep
   state/business logic as pure Kotlin, and keep Composables on multiplatform-safe APIs.
@@ -144,7 +146,8 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
 
 ## Project Structure
 
-Three Gradle modules (Phase A of the KMP migration is complete — see `docs/kmp-migration.md`):
+Three Gradle modules plus the Xcode app (Phase A of the KMP migration is complete, Phase B in
+progress — see `docs/kmp-migration.md`):
 
 - **`androidApp/`** — a **thin Android shell** (`com.android.application`, prod/staging
   flavors, signing, Firebase): `MainActivity`, `HisabakApp`, `nav/`, `security/AppLock.kt`,
@@ -168,6 +171,12 @@ Three Gradle modules (Phase A of the KMP migration is complete — see `docs/kmp
   (`com.hisabak.testutil`: `TestClock`, `TestData`, `Fake*` incl. `FakeBackupCrypto`),
   used by both `shared/commonTest` and `androidApp/src/test` (KMP has no multiplatform
   test-fixtures yet).
+- **`iosApp/`** — the Xcode project (not a Gradle module; JetBrains wizard pattern): a SwiftUI
+  shell whose `ContentView` wraps `MainViewController()` from the static `Shared` framework,
+  built by the `embedAndSignAppleFrameworkForXcode` script phase. Config in
+  `iosApp/Configuration/Config.xcconfig` (bundle id `com.hisabak`, `TEAM_ID` empty — simulator
+  only until App Store setup). Build headlessly with
+  `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17'`.
 
 Package layout (unchanged by the migration — files move between modules, packages stay):
 

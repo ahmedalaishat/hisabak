@@ -3,11 +3,12 @@
 Hisabak is migrating from a single-module Android app to **Kotlin Multiplatform + Compose
 Multiplatform**, in two phases:
 
-- **Phase A (in progress):** a running, fully-tested **Android** app restructured into KMP form —
-  all common code (domain, data, ViewModels, **and Compose UI**) in `shared/commonMain`, Android
-  platform code in `shared/androidMain` + a thin `androidApp`, and **stub iOS actuals** in
+- **Phase A (complete — PRs #90–#99):** a running, fully-tested **Android** app restructured into
+  KMP form — all common code (domain, data, ViewModels, **and Compose UI**) in `shared/commonMain`,
+  Android platform code in `shared/androidMain` + a thin `androidApp`, and **stub iOS actuals** in
   `iosMain` so the iOS targets compile. No iOS app yet.
-- **Phase B (later):** real iOS support — Xcode `iosApp`, real actuals, multiplatform Navigation 3.
+- **Phase B (in progress):** real iOS support — Xcode `iosApp`, real actuals, multiplatform
+  Navigation 3. Plan at the end of this doc.
 
 Structural reference: the JetBrains KMP wizard layout (`shared` + `androidApp` + Xcode-only
 `iosApp`; the `com.android.kotlin.multiplatform.library` AGP plugin; static `Shared` framework via
@@ -224,9 +225,56 @@ App Store setup.
 | Vico multiplatform API drift from 2.0.2 | Isolated to `VicoCharts.kt`; pin a matching version or budget a small rewrite |
 | Nav3 androidx ↔ JB lifecycle version skew | Screens use plain lambdas (already the pattern); align lifecycle versions |
 
-## Phase B (out of scope for now)
+## Phase B — real iOS app
 
-Xcode `iosApp` + `MainViewController` (wizard pattern), nav → JB multiplatform Nav3, real iOS
-actuals (Keychain, CryptoKit AES-GCM, LocalAuthentication, BGTaskScheduler, Ktor Drive remote +
-ASWebAuthenticationSession OAuth, Firebase via gitlive or stub), iOS locale/digit strategy,
-App Store setup.
+Goal: a functional Hisabak iOS app built from the same `shared` code. Android stays releasable
+after every PR; iOS capability grows PR by PR. Local iOS builds work (Xcode + iPhone
+simulators); CI keeps the compile + app-build gates.
+
+### PR sequence
+
+- [ ] **PR B1 — Xcode `iosApp` skeleton**: wizard-pattern `iosApp/` (pbxproj +
+  `Configuration/Config.xcconfig` + SwiftUI shell wrapping `MainViewController()` from the
+  static `Shared` framework via `embedAndSignAppleFrameworkForXcode`); a **shared `iosApp`
+  scheme** so `xcodebuild` works headlessly; portrait-only, bundle id `com.hisabak`,
+  `TEAM_ID` empty (simulator needs no signing). CI: `ios-compile.yml` gains an app-build job
+  (`xcodebuild … -destination 'iOS Simulator'`, path-filtered to `iosApp/**` too). Template
+  app icon retained (real icon in PR B6). This plan section.
+- [ ] **PR B2 — Multiplatform navigation**: `nav/` (`NavKeys`, `NavigationState`,
+  `BottomSheetScene`) + the scaffold/NavDisplay shell move to `shared/commonMain` on JB
+  multiplatform Navigation 3 (`org.jetbrains.androidx.navigation3`) + JB lifecycle;
+  `MainActivity` consumes the shared root; `MainViewController` renders the real app.
+  Exit: all five tabs browsable on the simulator with stub platform behavior.
+- [ ] **PR B3 — iOS actuals, tier 1 (local UX)**: `LocalizedDateFormatter` over
+  `NSDateFormatter` (+ the Arabic/locale digit strategy), motion-scale from
+  `UIAccessibility`, `BiometricAuthenticator` over LocalAuthentication,
+  notifications over `UNUserNotificationCenter`, app-lock gate on the iOS root,
+  real `AppConfig` values from the bundle.
+- [ ] **PR B4 — iOS actuals, tier 2 (backup)**: Keychain passphrase/account stores, AES-GCM
+  `BackupCrypto` (CommonCrypto/CryptoKit — must round-trip with the Android format),
+  `BackupRemote` over `NSURLSession`, Google OAuth via `ASWebAuthenticationSession`,
+  auto-backup via `BGTaskScheduler`.
+- [ ] **PR B5 — iOS feature shape**: no SMS capture exists on iOS — gate the SMS tab and
+  capture affordances off `AppConfig.smsAutoCapture` (manual entry + simulated samples
+  remain); audit remaining `TODO(Phase-B)` stubs to zero or explicit accepted no-ops
+  (analytics may stay no-op until B6).
+- [ ] **PR B6 — Firebase on iOS + app icon**: Crashlytics/Analytics via the gitlive KMP
+  wrappers **or** keep the no-op (decide then); real 1024pt app icon.
+- [ ] **PR B7 — App Store setup** *(user-gated: needs the Apple Developer account)*: signing
+  (`TEAM_ID`), privacy manifest + nutrition labels, launch screen, TestFlight lane in CI.
+
+### Phase B verification
+
+- Every PR: `./gradlew unitTests` green; `ios-compile.yml` green (compile + app build).
+- B1: app boots on the iPhone simulator showing the placeholder (screenshot).
+- B2: manual QA on the simulator — all tabs, EN + AR, add/edit transaction round-trip.
+- B4: cross-platform backup round-trip (Android backup → iOS restore and back).
+
+### Phase B risk register
+
+| Risk | Mitigation |
+|---|---|
+| JB multiplatform Nav3 API/version drift from androidx `1.0.0` | Spike at B2 start; nav layer is small (3 files + MainActivity shell) |
+| AES-GCM/PBKDF2 interop mismatch corrupts cross-platform restores | Golden-file tests: Android-produced ciphertext decrypts on iOS and vice versa |
+| Google OAuth without Play Services (client id / redirect scheme) | Separate iOS OAuth client in the same GCP project; `ASWebAuthenticationSession` code flow |
+| BGTaskScheduler's opportunistic scheduling ≠ WorkManager periodic guarantees | Accept best-effort on iOS; document the difference in Settings copy |
