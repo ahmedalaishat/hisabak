@@ -77,6 +77,9 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   direction, and the Settings screen saves the tag then calls `recreate()`. **The
   `Locale.setDefault(...)` call in `AppLocale.wrap` is load-bearing:** CMP resolves
   values/values-ar off the process default locale (`Locale.current`), not the wrapped Context.
+  **iOS uses the OS-native path instead:** `CFBundleLocalizations` declares en+ar so iOS
+  offers the per-app language picker in the Settings app, and the in-app language row
+  deep-links there (`IosSettingsRoute`); CMP resolves strings off the resulting locale.
   **Numbers follow the language:** English uses Western digits, Arabic uses **Arabic-Indic**
   digits. CMP's `%1$d` interpolation is *not* locale-aware (plain `toString()` substitution,
   positional `%1$d`/`%1$s` only, no `%%` escape), so numeric format args are localized at the
