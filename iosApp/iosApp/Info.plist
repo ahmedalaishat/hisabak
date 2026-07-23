@@ -7,6 +7,13 @@
 	<!-- Without this, LocalAuthentication silently skips Face ID and falls back to the passcode. -->
 	<key>NSFaceIDUsageDescription</key>
 	<string>Hisabak uses Face ID to unlock the app.</string>
+	<!-- Declaring localizations makes iOS offer the per-app language picker in Settings;
+	     the in-app language row deep-links there. -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ar</string>
+	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>com.hisabak.autobackup</string>

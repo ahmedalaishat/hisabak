@@ -284,10 +284,17 @@ simulators); CI keeps the compile + app-build gates.
   best-effort vs WorkManager, each run resubmits the next). `iOSApp.swift` now owns startup
   (BGTaskScheduler registration must precede end of launch). Remaining user step: create the
   iOS OAuth client in the GCP project (see `docs/google-drive-backup-setup.md`).
-- [ ] **PR B5 — iOS feature shape**: no SMS capture exists on iOS — gate the SMS tab and
-  capture affordances off `AppConfig.smsAutoCapture` (manual entry + simulated samples
-  remain); audit remaining `TODO(Phase-B)` stubs to zero or explicit accepted no-ops
-  (analytics may stay no-op until B6).
+- [x] **PR B5 — iOS feature shape**: notification parity — `IosNotifier` carries the same
+  deep-link payload as androidApp's Intent extras, and `IosNotificationTapHandler`
+  (UNUserNotificationCenter delegate, installed in `startIosApp`) publishes taps to the
+  category-focus / brand-edit buses and presents banners while foregrounded (verified via
+  `simctl push` with a category payload → Dashboard/Categories focus). Language —
+  `CFBundleLocalizations` declares en+ar so iOS offers the per-app language picker, and the
+  in-app language row deep-links to it (`UIApplicationOpenSettingsURLString`); full Arabic
+  QA on the simulator: RTL mirroring, Tajawal, values-ar strings, Arabic-Indic amount digits,
+  dual-form plurals. SMS shape confirmed: manual paste/share only, matching the Android Play
+  build (`MANUAL_PASTE` deliberately doesn't notify). `TODO(Phase-B)` audit → only
+  `NoopAnalytics` remains (B6).
 - [ ] **PR B6 — Firebase on iOS + app icon**: Crashlytics/Analytics via the gitlive KMP
   wrappers **or** keep the no-op (decide then); real 1024pt app icon.
 - [ ] **PR B7 — App Store setup** *(user-gated: needs the Apple Developer account)*: signing

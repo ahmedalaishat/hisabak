@@ -28,24 +28,47 @@ fun requestNotificationAuthorization() {
     ) { _, _ -> }
 }
 
-/** UNUserNotificationCenter-backed [Notifier]: posts local notifications immediately.
- *  Deep-link payloads (category focus / brand edit) are TODO(Phase-B) — a tap just opens the app. */
+/** UNUserNotificationCenter-backed [Notifier]: posts local notifications immediately, carrying
+ *  the same deep-link payload androidApp puts in its Intent extras — the tap handler in
+ *  `IosNotificationTapHandler` publishes it to the category-focus / brand-edit buses. */
 class IosNotifier : Notifier {
 
-    override fun post(notification: Notification) =
-        post(id = notification.id.value, title = notification.title, body = notification.message)
+    override fun post(notification: Notification) = post(
+        id = notification.id.value,
+        title = notification.title,
+        body = notification.message,
+        categoryId = notification.categoryId,
+        brandId = null,
+    )
 
-    override fun postTransactionRecorded(alert: TransactionRecordedAlert) =
-        post(id = "tx-${alert.transactionId}", title = alert.title, body = alert.message)
+    override fun postTransactionRecorded(alert: TransactionRecordedAlert) = post(
+        id = "tx-${alert.transactionId}",
+        title = alert.title,
+        body = alert.message,
+        categoryId = alert.categoryId,
+        // Same rule as SystemNotifier: only an uncategorized brand deep-links to its editor.
+        brandId = if (alert.categoryId == null) alert.brandId else null,
+    )
 
-    private fun post(id: String, title: String, body: String) {
+    private fun post(id: String, title: String, body: String, categoryId: String?, brandId: String?) {
         val content = UNMutableNotificationContent().apply {
             setTitle(title)
             setBody(body)
+            setUserInfo(
+                buildMap<Any?, Any?> {
+                    categoryId?.let { put(USER_INFO_CATEGORY_ID, it) }
+                    brandId?.let { put(USER_INFO_BRAND_ID, it) }
+                },
+            )
         }
         val request = UNNotificationRequest.requestWithIdentifier(id, content, trigger = null)
         UNUserNotificationCenter.currentNotificationCenter()
             .addNotificationRequest(request) { _ -> }
+    }
+
+    companion object {
+        const val USER_INFO_CATEGORY_ID = "categoryId"
+        const val USER_INFO_BRAND_ID = "brandId"
     }
 }
 

@@ -57,8 +57,8 @@ val LocalDateFormatter = staticCompositionLocalOf<LocalizedDateFormatter> {
 
 /**
  * Pure-kotlinx fallback: fixed English month/day names, Western digits, no relative phrasing.
- * Doubles as the iOS behavior until a real NSDateFormatter-backed implementation lands.
- * TODO(Phase-B): replace with a locale-aware iOS implementation.
+ * Only the composition default — both platforms provide real formatters at the root
+ * (`AndroidLocalizedDateFormatter` / `IosLocalizedDateFormatter`).
  */
 class BasicLocalizedDateFormatter : LocalizedDateFormatter {
 
