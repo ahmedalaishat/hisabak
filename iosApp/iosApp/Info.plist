@@ -26,5 +26,8 @@
 	     Set GOOGLE_OAUTH_CLIENT_ID in Configuration/Config.xcconfig; blank = Drive unavailable. -->
 	<key>GoogleOAuthClientID</key>
 	<string>$(GOOGLE_OAUTH_CLIENT_ID)</string>
+	<!-- Crashlytics stays off until iOSApp.init enables it for non-debug builds (Android parity). -->
+	<key>FirebaseCrashlyticsCollectionEnabled</key>
+	<false/>
 </dict>
 </plist>
