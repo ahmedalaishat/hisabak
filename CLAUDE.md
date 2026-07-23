@@ -32,7 +32,10 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   Gradle plugins (config in `androidApp/google-services.json`, project `hisabak-finance-tracking`).
   Collection is gated on `!BuildConfig.DEBUG` in `HisabakApp` — **on in release, off in debug** —
   so local runs never reach the dashboard. Reports carry no financial/personal data; the
-  privacy policy (`docs/privacy.html`) discloses it.
+  privacy policy (`docs/privacy.html`) discloses it. **iOS: Crashlytics only, natively in
+  Swift** (`firebase-ios-sdk` via SPM, configured in `iOSApp.init`, guarded on
+  `GoogleService-Info.plist` presence, same debug/release gating; no event analytics —
+  `NoopAnalytics` is deliberate until iOS has real users).
 - **Analytics:** Firebase Analytics (no extra plugin — uses the same `google-services` setup),
   collection gated the same way (`!BuildConfig.DEBUG`, on in release). Behind a small domain
   abstraction: the `Analytics` interface + the `AnalyticsEvent` catalogue in
