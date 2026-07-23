@@ -1,5 +1,9 @@
 package com.hisabak.nav
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -8,9 +12,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 
@@ -75,12 +81,28 @@ fun rememberNavigationState(
 fun NavigationState.toEntries(
     entryProvider: (NavKey) -> NavEntry<NavKey>,
 ): SnapshotStateList<NavEntry<NavKey>> {
+    // Screens are content-only layers over the Scaffold's background; slide-type transitions
+    // (e.g. the iOS-default push) move that layer at full opacity, so without an opaque
+    // per-entry background the previous destination shows through until the animation ends.
+    // Sheet entries keep the ModalBottomSheet's own surface.
+    val opaqueBackgroundDecorator = remember {
+        NavEntryDecorator<NavKey> { entry ->
+            if (isBottomSheet(entry.metadata)) {
+                entry.Content()
+            } else {
+                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                    entry.Content()
+                }
+            }
+        }
+    }
     val decoratedEntries = backStacks.mapValues { (_, stack) ->
         rememberDecoratedNavEntries(
             backStack = stack,
             entryDecorators = listOf(
                 rememberSaveableStateHolderNavEntryDecorator(),
                 rememberViewModelStoreNavEntryDecorator(),
+                opaqueBackgroundDecorator,
             ),
             entryProvider = entryProvider,
         )
