@@ -6,6 +6,11 @@ All notable changes to Hisabak are documented here. Format based on
 
 ## [Unreleased]
 
+### Added
+- **Reconnect Google Drive from the Backup screen** — if backup is on but no Google account is
+  connected (declined, failed, or revoked access), a "Connect Google account" button now appears;
+  previously the only way back was turning backup off and on again.
+
 ### Changed
 - **Bundled fonts** — DM Sans, Geist Mono and Tajawal now ship inside the app instead of being
   downloaded through Google Play services, so the app's typography renders correctly offline, on

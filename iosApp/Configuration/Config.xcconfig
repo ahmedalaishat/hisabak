@@ -7,4 +7,4 @@ CURRENT_PROJECT_VERSION=1
 MARKETING_VERSION=1.0
 
 // iOS OAuth client id for Google Drive backup (create per docs/google-drive-backup-setup.md §5).
-GOOGLE_OAUTH_CLIENT_ID=
+GOOGLE_OAUTH_CLIENT_ID=469916556187-5gh2l5euvu13d4e02nb3k02idf05qnhj.apps.googleusercontent.com

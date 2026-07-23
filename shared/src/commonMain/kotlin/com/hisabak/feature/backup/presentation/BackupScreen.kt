@@ -174,6 +174,15 @@ private fun BackupSettings(
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.sectionGap)) {
                     LastBackupCard(state = state)
 
+                    // Backup can be enabled with no account (connect declined/failed/revoked);
+                    // without this the only reconnect path was toggling backup off and on.
+                    if (state.account == null) {
+                        HisabakButton(
+                            text = stringResource(Res.string.backup_connect_account),
+                            onClick = onConnectAccount,
+                            fullWidth = true,
+                        )
+                    }
                     HisabakButton(
                         text = stringResource(Res.string.backup_now),
                         onClick = onBackupNow,
