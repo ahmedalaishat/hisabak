@@ -36,3 +36,7 @@ scripts/play/node_modules/
 
 # Generated Play "What's new" notes (built from CHANGELOG by scripts/changelog-to-whatsnew.sh)
 /distribution/whatsnew/
+
+# Xcode
+iosApp/iosApp.xcodeproj/xcuserdata/
+iosApp/iosApp.xcodeproj/project.xcworkspace/xcuserdata/

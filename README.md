@@ -144,8 +144,9 @@ What's next, roughly in order:
 Three Gradle modules — **`shared`** (Kotlin Multiplatform: domain, data (Room/DataStore),
 ViewModels, and the Compose Multiplatform UI; compiles for Android and iOS), **`androidApp`**
 (a thin Android shell: navigation, platform integrations, permission/consent glue), and
-**`testutil`** (shared test fakes). Phase A of the KMP migration is complete
-([migration plan](docs/kmp-migration.md)).
+**`testutil`** (shared test fakes) — plus **`iosApp`**, the Xcode project that runs the shared
+UI on the iOS simulator. Phase A of the KMP migration is complete and Phase B (real iOS app)
+is in progress ([migration plan](docs/kmp-migration.md)).
 
 Feature-by-layer, with clean architecture inside each feature:
 
