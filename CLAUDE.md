@@ -212,9 +212,15 @@ retained per tab when switching; the user always exits the app through the **Das
   `ManageKey`, `SettingsKey` (top-level) + `TransactionEditKey/BrandEditKey/CategoryEditKey(id)` (children).
 - `NavigationState.kt` — `NavigationState` (one back stack per tab), `Navigator`
   (`navigate`/`goBack`: back from a tab → home; back from home → exit), and `toEntries()`
-  which wires the saveable-state + **ViewModel-store** entry decorators. The ViewModel
-  decorator scopes each screen's ViewModel to its `NavEntry`, so a popped destination's
-  ViewModel is cleared — re-entering a screen starts fresh (no stale state).
+  which wires the saveable-state + **ViewModel-store** entry decorators plus an
+  **opaque-background decorator** (screens are content-only layers over the Scaffold
+  background; slide-type transitions — e.g. the JB iOS default push — would otherwise show
+  the previous destination through the incoming one; sheet entries are excluded). The
+  ViewModel decorator scopes each screen's ViewModel to its `NavEntry`, so a popped
+  destination's ViewModel is cleared — re-entering a screen starts fresh (no stale state).
+  The `NavDisplay` container transition is pinned to a **cross-fade** on both platforms
+  (tab switches must not animate like hierarchy pushes); full-screen children carry their
+  own `fullScreenTransition()` metadata.
 - `BottomSheetScene.kt` — `BottomSheetSceneStrategy`; the transaction add/edit destination
   is marked with `bottomSheet()` metadata so it renders as a modal bottom sheet overlay.
 - `HisabakRoot.kt` (`shared/commonMain`, `com.hisabak`) — the whole app shell:
