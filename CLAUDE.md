@@ -150,7 +150,7 @@ Three Gradle modules plus the Xcode app (Phase A of the KMP migration is complet
 progress — see `docs/kmp-migration.md`):
 
 - **`androidApp/`** — a **thin Android shell** (`com.android.application`, prod/staging
-  flavors, signing, Firebase): `MainActivity`, `HisabakApp`, `nav/`, `security/AppLock.kt`,
+  flavors, signing, Firebase): `MainActivity`, `HisabakApp`, `security/AppLock.kt`,
   the platform glue (SMS capture, `SystemNotifier`, WorkManager, Keystore stores,
   `GoogleDriveAuthorizer`/`GoogleDriveBackupRemote`, `AesGcmBackupCrypto`,
   `FirebaseAnalyticsClient`, `BiometricAuthenticator`, `AppLocale`,
@@ -162,7 +162,8 @@ progress — see `docs/kmp-migration.md`):
   static `Shared` framework). `commonMain` holds the whole app minus the platform glue:
   domain + data (Room, DataStore), the SMS parsing engine, theme/components/icons/CMP
   resources, **all feature Screens + ViewModels** (plus the Routes with no platform
-  touchpoints), the Vico charts, and the pure Koin modules (`di/SharedModules.kt`).
+  touchpoints), the Vico charts, the pure Koin modules (`di/SharedModules.kt`), and the
+  **nav layer + app shell** (`nav/`, `HisabakRoot.kt` — see Navigation below).
   `iosMain` has the stub platform bindings (`di/IosPlatformModule.kt`,
   `core/platform/IosStubs.kt`, all `TODO(Phase-B)`) and the `MainViewController`
   placeholder entry point. Source sets: `commonMain` / `androidMain` / `iosMain` +
@@ -196,9 +197,12 @@ com.hisabak
 
 ## Navigation
 
-**Jetpack Navigation 3** (`com.hisabak.nav`). 5-tab bottom navigation, each tab a
-top-level destination with its own back stack. State is retained per tab when
-switching; the user always exits the app through the **Dashboard** (home) tab.
+**Navigation 3, multiplatform** (`com.hisabak.nav`, `shared/commonMain` — androidx
+`navigation3-runtime` (multiplatform upstream) + JetBrains `navigation3-ui` + JB
+`lifecycle-viewmodel-navigation3`; the JB artifacts keep `androidx.*` package names).
+5-tab bottom navigation, each tab a top-level destination with its own back stack. State is
+retained per tab when switching; the user always exits the app through the **Dashboard**
+(home) tab.
 
 - `NavKeys.kt` — destination keys: `DashboardKey`, `TransactionsKey`, `SmsKey`,
   `ManageKey`, `SettingsKey` (top-level) + `TransactionEditKey/BrandEditKey/CategoryEditKey(id)` (children).
@@ -209,8 +213,14 @@ switching; the user always exits the app through the **Dashboard** (home) tab.
   ViewModel is cleared — re-entering a screen starts fresh (no stale state).
 - `BottomSheetScene.kt` — `BottomSheetSceneStrategy`; the transaction add/edit destination
   is marked with `bottomSheet()` metadata so it renders as a modal bottom sheet overlay.
-- `MainActivity.kt` — `Scaffold` + `NavDisplay`. Top bar / bottom nav / FAB are derived
-  from the current destination.
+- `HisabakRoot.kt` (`shared/commonMain`, `com.hisabak`) — the whole app shell:
+  theme resolution from prefs, the first-launch flow (onboarding → restore offer → app),
+  and the `Scaffold` + `NavDisplay` (top bar / bottom nav / FAB derived from the current
+  destination). Its **`PlatformSlots`** parameter carries the per-platform seams: the five
+  thin Routes (onboarding, restore, SMS inbox, settings, backup), the app-lock gate, a
+  notification-permission effect, and a system-bar styler. `MainActivity` supplies the
+  Android slots; `MainViewController` (iosMain) starts Koin via `startIosApp()` and supplies
+  the iOS slots (`IosRoutes.kt` — inert seams until their Phase B tier lands).
 
 | Tab | Top-level key | Internal screens |
 |-----|---------------|-----------------|

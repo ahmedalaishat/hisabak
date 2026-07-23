@@ -233,7 +233,7 @@ simulators); CI keeps the compile + app-build gates.
 
 ### PR sequence
 
-- [ ] **PR B1 — Xcode `iosApp` skeleton**: wizard-pattern `iosApp/` (pbxproj +
+- [x] **PR B1 — Xcode `iosApp` skeleton** (#100): wizard-pattern `iosApp/` (pbxproj +
   `Configuration/Config.xcconfig` + SwiftUI shell wrapping `MainViewController()` from the
   static `Shared` framework via `embedAndSignAppleFrameworkForXcode`); a **shared `iosApp`
   scheme** so `xcodebuild` works headlessly; portrait-only, bundle id `com.hisabak`,
@@ -241,9 +241,18 @@ simulators); CI keeps the compile + app-build gates.
   (`xcodebuild … -destination 'iOS Simulator'`, path-filtered to `iosApp/**` too). Template
   app icon retained (real icon in PR B6). This plan section.
 - [ ] **PR B2 — Multiplatform navigation**: `nav/` (`NavKeys`, `NavigationState`,
-  `BottomSheetScene`) + the scaffold/NavDisplay shell move to `shared/commonMain` on JB
-  multiplatform Navigation 3 (`org.jetbrains.androidx.navigation3`) + JB lifecycle;
-  `MainActivity` consumes the shared root; `MainViewController` renders the real app.
+  `BottomSheetScene`, `NavTransitions`) + the app shell move to `shared/commonMain` on JB
+  multiplatform Navigation 3 + JB lifecycle 2.11: the shared root is `HisabakRoot(PlatformSlots)`
+  (`HisabakRoot.kt` — theme resolution, launch-stage flow, tabbed NavDisplay shell), where
+  `PlatformSlots` carries the per-platform seams (the five thin Routes, app-lock gate,
+  notification-permission effect, system-bar styler). `MainActivity` builds the Android slots;
+  `MainViewController` starts Koin (`startIosApp`) and renders the iOS slots (`IosRoutes.kt`,
+  inert seams). Versions: androidx `navigation3-runtime` 1.1.4 (multiplatform upstream),
+  JB `navigation3-ui` 1.1.1 (androidx package names, so moved files keep their imports;
+  API drift: `sceneStrategy`+`.then()` → `sceneStrategies` list), JB lifecycle 2.10.0 → 2.11.0.
+  CI fix ridden along: the `iosApp simulator build` job needs an Xcode 26 toolchain
+  (CMP 1.11.x references iOS 26 UIKit symbols — `UIViewLayoutRegion`), so it runs on
+  `macos-26`; the compile job moved off deprecated `macos-14` to `macos-15`.
   Exit: all five tabs browsable on the simulator with stub platform behavior.
 - [ ] **PR B3 — iOS actuals, tier 1 (local UX)**: `LocalizedDateFormatter` over
   `NSDateFormatter` (+ the Arabic/locale digit strategy), motion-scale from

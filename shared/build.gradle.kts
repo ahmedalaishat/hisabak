@@ -58,6 +58,9 @@ kotlin {
             api(libs.koin.core.viewmodel)
             api(libs.koin.compose)
             api(libs.koin.compose.viewmodel)
+            implementation(libs.androidx.navigation3.runtime)
+            implementation(libs.jetbrains.navigation3.ui)
+            implementation(libs.jetbrains.lifecycle.viewmodel.navigation3)
             implementation(libs.vico.multiplatform.m3)
         }
         commonTest.dependencies {

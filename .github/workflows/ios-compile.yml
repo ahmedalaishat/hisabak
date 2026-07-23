@@ -16,7 +16,7 @@ on:
 jobs:
   compile:
     name: Kotlin/Native iOS compile
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v5
 
@@ -33,9 +33,11 @@ jobs:
         run: ./gradlew :shared:compileKotlinIosSimulatorArm64 :shared:compileTestKotlinIosSimulatorArm64 --no-daemon
 
   app:
-    # objectVersion 77 pbxproj needs Xcode >= 16.3 (macos-15 default qualifies).
+    # Needs an Xcode 26 toolchain: CMP 1.11.x references iOS 26 UIKit symbols
+    # (UIViewLayoutRegion), so linking against the iOS 18.x SDK of Xcode 16.4 fails.
+    # macos-26's default Xcode qualifies (and objectVersion 77 needs >= 16.3 anyway).
     name: iosApp simulator build
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v5
 
