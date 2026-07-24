@@ -7,6 +7,11 @@ All notable changes to Hisabak are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **iOS: capture transactions through the Shortcuts app** — Hisabak now provides a
+  "Capture transaction" action in the Shortcuts app. Point a personal automation
+  ("When I get a message" → Run immediately) at it to record bank SMS hands-free — the
+  closest iOS gets to Android's SMS auto-capture, without the app ever reading your
+  messages.
 - **Reconnect Google Drive from the Backup screen** — if backup is on but no Google account is
   connected (declined, failed, or revoked access), a "Connect Google account" button now appears;
   previously the only way back was turning backup off and on again.

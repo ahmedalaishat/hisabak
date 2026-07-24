@@ -88,6 +88,18 @@ class CaptureTransactionUseCaseTest {
     }
 
     @Test
+    fun `shortcut capture saves, posts the recorded confirmation, and reports its source`() = runTest {
+        val result = capture("Purchase of AED 42.00 at Lulu done", CaptureSource.SHORTCUT)
+
+        assertTrue(result is DomainResult.Success)
+        assertEquals(1, transactionRepo.current.size)
+        assertEquals(1, notifier.recorded.size)
+
+        val event = analytics.logged.single() as AnalyticsEvent.SmsCaptured
+        assertEquals("shortcut", event.params["source"])
+    }
+
+    @Test
     fun `manual paste saves the transaction but posts no confirmation`() = runTest {
         val result = capture("Purchase of AED 42.00 at Lulu done", CaptureSource.MANUAL_PASTE)
 
