@@ -240,7 +240,7 @@ simulators); CI keeps the compile + app-build gates.
   `TEAM_ID` empty (simulator needs no signing). CI: `ios-compile.yml` gains an app-build job
   (`xcodebuild … -destination 'iOS Simulator'`, path-filtered to `iosApp/**` too). Template
   app icon retained (real icon in PR B6). This plan section.
-- [ ] **PR B2 — Multiplatform navigation**: `nav/` (`NavKeys`, `NavigationState`,
+- [x] **PR B2 — Multiplatform navigation**: `nav/` (`NavKeys`, `NavigationState`,
   `BottomSheetScene`, `NavTransitions`) + the app shell move to `shared/commonMain` on JB
   multiplatform Navigation 3 + JB lifecycle 2.11: the shared root is `HisabakRoot(PlatformSlots)`
   (`HisabakRoot.kt` — theme resolution, launch-stage flow, tabbed NavDisplay shell), where

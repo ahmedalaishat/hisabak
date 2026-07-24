@@ -321,4 +321,6 @@
     <string name="notification_budget_level_title">%1$s at %2$d% of budget</string>
     <string name="notification_budget_message">Spent %1$s of %2$s this month.</string>
     <string name="backup_connect_account">Connect Google account</string>
+    <string name="shortcut_capture_success">Transaction saved</string>
+    <string name="shortcut_capture_failure">Couldn't read a transaction from that text</string>
 </resources>
