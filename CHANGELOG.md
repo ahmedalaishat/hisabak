@@ -10,9 +10,11 @@ All notable changes to Hisabak are documented here. Format based on
 - **AI parsing for unrecognized bank messages** — when a bank SMS doesn't match any known
   format, the app's on-device AI (Gemini Nano on Android, Apple Intelligence on iOS) now
   reads it and proposes the transaction as a suggestion you confirm with one tap; a
-  "Parse with AI" button also appears on unparsed messages. Everything runs on your
-  device — messages never leave your phone. Available on devices with on-device AI
-  support; everywhere else the app behaves as before.
+  "Parse with AI" button also appears on unparsed messages. Suggestions recognize your
+  existing brands — typos, different casing, and abbreviations resolve to the brand you
+  already track instead of creating a duplicate. Everything runs on your device —
+  messages never leave your phone. Available on devices with on-device AI support;
+  everywhere else the app behaves as before.
 - **iOS: capture transactions through the Shortcuts app** — Hisabak now provides a
   "Capture transaction" action in the Shortcuts app. Point a personal automation
   ("When I get a message" → Run immediately) at it to record bank SMS hands-free — the

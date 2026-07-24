@@ -97,7 +97,9 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   platform's on-device model into a **confirm-first suggestion** (never an auto-created
   transaction). The port is `AiSmsParser` + `SuggestAiParse/ConfirmAiSuggestion/
   DismissAiSuggestionUseCase` in `feature/sms/domain/ai/` (commonMain; the shared `sanitize`
-  step owns acceptance rules, prompts live platform-side). Android:
+  step owns acceptance rules, prompts live platform-side). Parsing is **brand-aware**: the
+  top-50 most-used brand names go into the prompt, and `canonicalize` (exact/substring/
+  Levenshtein≤2) snaps the model's merchant string to an existing brand deterministically. Android:
   `GeminiNanoSmsParser` over the ML Kit GenAI **Prompt API** (`com.google.mlkit:genai-prompt`,
   beta — OS-managed Gemini Nano via AICore, flagship devices only). iOS: `AiSmsBridge` seam →
   `FoundationModelsSmsParser.swift` (Apple Foundation Models, iOS 26+, `@Generable`; injected

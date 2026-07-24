@@ -13,9 +13,9 @@ class IosAiSmsParser(private val bridge: AiSmsBridge) : AiSmsParser {
     override suspend fun availability(): AiParserAvailability =
         if (bridge.isAvailable()) AiParserAvailability.Ready else AiParserAvailability.Unavailable
 
-    override suspend fun parse(body: String): AiParsedSms? =
+    override suspend fun parse(body: String, knownBrands: List<String>): AiParsedSms? =
         suspendCancellableCoroutine { continuation ->
-            bridge.parse(body) { result ->
+            bridge.parse(body, knownBrands) { result ->
                 continuation.resume(
                     result?.let {
                         AiParsedSms(

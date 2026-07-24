@@ -18,7 +18,13 @@ import kotlin.time.Instant
  */
 interface AiSmsParser {
     suspend fun availability(): AiParserAvailability
-    suspend fun parse(body: String): AiParsedSms?
+
+    /**
+     * [knownBrands] are the user's existing brand names (most used first) — implementations put
+     * them in the prompt so the model prefers an existing brand's exact name over the raw
+     * merchant string (typos, casing, and abbreviations included). May be empty.
+     */
+    suspend fun parse(body: String, knownBrands: List<String>): AiParsedSms?
 }
 
 enum class AiParserAvailability { Ready, Unavailable }

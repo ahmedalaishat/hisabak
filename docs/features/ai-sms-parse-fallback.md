@@ -58,6 +58,23 @@ platform-native model pair.
   (availability, spinner set, effects) with `FakeAiSmsParser` in testutil. The 3→4
   migration is a spec-less additive AutoMigration verified by Room at compile time.
 
+## Brand-aware parsing (follow-up PR)
+
+The parser knows the user's existing brands, two layers deep:
+- **Prompt-side:** `SuggestAiParseUseCase` passes the top-50 brand names by transaction
+  count (`BrandRepository.namesByUsage`) into `AiSmsParser.parse(body, knownBrands)`;
+  both adapters instruct the model to answer with an existing brand's exact name when the
+  merchant matches it — typos, casing, and abbreviations included. On-device inference is
+  what makes feeding user data into the prompt acceptable.
+- **Deterministic backstop:** `canonicalize` in the sanitize step snaps the model's
+  merchant string to an existing brand — case-insensitive exact, then substring either way
+  (mirroring `findByNameLike`'s link-time containment rule, so the suggestion shows
+  exactly what Confirm will link), then Levenshtein ≤ 2 for names ≥ 4 chars. Usage order
+  breaks ties toward the most-used brand.
+
+This also pre-wires auto-categorization: a suggestion landing on an existing brand
+inherits that brand's category through the normal commit path, no extra model call.
+
 ## Risks
 Arabic/bilingual SMS quality (confirm-first mitigates; measure via analytics before
 building categorization on top); initial device reach is small (Nano flagships; iPhone

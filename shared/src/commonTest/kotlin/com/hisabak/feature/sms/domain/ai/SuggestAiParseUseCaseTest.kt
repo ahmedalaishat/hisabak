@@ -3,12 +3,15 @@ package com.hisabak.feature.sms.domain.ai
 import com.hisabak.core.common.Currency
 import com.hisabak.core.common.DomainResult
 import com.hisabak.core.common.Money
+import com.hisabak.feature.brand.domain.Brand
+import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessage
 import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.transaction.domain.TransactionId
 import com.hisabak.testutil.FakeAiSmsParser
 import com.hisabak.testutil.FakeAnalytics
+import com.hisabak.testutil.FakeBrandRepository
 import com.hisabak.testutil.FakeSmsRepository
 import com.hisabak.testutil.TestClock
 import com.hisabak.testutil.aed
@@ -24,12 +27,15 @@ class SuggestAiParseUseCaseTest {
 
     private val clock = TestClock()
     private val smsRepo = FakeSmsRepository()
+    private val brandRepo = FakeBrandRepository()
     private val aiParser = FakeAiSmsParser()
     private val analytics = FakeAnalytics()
 
-    private val suggest = SuggestAiParseUseCase(aiParser, smsRepo, Currency.AED, clock, analytics)
+    private val suggest = SuggestAiParseUseCase(aiParser, smsRepo, brandRepo, Currency.AED, clock, analytics)
 
     private val receivedAt = Instant.parse("2026-03-04T09:30:00Z")
+
+    private fun brand(name: String) = Brand(id = BrandId.new(), name = name, categoryId = null)
 
     private suspend fun storedMessage(
         transactionId: TransactionId? = null,
@@ -126,6 +132,61 @@ class SuggestAiParseUseCaseTest {
         val suggested = smsRepo.current.single().suggested
         assertEquals(receivedAt, suggested?.occurredAt)
         assertEquals(Currency.AED, suggested?.amount?.currency)
+    }
+
+    @Test
+    fun `known brands are passed to the model most used first`() = runTest {
+        aiParser.result = AiParsedSms("Noon", 12_50, "AED", null)
+        brandRepo.emit(listOf(brand("Carrefour"), brand("Talabat")))
+        val message = storedMessage()
+
+        suggest(message.id, source = "auto")
+
+        assertEquals(listOf("Carrefour", "Talabat"), aiParser.lastKnownBrands)
+    }
+
+    @Test
+    fun `a brand differing only in case snaps to the existing name`() = runTest {
+        aiParser.result = AiParsedSms("NOON", 12_50, "AED", null)
+        brandRepo.emit(listOf(brand("Noon")))
+        val message = storedMessage()
+
+        suggest(message.id, source = "auto")
+
+        assertEquals("Noon", smsRepo.current.single().suggested?.brandName)
+    }
+
+    @Test
+    fun `a merchant string containing an existing brand snaps to it`() = runTest {
+        aiParser.result = AiParsedSms("CARREFOUR DIFC", 12_50, "AED", null)
+        brandRepo.emit(listOf(brand("Carrefour")))
+        val message = storedMessage()
+
+        suggest(message.id, source = "auto")
+
+        assertEquals("Carrefour", smsRepo.current.single().suggested?.brandName)
+    }
+
+    @Test
+    fun `a small typo snaps to the existing brand`() = runTest {
+        aiParser.result = AiParsedSms("Carefour", 12_50, "AED", null)
+        brandRepo.emit(listOf(brand("Carrefour")))
+        val message = storedMessage()
+
+        suggest(message.id, source = "auto")
+
+        assertEquals("Carrefour", smsRepo.current.single().suggested?.brandName)
+    }
+
+    @Test
+    fun `an unrelated merchant keeps the model string`() = runTest {
+        aiParser.result = AiParsedSms("Amazon", 12_50, "AED", null)
+        brandRepo.emit(listOf(brand("Carrefour"), brand("Noon")))
+        val message = storedMessage()
+
+        suggest(message.id, source = "auto")
+
+        assertEquals("Amazon", smsRepo.current.single().suggested?.brandName)
     }
 
     @Test

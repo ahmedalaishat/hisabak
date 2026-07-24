@@ -120,6 +120,10 @@ class FakeBrandRepository(initial: List<Brand> = emptyList()) : BrandRepository 
     }
 
     override suspend fun countTransactions(id: BrandId): Long = 0L
+
+    // Insertion order stands in for usage order; tests arrange brands most-used-first.
+    override suspend fun namesByUsage(limit: Int): List<String> =
+        items.value.take(limit).map { it.name }
 }
 
 class FakeCategoryRepository(initial: List<Category> = emptyList()) : CategoryRepository {

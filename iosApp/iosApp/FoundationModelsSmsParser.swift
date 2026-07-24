@@ -21,12 +21,12 @@ final class FoundationModelsSmsParser: AiSmsBridge {
         return false
     }
 
-    func parse(body: String, completion: @escaping (AiSmsBridgeResult?) -> Void) {
+    func parse(body: String, knownBrands: [String], completion: @escaping (AiSmsBridgeResult?) -> Void) {
         #if canImport(FoundationModels)
         guard #available(iOS 26.0, *) else { completion(nil); return }
         Task {
             do {
-                let session = LanguageModelSession(instructions: Self.instructions)
+                let session = LanguageModelSession(instructions: Self.instructions(knownBrands: knownBrands))
                 let response = try await session.respond(to: body, generating: ParsedBankSms.self)
                 let parsed = response.content
                 completion(
@@ -47,10 +47,20 @@ final class FoundationModelsSmsParser: AiSmsBridge {
         #endif
     }
 
-    private static let instructions = """
-        You extract bank transaction data from SMS messages. Messages may be in English, Arabic, \
-        or both. If the text is not a bank transaction message, leave every field empty.
-        """
+    private static func instructions(knownBrands: [String]) -> String {
+        var text = """
+            You extract bank transaction data from SMS messages. Messages may be in English, Arabic, \
+            or both. If the text is not a bank transaction message, leave every field empty.
+            """
+        if !knownBrands.isEmpty {
+            text += """
+                \nKnown brands: \(knownBrands.joined(separator: ", ")). \
+                If the merchant matches a known brand - even with typos, different casing, or an \
+                abbreviation - use that brand name exactly as listed.
+                """
+        }
+        return text
+    }
 }
 
 #if canImport(FoundationModels)

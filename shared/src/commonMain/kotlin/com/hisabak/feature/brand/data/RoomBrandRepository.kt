@@ -50,4 +50,6 @@ class RoomBrandRepository(
 
     override suspend fun countTransactions(id: BrandId): Long =
         transactionDao.countForBrand(id.value)
+
+    override suspend fun namesByUsage(limit: Int): List<String> = dao.namesByUsage(limit)
 }

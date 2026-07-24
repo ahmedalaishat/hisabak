@@ -11,4 +11,7 @@ interface BrandRepository {
     suspend fun upsert(brand: Brand): DomainResult<Unit>
     suspend fun delete(id: BrandId): DomainResult<Unit>
     suspend fun countTransactions(id: BrandId): Long
+
+    /** Brand names ordered by transaction count (most used first), capped at [limit]. */
+    suspend fun namesByUsage(limit: Int): List<String>
 }
