@@ -38,7 +38,9 @@ platform-native model pair.
 - **Use cases:** `SuggestAiParseUseCase` (guards → parse → sanitize → store suggestion),
   `ConfirmAiSuggestionUseCase` (promotes via `SmsTransactionProcessor.commit`, the
   extracted trusted pipeline tail — one write links the transaction, records the parse,
-  clears the suggestion; then budget re-check), `DismissAiSuggestionUseCase`.
+  keeps the suggestion as the linked row's "AI parsed" provenance badge; then budget
+  re-check), `DismissAiSuggestionUseCase`. Note: provenance isn't backed up (suggested*
+  columns stay out of the backup format), so it's lost on restore — accepted.
   `IngestSmsUseCase` launches the auto suggest on `ValidationFailed`.
 - **Data:** `SmsMessage.suggested: ParsedSmsData?`; `sms_messages` gains 4 nullable
   `suggested*` columns; `SCHEMA_VERSION` 3→4 with additive `AutoMigration(3,4)`. Backup
