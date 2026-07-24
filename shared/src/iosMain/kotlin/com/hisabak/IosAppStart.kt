@@ -11,6 +11,7 @@ import com.hisabak.di.iosPlatformModule
 import com.hisabak.di.sharedModules
 import com.hisabak.feature.notification.domain.CategoryLimitMonitor
 import com.hisabak.feature.notification.platform.installNotificationTapHandler
+import com.hisabak.feature.sms.platform.AiSmsBridge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -23,12 +24,13 @@ private var started = false
  * iOS counterpart of `HisabakApp.onCreate`: Koin, first-run seeding, the budget-limit monitor,
  * and the auto-backup task registration + reschedule. Called from `iOSApp.swift`'s init —
  * BGTaskScheduler registration must complete before the app finishes launching. [gcmCipher] is
- * the Swift CryptoKit bridge (see `CryptoKitGcmCipher.swift`).
+ * the Swift CryptoKit bridge (see `CryptoKitGcmCipher.swift`); [aiSmsBridge] the Swift
+ * Foundation Models bridge (see `FoundationModelsSmsParser.swift`).
  */
-fun startIosApp(gcmCipher: GcmCipher) {
+fun startIosApp(gcmCipher: GcmCipher, aiSmsBridge: AiSmsBridge) {
     if (started) return
     started = true
-    startKoin { modules(sharedModules + iosPlatformModule(gcmCipher)) }
+    startKoin { modules(sharedModules + iosPlatformModule(gcmCipher, aiSmsBridge)) }
     val koin = KoinPlatform.getKoin()
     val appScope = koin.get<CoroutineScope>(APPLICATION_SCOPE)
     registerAutoBackupTask(appScope)

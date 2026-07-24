@@ -93,6 +93,17 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   always read LTR (glyph · number · K/M-or-أ/م suffix) via a forced `LayoutDirection.Ltr`,
   with the number and suffix as separate `Text`s so Arabic-Indic digits don't bidi-reorder.
   Amounts keep the dirham glyph in both languages.
+- **On-device AI (SMS parse fallback):** bank SMS that match no regex template get parsed by the
+  platform's on-device model into a **confirm-first suggestion** (never an auto-created
+  transaction). The port is `AiSmsParser` + `SuggestAiParse/ConfirmAiSuggestion/
+  DismissAiSuggestionUseCase` in `feature/sms/domain/ai/` (commonMain; the shared `sanitize`
+  step owns acceptance rules, prompts live platform-side). Android:
+  `GeminiNanoSmsParser` over the ML Kit GenAI **Prompt API** (`com.google.mlkit:genai-prompt`,
+  beta — OS-managed Gemini Nano via AICore, flagship devices only). iOS: `AiSmsBridge` seam →
+  `FoundationModelsSmsParser.swift` (Apple Foundation Models, iOS 26+, `@Generable`; injected
+  via `startIosApp(gcmCipher, aiSmsBridge)` like the CryptoKit bridge). Unsupported devices
+  report `Unavailable` and every AI affordance stays hidden. Inference is fully on-device —
+  SMS text never leaves the phone; analytics events (`ai_parse_*`) stay PII-free.
 - **Platform:** Android only, portrait, edge-to-edge. `minSdk 29`.
 - **Dates & times: use kotlinx-datetime** (`kotlin.time.Instant`, `kotlinx.datetime.LocalDate` /
   `YearMonth` / `TimeZone`), **not `java.time`** — the code is KMP-bound and java.time doesn't

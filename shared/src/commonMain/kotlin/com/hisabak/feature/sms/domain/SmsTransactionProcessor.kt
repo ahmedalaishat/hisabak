@@ -29,6 +29,15 @@ class SmsTransactionProcessor(
             if (base.occurredAt == null) base.copy(occurredAt = defaultDate ?: clock.now()) else base
         }
 
+        return commit(message, parsed)
+    }
+
+    /**
+     * The trusted tail of the pipeline: find/create the brand, create the transaction, and link
+     * the message (writing [parsed] as its confirmed parse) in one upsert. Also the entry point
+     * for confirming an AI suggestion — the caller passes the suggestion as [parsed].
+     */
+    suspend fun commit(message: SmsMessage, parsed: ParsedSmsData): DomainResult<Transaction> {
         val brandName = parsed.brandName
             ?: return DomainResult.Failure(DomainError.ValidationFailed("SMS parse missing brand"))
         val amount = parsed.amount

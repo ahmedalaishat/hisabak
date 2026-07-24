@@ -24,8 +24,11 @@ import com.hisabak.core.domain.backup.BackupPassphraseStore
 import com.hisabak.core.domain.backup.BackupRemote
 import com.hisabak.core.domain.security.BiometricAvailability
 import com.hisabak.core.platform.security.BiometricAuthenticator
+import com.hisabak.di.APPLICATION_SCOPE
 import com.hisabak.feature.notification.domain.NotificationStrings
 import com.hisabak.feature.notification.domain.Notifier
+import com.hisabak.feature.sms.domain.ai.AiSmsParser
+import com.hisabak.feature.sms.platform.GeminiNanoSmsParser
 import com.hisabak.feature.notification.platform.AndroidNotificationStrings
 import com.hisabak.feature.notification.platform.SystemNotifier
 import org.koin.android.ext.koin.androidContext
@@ -58,6 +61,8 @@ val platformModule = module {
     } bind AppPreferences::class
 
     single { BiometricAuthenticator(androidContext()) } bind BiometricAvailability::class
+
+    single<AiSmsParser> { GeminiNanoSmsParser(appScope = get(APPLICATION_SCOPE)) }
 
     single { SystemNotifier(androidContext()) } bind Notifier::class
     single<NotificationStrings> { AndroidNotificationStrings(androidContext()) }

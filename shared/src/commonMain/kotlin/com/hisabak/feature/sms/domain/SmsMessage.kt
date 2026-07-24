@@ -9,6 +9,8 @@ data class SmsMessage(
     val receivedAt: Instant,
     val transactionId: TransactionId? = null,
     val parsed: ParsedSmsData? = null,
+    /** Unconfirmed AI parse — shown as a suggestion until the user confirms (then it becomes [parsed]). */
+    val suggested: ParsedSmsData? = null,
 ) {
     val isLinked: Boolean get() = transactionId != null
 }

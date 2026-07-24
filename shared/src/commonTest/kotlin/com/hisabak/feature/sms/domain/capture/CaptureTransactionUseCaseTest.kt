@@ -8,8 +8,11 @@ import com.hisabak.feature.notification.domain.TransactionRecordedNotifier
 import com.hisabak.feature.sms.data.parser.RegexSmsTemplateDetector
 import com.hisabak.feature.sms.data.parser.TemplateSmsParser
 import com.hisabak.feature.sms.domain.SmsTransactionProcessor
+import com.hisabak.feature.sms.domain.ai.AiParserAvailability
+import com.hisabak.feature.sms.domain.ai.SuggestAiParseUseCase
 import com.hisabak.feature.sms.domain.usecase.IngestSmsUseCase
 import com.hisabak.core.domain.analytics.AnalyticsEvent
+import com.hisabak.testutil.FakeAiSmsParser
 import com.hisabak.testutil.FakeAnalytics
 import com.hisabak.testutil.FakeBrandRepository
 import com.hisabak.testutil.FakeCategoryLimitAlertStore
@@ -20,6 +23,8 @@ import com.hisabak.testutil.FakeSmsRepository
 import com.hisabak.testutil.FakeTransactionRepository
 import com.hisabak.testutil.RecordingNotifier
 import com.hisabak.testutil.TestClock
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -34,6 +39,10 @@ class CaptureTransactionUseCaseTest {
     private val transactionRepo = FakeTransactionRepository()
     private val notifier = RecordingNotifier()
 
+    // The AI fallback is exercised in its own suites; here it is unavailable so the capture
+    // funnel's own analytics assertions stay isolated.
+    private val aiParser = FakeAiSmsParser().apply { availability = AiParserAvailability.Unavailable }
+
     private val ingest = IngestSmsUseCase(
         smsRepository = smsRepo,
         processor = SmsTransactionProcessor(
@@ -45,6 +54,8 @@ class CaptureTransactionUseCaseTest {
             clock = clock,
         ),
         clock = clock,
+        suggestAiParse = SuggestAiParseUseCase(aiParser, smsRepo, Currency.AED, clock, FakeAnalytics()),
+        appScope = CoroutineScope(Dispatchers.Unconfined),
     )
 
     private val recordedNotifier = TransactionRecordedNotifier(

@@ -17,12 +17,21 @@ fun SmsMessageEntity.toDomain(): SmsMessage {
         )
     } else null
 
+    val suggested = if (suggestedBrandName != null || suggestedAmountMinor != null || suggestedOccurredAtMillis != null) {
+        ParsedSmsData(
+            brandName = suggestedBrandName,
+            amount = suggestedAmountMinor?.let { Money(it, Currency(suggestedCurrency ?: "AED")) },
+            occurredAt = suggestedOccurredAtMillis?.let(Instant::fromEpochMilliseconds),
+        )
+    } else null
+
     return SmsMessage(
         id = SmsMessageId(id),
         body = body,
         receivedAt = Instant.fromEpochMilliseconds(receivedAtMillis),
         transactionId = transactionId?.let(::TransactionId),
         parsed = parsed,
+        suggested = suggested,
     )
 }
 
@@ -35,4 +44,8 @@ fun SmsMessage.toEntity(): SmsMessageEntity = SmsMessageEntity(
     parsedAmountMinor = parsed?.amount?.amountMinor,
     parsedCurrency = parsed?.amount?.currency?.code,
     parsedOccurredAtMillis = parsed?.occurredAt?.toEpochMilliseconds(),
+    suggestedBrandName = suggested?.brandName,
+    suggestedAmountMinor = suggested?.amount?.amountMinor,
+    suggestedCurrency = suggested?.amount?.currency?.code,
+    suggestedOccurredAtMillis = suggested?.occurredAt?.toEpochMilliseconds(),
 )

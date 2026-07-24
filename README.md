@@ -78,6 +78,9 @@ Everything below is built and shipping today:
   features, ending with an SMS-permission primer.
 - [x] 💬 **SMS capture** — parse bank SMS into transactions automatically (with permission), or
   capture one on demand by sharing it into Hisabak, selecting its text → Hisabak, or pasting it.
+  Messages no template recognizes fall back to **on-device AI** (Gemini Nano / Apple
+  Intelligence, where supported): the parse is suggested on the message and you confirm it with
+  one tap — nothing ever leaves your device.
 - [x] 🔔 **Budgets with alerts** — set a monthly limit per category and get notified at **50% /
   80% / 100%**. Alerts arrive as an Android notification *and* an in-app entry; tapping one opens
   the dashboard with that category expanded.

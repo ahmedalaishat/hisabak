@@ -1,5 +1,6 @@
 package com.hisabak.feature.sms.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -17,4 +18,8 @@ data class SmsMessageEntity(
     val parsedAmountMinor: Long?,
     val parsedCurrency: String?,
     val parsedOccurredAtMillis: Long?,
+    @ColumnInfo(defaultValue = "NULL") val suggestedBrandName: String? = null,
+    @ColumnInfo(defaultValue = "NULL") val suggestedAmountMinor: Long? = null,
+    @ColumnInfo(defaultValue = "NULL") val suggestedCurrency: String? = null,
+    @ColumnInfo(defaultValue = "NULL") val suggestedOccurredAtMillis: Long? = null,
 )

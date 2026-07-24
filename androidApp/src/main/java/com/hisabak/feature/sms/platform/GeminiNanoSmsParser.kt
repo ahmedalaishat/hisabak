@@ -1,0 +1,83 @@
+package com.hisabak.feature.sms.platform
+
+import com.google.mlkit.genai.common.FeatureStatus
+import com.google.mlkit.genai.prompt.Generation
+import com.hisabak.feature.sms.domain.ai.AiParsedSms
+import com.hisabak.feature.sms.domain.ai.AiParserAvailability
+import com.hisabak.feature.sms.domain.ai.AiSmsParser
+import com.hisabak.feature.sms.domain.ai.parseAiIsoDate
+import kotlin.math.roundToLong
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.jsonObject
+
+/**
+ * [AiSmsParser] over Gemini Nano via the ML Kit GenAI Prompt API. The model is OS-managed
+ * (AICore) — nothing ships in the APK, and inference never leaves the device. Only recent
+ * flagship devices have the feature; everywhere else [availability] reports Unavailable and the
+ * app behaves exactly as before. A DOWNLOADABLE model triggers a background download and stays
+ * Unavailable for this session.
+ */
+class GeminiNanoSmsParser(private val appScope: CoroutineScope) : AiSmsParser {
+
+    private val model by lazy { Generation.getClient() }
+    private var ready = false
+
+    override suspend fun availability(): AiParserAvailability {
+        if (ready) return AiParserAvailability.Ready
+        val status = runCatching { model.checkStatus() }.getOrDefault(FeatureStatus.UNAVAILABLE)
+        return when (status) {
+            FeatureStatus.AVAILABLE -> {
+                ready = true
+                AiParserAvailability.Ready
+            }
+            FeatureStatus.DOWNLOADABLE -> {
+                appScope.launch { runCatching { model.download().collect {} } }
+                AiParserAvailability.Unavailable
+            }
+            else -> AiParserAvailability.Unavailable
+        }
+    }
+
+    override suspend fun parse(body: String): AiParsedSms? = runCatching {
+        val response = model.generateContent(promptFor(body))
+        response.candidates.firstOrNull()?.text?.let(::decode)
+    }.getOrNull()
+
+    private fun promptFor(body: String) = """
+        You extract bank transaction data from SMS messages. Messages may be in English, Arabic, or both.
+        Reply with ONLY a JSON object, exactly this shape:
+        {"brand": string or null, "amount": number or null, "currency": string or null, "date": string or null}
+        Rules:
+        - brand: the merchant or sender name only, cleaned of locations and reference codes (e.g. "CARREFOUR", not "CARREFOUR, DUBAI, ARE").
+        - amount: the transaction amount as a positive decimal number without separators.
+        - currency: the ISO 4217 code such as "AED" or "USD"; null if not stated.
+        - date: the transaction date and time in ISO 8601 format (e.g. 2026-07-24T10:30:00); null if not stated.
+        - If the text is not a bank transaction message, use null for every field.
+
+        Message:
+        $body
+    """.trimIndent()
+
+    /** Defensive decode: models wrap JSON in prose/fences at will; null on anything unusable. */
+    private fun decode(raw: String): AiParsedSms? {
+        val start = raw.indexOf('{').takeIf { it >= 0 } ?: return null
+        val end = raw.lastIndexOf('}').takeIf { it > start } ?: return null
+        val json = runCatching { Json.parseToJsonElement(raw.substring(start, end + 1)).jsonObject }
+            .getOrNull() ?: return null
+
+        // JsonNull is a JsonPrimitive with isString=false and doubleOrNull=null, so it falls
+        // through every branch below without special-casing.
+        fun string(name: String) = (json[name] as? JsonPrimitive)?.takeIf { it.isString }?.content
+
+        return AiParsedSms(
+            brandName = string("brand"),
+            amountMinor = (json["amount"] as? JsonPrimitive)?.doubleOrNull?.let { (it * 100).roundToLong() },
+            currencyCode = string("currency"),
+            occurredAtEpochMillis = string("date")?.let(::parseAiIsoDate),
+        )
+    }
+}
