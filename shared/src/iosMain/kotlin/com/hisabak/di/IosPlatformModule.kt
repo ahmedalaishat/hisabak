@@ -42,6 +42,10 @@ private fun bundleBuildNumber(): Int =
     (NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleVersion") as? String)
         ?.toIntOrNull() ?: 0
 
+/** HisabakFlavor from Info.plist ("prod" | "staging") — the iOS counterpart of Android's flavors. */
+private fun bundleFlavor(): String =
+    NSBundle.mainBundle.objectForInfoDictionaryKey("HisabakFlavor") as? String ?: "prod"
+
 /**
  * iOS bindings for every platform port androidApp binds natively. Everything is real except
  * [Analytics] (no-op pending the B6 Firebase decision). [gcmCipher] is the Swift CryptoKit
@@ -50,7 +54,9 @@ private fun bundleBuildNumber(): Int =
 fun iosPlatformModule(gcmCipher: GcmCipher): Module = module {
     single {
         AppConfig(
-            seedData = false,
+            seedData = bundleFlavor() == "staging",
+            // False in every flavor: iOS has no SMS-read API. Unlike Android's staging (which
+            // carries RECEIVE_SMS), near-automatic capture on iOS is the Shortcuts action.
             smsAutoCapture = false,
             isDebug = Platform.isDebugBinary,
             versionCode = bundleBuildNumber(),

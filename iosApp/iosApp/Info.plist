@@ -29,5 +29,9 @@
 	<!-- Crashlytics stays off until iOSApp.init enables it for non-debug builds (Android parity). -->
 	<key>FirebaseCrashlyticsCollectionEnabled</key>
 	<false/>
+	<!-- prod | staging, from the xcconfig layer — the iOS counterpart of Android's flavors.
+	     The shared AppConfig reads it (staging seeds demo data). -->
+	<key>HisabakFlavor</key>
+	<string>$(HISABAK_FLAVOR)</string>
 </dict>
 </plist>

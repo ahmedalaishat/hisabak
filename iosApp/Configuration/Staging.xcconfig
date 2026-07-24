@@ -1,0 +1,9 @@
+// Staging flavor — the iOS counterpart of androidApp's `staging` product flavor
+// (separate bundle id so it installs alongside prod, "Hisabak STG" on the home screen,
+// seeded demo data via the HisabakFlavor Info.plist key). Referenced by the
+// DebugStaging/ReleaseStaging configurations; the iosAppStaging scheme builds them.
+#include "Config.xcconfig"
+
+PRODUCT_BUNDLE_IDENTIFIER=com.hisabak.staging
+INFOPLIST_KEY_CFBundleDisplayName=Hisabak STG
+HISABAK_FLAVOR=staging
