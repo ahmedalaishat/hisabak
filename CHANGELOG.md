@@ -10,7 +10,8 @@ All notable changes to Hisabak are documented here. Format based on
 - **AI parsing for unrecognized bank messages** — when a bank SMS doesn't match any known
   format, the app's on-device AI (Gemini Nano on Android, Apple Intelligence on iOS) now
   reads it and proposes the transaction as a suggestion you confirm with one tap; a
-  "Parse with AI" button also appears on unparsed messages. Suggestions recognize your
+  "Parse with AI" button also appears on unparsed messages. Each suggestion shows the
+  brand, amount, and booking date before you confirm. Suggestions recognize your
   existing brands — typos, different casing, and abbreviations resolve to the brand you
   already track instead of creating a duplicate — and messages imported this way keep an
   "AI parsed" label so you can always tell them apart from template parses. Everything runs on your device —
