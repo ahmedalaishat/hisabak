@@ -56,6 +56,9 @@ All notable changes to Hisabak are documented here. Format based on
   between them and animate in, for a more polished look.
 
 ### Fixed
+- **Crash on some AI suggestions** — an AI parse whose currency came back as a local
+  abbreviation or symbol (e.g. "Dhs", "د.إ") crashed the app; such results now fall back
+  to your app currency, the same as when the message names no currency at all.
 - **Expense sign** — expense amounts in the Transactions list and SMS Inbox now show a minus (`−`)
   instead of a plus, matching the rest of the app.
 - **Press feedback** — buttons, filter chips, and the segmented control no longer briefly lose their

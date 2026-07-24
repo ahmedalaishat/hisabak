@@ -135,6 +135,28 @@ class SuggestAiParseUseCaseTest {
     }
 
     @Test
+    fun `a non-iso model currency falls back to the app currency`() = runTest {
+        // Observed on device: a local abbreviation ("Dhs.") aborted Currency's validation.
+        aiParser.result = AiParsedSms("Noon", 12_50, "Dhs.", null)
+        val message = storedMessage()
+
+        val result = suggest(message.id, source = "auto")
+
+        assertTrue(result is DomainResult.Success)
+        assertEquals(Currency.AED, smsRepo.current.single().suggested?.amount?.currency)
+    }
+
+    @Test
+    fun `a valid lowercase model currency is honored`() = runTest {
+        aiParser.result = AiParsedSms("Noon", 12_50, "usd", null)
+        val message = storedMessage()
+
+        suggest(message.id, source = "auto")
+
+        assertEquals(Currency.USD, smsRepo.current.single().suggested?.amount?.currency)
+    }
+
+    @Test
     fun `known brands are passed to the model most used first`() = runTest {
         aiParser.result = AiParsedSms("Noon", 12_50, "AED", null)
         brandRepo.emit(listOf(brand("Carrefour"), brand("Talabat")))
