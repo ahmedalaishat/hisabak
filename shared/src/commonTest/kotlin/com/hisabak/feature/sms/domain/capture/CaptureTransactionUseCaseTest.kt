@@ -88,7 +88,7 @@ class CaptureTransactionUseCaseTest {
     }
 
     @Test
-    fun `shortcut capture saves, posts the recorded confirmation, and reports its source`() = runTest {
+    fun `shortcut capture saves and posts the recorded confirmation with its source`() = runTest {
         val result = capture("Purchase of AED 42.00 at Lulu done", CaptureSource.SHORTCUT)
 
         assertTrue(result is DomainResult.Success)
