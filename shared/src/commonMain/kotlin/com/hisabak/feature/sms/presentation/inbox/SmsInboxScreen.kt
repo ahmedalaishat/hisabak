@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hisabak.shared.resources.*
@@ -302,6 +303,9 @@ private fun SmsRowCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
+                    // Weight + ellipsis: a long brand truncates instead of pushing the amount
+                    // and action buttons off-screen.
+                    modifier = Modifier.weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -310,6 +314,9 @@ private fun SmsRowCard(
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
                     AmountText(
                         value = row.parsedAmount.amountMinor / 100.0,
@@ -337,55 +344,54 @@ private fun SmsRowCard(
                     }
                 }
             }
-        } else if (row.suggestedBrand != null && row.suggestedAmount != null) {
+        } else if (!row.isLinked && row.suggestedBrand != null && row.suggestedAmount != null) {
             // Unconfirmed AI parse: mirrors the parsed detail row, but badged as a suggestion —
             // the StatusChip above deliberately stays Unparsed until the user confirms.
             Spacer(Modifier.height(10.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(Modifier.height(10.dp))
-            Badge(
-                label = stringResource(Res.string.sms_ai_suggestion),
-                tone = BadgeTone.Info,
-                dot = true,
-            )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Badge(
+                    label = stringResource(Res.string.sms_ai_suggestion),
+                    tone = BadgeTone.Info,
+                    dot = true,
+                )
+                Text(
+                    row.suggestedBrand,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                AmountText(
+                    value = row.suggestedAmount.amountMinor / 100.0,
+                    tone = AmountTone.Expense,
+                    showSign = false,
+                    size = 18.sp,
+                )
+            }
             Spacer(Modifier.height(Spacing.s3))
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s2, Alignment.End),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        row.suggestedBrand,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    AmountText(
-                        value = row.suggestedAmount.amountMinor / 100.0,
-                        tone = AmountTone.Expense,
-                        showSign = false,
-                        size = 18.sp,
-                    )
-                }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    HisabakButton(
-                        text = stringResource(Res.string.sms_ai_dismiss),
-                        onClick = onDismissSuggestion,
-                        variant = ButtonVariant.Ghost,
-                    )
-                    PrimaryPillButton(
-                        text = stringResource(Res.string.sms_ai_confirm),
-                        onClick = onConfirmSuggestion,
-                        leadingIcon = HugeIcons.Download,
-                    )
-                }
+                HisabakButton(
+                    text = stringResource(Res.string.sms_ai_dismiss),
+                    onClick = onDismissSuggestion,
+                    variant = ButtonVariant.Ghost,
+                )
+                PrimaryPillButton(
+                    text = stringResource(Res.string.sms_ai_confirm),
+                    onClick = onConfirmSuggestion,
+                    leadingIcon = HugeIcons.Download,
+                )
             }
         } else {
             Spacer(Modifier.height(Spacing.s3))
@@ -394,6 +400,15 @@ private fun SmsRowCard(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.s2, Alignment.End),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (row.isLinked && row.suggestedBrand != null) {
+                    // Provenance: this linked transaction came from a confirmed AI parse.
+                    Badge(
+                        label = stringResource(Res.string.sms_ai_parsed),
+                        tone = BadgeTone.Info,
+                        dot = true,
+                    )
+                    Spacer(Modifier.weight(1f))
+                }
                 if (aiAvailable && !row.isLinked) {
                     if (isSuggesting) {
                         CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)

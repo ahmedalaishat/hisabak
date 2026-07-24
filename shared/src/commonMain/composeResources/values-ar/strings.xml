@@ -344,4 +344,5 @@
     <string name="sms_ai_confirm">تأكيد</string>
     <string name="sms_ai_dismiss">تجاهل</string>
     <string name="sms_ai_parse_failed">تعذّرت قراءة هذه الرسالة بالذكاء الاصطناعي</string>
+    <string name="sms_ai_parsed">عبر الذكاء الاصطناعي</string>
 </resources>

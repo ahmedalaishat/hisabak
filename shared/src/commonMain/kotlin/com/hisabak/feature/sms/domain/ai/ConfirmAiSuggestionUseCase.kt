@@ -13,8 +13,9 @@ import com.hisabak.feature.transaction.domain.Transaction
 /**
  * Promotes a stored AI suggestion into a real transaction through the trusted pipeline tail
  * ([SmsTransactionProcessor.commit]) — one write creates the transaction, links the message,
- * records the suggestion as its confirmed parse, and clears the suggestion. No recorded
- * notification: the user is in-app, watching the row flip to Linked.
+ * and records the suggestion as its confirmed parse. The suggestion itself is deliberately
+ * retained: on a linked message it serves as the "AI parsed" provenance marker in the inbox.
+ * No recorded notification: the user is in-app, watching the row flip to Linked.
  */
 class ConfirmAiSuggestionUseCase(
     private val smsRepository: SmsRepository,
@@ -33,7 +34,7 @@ class ConfirmAiSuggestionUseCase(
         val suggestion = message.suggested
             ?: return DomainResult.Failure(DomainError.ValidationFailed("No suggestion to confirm"))
 
-        val result = processor.commit(message.copy(suggested = null), suggestion)
+        val result = processor.commit(message, suggestion)
         if (result is DomainResult.Success) {
             analytics.log(AnalyticsEvent.AiSuggestionConfirmed(result.value.amount))
             limitMonitor.evaluateNow()

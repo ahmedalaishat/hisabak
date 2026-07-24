@@ -91,7 +91,8 @@ class ConfirmAiSuggestionUseCaseTest {
         val stored = smsRepo.current.single()
         assertEquals(tx.id, stored.transactionId)
         assertEquals(suggestion, stored.parsed)
-        assertNull(stored.suggested)
+        // Retained on purpose: the suggestion doubles as the "AI parsed" provenance marker.
+        assertEquals(suggestion, stored.suggested)
         assertEquals(listOf("ai_suggestion_confirmed"), analytics.names())
     }
 

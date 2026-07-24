@@ -210,6 +210,7 @@ class SmsInboxViewModelTest : MainDispatcherTest() {
         )
         val row = vm.state.value.rows.single()
         assertEquals(true, row.isLinked)
-        assertNull(row.suggestedBrand)
+        // Kept as the "AI parsed" provenance marker on the linked row.
+        assertEquals("Noon", row.suggestedBrand)
     }
 }
