@@ -382,6 +382,16 @@ private fun SmsRowCard(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.s2, Alignment.End),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                // The date the transaction will be booked at — a hallucinated or fallback date
+                // must be visible before Confirm, not discovered afterwards.
+                if (row.suggestedOccurredAt != null) {
+                    Text(
+                        formatDate(row.suggestedOccurredAt),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.weight(1f))
+                }
                 HisabakButton(
                     text = stringResource(Res.string.sms_ai_dismiss),
                     onClick = onDismissSuggestion,

@@ -17,6 +17,7 @@ data class SmsInboxRow(
     val isLinked: Boolean,
     val suggestedBrand: String? = null,
     val suggestedAmount: Money? = null,
+    val suggestedOccurredAt: Instant? = null,
 )
 
 data class SmsInboxUiState(

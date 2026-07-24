@@ -76,7 +76,7 @@ private struct ParsedBankSms {
     @Guide(description: "The ISO 4217 currency code such as AED or USD; empty if not stated.")
     var currency: String?
 
-    @Guide(description: "The transaction date and time in ISO 8601 format, e.g. 2026-07-24T10:30:00; empty if not stated.")
+    @Guide(description: "The transaction date and time in ISO 8601 format, e.g. 2026-07-24T10:30:00, ONLY if a date is written in the message itself. If the message has no date, leave this empty - never guess or invent one.")
     var date: String?
 }
 #endif

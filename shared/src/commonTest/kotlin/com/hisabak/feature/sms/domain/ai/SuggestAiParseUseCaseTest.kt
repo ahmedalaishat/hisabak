@@ -199,4 +199,27 @@ class SuggestAiParseUseCaseTest {
 
         assertEquals(receivedAt, smsRepo.current.single().suggested?.occurredAt)
     }
+
+    @Test
+    fun `a hallucinated past date is replaced with the arrival time`() = runTest {
+        // Observed on device: a dateless body ("400 lulu") provoked a date months in the past.
+        val hallucinated = (receivedAt - 30.days).toEpochMilliseconds()
+        aiParser.result = AiParsedSms("Lulu", 400_00, "AED", hallucinated)
+        val message = storedMessage()
+
+        suggest(message.id, source = "auto")
+
+        assertEquals(receivedAt, smsRepo.current.single().suggested?.occurredAt)
+    }
+
+    @Test
+    fun `a model date shortly before arrival is trusted`() = runTest {
+        val plausible = receivedAt - 1.days
+        aiParser.result = AiParsedSms("Noon", 12_50, "AED", plausible.toEpochMilliseconds())
+        val message = storedMessage()
+
+        suggest(message.id, source = "auto")
+
+        assertEquals(plausible, smsRepo.current.single().suggested?.occurredAt)
+    }
 }

@@ -57,7 +57,7 @@ class GeminiNanoSmsParser(private val appScope: CoroutineScope) : AiSmsParser {
             - brand: the merchant or sender name only, cleaned of locations and reference codes (e.g. "CARREFOUR", not "CARREFOUR, DUBAI, ARE").
             - amount: the transaction amount as a positive decimal number without separators.
             - currency: the ISO 4217 code such as "AED" or "USD"; null if not stated.
-            - date: the transaction date and time in ISO 8601 format (e.g. 2026-07-24T10:30:00); null if not stated.
+            - date: the transaction date and time in ISO 8601 format (e.g. 2026-07-24T10:30:00), ONLY if a date is written in the message itself; if the message has no date, use null - never guess or invent one.
             - If the text is not a bank transaction message, use null for every field.
             """.trimIndent(),
         )

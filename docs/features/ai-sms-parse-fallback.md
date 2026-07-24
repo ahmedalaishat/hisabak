@@ -33,8 +33,12 @@ platform-native model pair.
   failure, never throws). Prompt + output schema live platform-side (Foundation Models
   defines its schema in Swift `@Generable`); the shared **`sanitize`** step in
   `SuggestAiParseUseCase` owns acceptance: brand + positive amount required, currency
-  defaults to the app currency, missing/far-future dates fall back to the SMS arrival
-  time. `parseAiIsoDate` (shared) accepts instant / local date-time / bare date.
+  defaults to the app currency, and a model date is trusted only inside a plausibility
+  window (SMS arrival − 7 days … now + 1 day) — dateless bodies provoke hallucinated
+  dates months in the past (observed on-device), and anything outside the window falls
+  back to the SMS arrival time. The suggestion row shows the booking date before
+  Confirm; a pasted backlog message older than the window gets dated at paste time and
+  is correctable in the transaction editor. `parseAiIsoDate` (shared) accepts instant / local date-time / bare date.
 - **Use cases:** `SuggestAiParseUseCase` (guards → parse → sanitize → store suggestion),
   `ConfirmAiSuggestionUseCase` (promotes via `SmsTransactionProcessor.commit`, the
   extracted trusted pipeline tail — one write links the transaction, records the parse,

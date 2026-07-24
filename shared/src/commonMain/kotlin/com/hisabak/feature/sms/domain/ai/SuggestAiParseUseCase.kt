@@ -61,9 +61,11 @@ class SuggestAiParseUseCase(
 
     /**
      * Common guardrails regardless of which platform model produced the output: brand and a
-     * positive amount are required, the currency defaults to the app currency, and a missing or
-     * implausible date (model hallucinations land in the far future) falls back to when the SMS
-     * arrived — the same rule the template pipeline applies.
+     * positive amount are required, and the currency defaults to the app currency. A model date
+     * is trusted only inside a plausibility window around the SMS arrival — dateless messages
+     * provoke hallucinated dates months in the past (observed on-device: "400 lulu" → Oct 2025),
+     * and the far future is equally fictional — anything outside falls back to when the SMS
+     * arrived, the same rule the template pipeline applies.
      */
     private fun sanitize(raw: AiParsedSms, receivedAt: Instant, knownBrands: List<String>): ParsedSmsData? {
         val brand = raw.brandName?.trim()?.takeIf { it.isNotEmpty() } ?: return null
@@ -72,7 +74,7 @@ class SuggestAiParseUseCase(
             ?: defaultCurrency.code
         val occurredAt = raw.occurredAtEpochMillis
             ?.let(Instant::fromEpochMilliseconds)
-            ?.takeIf { it <= clock.now() + 1.days }
+            ?.takeIf { it >= receivedAt - MAX_DATE_AGE && it <= clock.now() + 1.days }
             ?: receivedAt
         return ParsedSmsData(
             brandName = canonicalize(brand, knownBrands),
@@ -121,5 +123,10 @@ class SuggestAiParseUseCase(
         const val MAX_KNOWN_BRANDS = 50
         const val MIN_TYPO_LENGTH = 4
         const val MAX_TYPO_DISTANCE = 2
+
+        /** How far before the SMS arrival a model-claimed date is still believable. Bank alerts
+         *  arrive near the transaction; a pasted backlog message older than this gets dated at
+         *  paste time and can be corrected in the transaction editor. */
+        val MAX_DATE_AGE = 7.days
     }
 }

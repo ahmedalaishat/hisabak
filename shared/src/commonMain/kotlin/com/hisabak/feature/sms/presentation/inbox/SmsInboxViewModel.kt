@@ -138,6 +138,7 @@ class SmsInboxViewModel(
         isLinked = msg.isLinked,
         suggestedBrand = msg.suggested?.brandName,
         suggestedAmount = msg.suggested?.amount,
+        suggestedOccurredAt = msg.suggested?.occurredAt,
     )
 
     private fun reasonFor(error: DomainError): String = when (error) {
