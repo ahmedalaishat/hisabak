@@ -188,6 +188,10 @@ progress — see `docs/kmp-migration.md`):
   `iosApp/Configuration/Config.xcconfig` (bundle id `com.hisabak`, `TEAM_ID` empty — simulator
   only until App Store setup; `GOOGLE_OAUTH_CLIENT_ID` for Drive backup, blank = unavailable). Build headlessly with
   `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17'`.
+  **Flavors mirror Android:** the `iosAppStaging` scheme builds the `DebugStaging`/`ReleaseStaging`
+  configurations (`Staging.xcconfig` — bundle id `com.hisabak.staging`, "Hisabak STG", seeded demo
+  data via the `HisabakFlavor` Info.plist key read by the shared `AppConfig`; `smsAutoCapture`
+  stays false on iOS — no SMS API, the Shortcuts action is the near-automatic capture path).
 
 Package layout (unchanged by the migration — files move between modules, packages stay):
 

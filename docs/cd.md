@@ -8,6 +8,15 @@ coexist on one device:
 | `staging` | `com.hisabak.staging` ("Hisabak STG") | Firebase App Distribution → testers | **Yes** (`RECEIVE_SMS`) |
 | `prod` | `com.hisabak` ("Hisabak") | Google Play *(planned)* | **No** — share / select-text / paste |
 
+**iOS mirrors the same two flavors** via Xcode configurations (`DebugStaging`/`ReleaseStaging`,
+`iosApp/Configuration/Staging.xcconfig`) and the **`iosAppStaging`** scheme: bundle id
+`com.hisabak.staging`, "Hisabak STG" on the home screen, seeded demo data (the `HisabakFlavor`
+Info.plist key feeds the shared `AppConfig`). SMS auto-capture stays off in every iOS flavor —
+Apple has no SMS-read API; the Shortcuts "Capture transaction" action is the near-automatic
+path. No iOS distribution channel yet: staging installs are dev-signed direct deploys
+(`xcodebuild -scheme iosAppStaging -configuration DebugStaging` + `devicectl`); a TestFlight
+lane arrives with PR B7 once the paid Apple Developer account exists.
+
 **SMS by flavor.** `RECEIVE_SMS` is a Google Play *restricted permission* that the Play build
 must not declare, so the broadcast receiver + permission live in the **staging flavor only**
 (`androidApp/src/staging/AndroidManifest.xml`). The `prod`/Play build is SMS-free and captures via the
