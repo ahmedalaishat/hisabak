@@ -42,25 +42,33 @@ class GeminiNanoSmsParser(private val appScope: CoroutineScope) : AiSmsParser {
         }
     }
 
-    override suspend fun parse(body: String): AiParsedSms? = runCatching {
-        val response = model.generateContent(promptFor(body))
+    override suspend fun parse(body: String, knownBrands: List<String>): AiParsedSms? = runCatching {
+        val response = model.generateContent(promptFor(body, knownBrands))
         response.candidates.firstOrNull()?.text?.let(::decode)
     }.getOrNull()
 
-    private fun promptFor(body: String) = """
-        You extract bank transaction data from SMS messages. Messages may be in English, Arabic, or both.
-        Reply with ONLY a JSON object, exactly this shape:
-        {"brand": string or null, "amount": number or null, "currency": string or null, "date": string or null}
-        Rules:
-        - brand: the merchant or sender name only, cleaned of locations and reference codes (e.g. "CARREFOUR", not "CARREFOUR, DUBAI, ARE").
-        - amount: the transaction amount as a positive decimal number without separators.
-        - currency: the ISO 4217 code such as "AED" or "USD"; null if not stated.
-        - date: the transaction date and time in ISO 8601 format (e.g. 2026-07-24T10:30:00); null if not stated.
-        - If the text is not a bank transaction message, use null for every field.
-
-        Message:
-        $body
-    """.trimIndent()
+    private fun promptFor(body: String, knownBrands: List<String>) = buildString {
+        appendLine(
+            """
+            You extract bank transaction data from SMS messages. Messages may be in English, Arabic, or both.
+            Reply with ONLY a JSON object, exactly this shape:
+            {"brand": string or null, "amount": number or null, "currency": string or null, "date": string or null}
+            Rules:
+            - brand: the merchant or sender name only, cleaned of locations and reference codes (e.g. "CARREFOUR", not "CARREFOUR, DUBAI, ARE").
+            - amount: the transaction amount as a positive decimal number without separators.
+            - currency: the ISO 4217 code such as "AED" or "USD"; null if not stated.
+            - date: the transaction date and time in ISO 8601 format (e.g. 2026-07-24T10:30:00); null if not stated.
+            - If the text is not a bank transaction message, use null for every field.
+            """.trimIndent(),
+        )
+        if (knownBrands.isNotEmpty()) {
+            appendLine("- Known brands: ${knownBrands.joinToString(", ")}")
+            appendLine("- If the merchant matches a known brand - even with typos, different casing, or an abbreviation - use that brand name exactly as listed.")
+        }
+        appendLine()
+        appendLine("Message:")
+        append(body)
+    }
 
     /** Defensive decode: models wrap JSON in prose/fences at will; null on anything unusable. */
     private fun decode(raw: String): AiParsedSms? {

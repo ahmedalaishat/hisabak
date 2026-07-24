@@ -41,7 +41,7 @@ class IngestSmsUseCaseTest {
     )
     private val aiParser = FakeAiSmsParser()
     private val suggestAiParse =
-        SuggestAiParseUseCase(aiParser, smsRepo, Currency.AED, clock, FakeAnalytics())
+        SuggestAiParseUseCase(aiParser, smsRepo, brandRepo, Currency.AED, clock, FakeAnalytics())
 
     private fun TestScope.ingestUseCase() =
         IngestSmsUseCase(smsRepo, processor, clock, suggestAiParse, this)

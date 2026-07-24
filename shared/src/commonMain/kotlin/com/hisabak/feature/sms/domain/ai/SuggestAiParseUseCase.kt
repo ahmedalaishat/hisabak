@@ -7,6 +7,7 @@ import com.hisabak.core.common.DomainResult
 import com.hisabak.core.common.Money
 import com.hisabak.core.domain.analytics.Analytics
 import com.hisabak.core.domain.analytics.AnalyticsEvent
+import com.hisabak.feature.brand.domain.BrandRepository
 import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessage
 import com.hisabak.feature.sms.domain.SmsMessageId
@@ -22,6 +23,7 @@ import kotlin.time.Instant
 class SuggestAiParseUseCase(
     private val aiParser: AiSmsParser,
     private val smsRepository: SmsRepository,
+    private val brandRepository: BrandRepository,
     private val defaultCurrency: Currency,
     private val clock: Clock,
     private val analytics: Analytics,
@@ -40,12 +42,13 @@ class SuggestAiParseUseCase(
         }
 
         analytics.log(AnalyticsEvent.AiParseAttempted(source))
-        val raw = aiParser.parse(message.body)
+        val knownBrands = brandRepository.namesByUsage(MAX_KNOWN_BRANDS)
+        val raw = aiParser.parse(message.body, knownBrands)
         if (raw == null) {
             analytics.log(AnalyticsEvent.AiParseFailed(source, "model_empty"))
             return DomainResult.Failure(DomainError.ValidationFailed("AI parse produced nothing"))
         }
-        val suggestion = sanitize(raw, message.receivedAt)
+        val suggestion = sanitize(raw, message.receivedAt, knownBrands)
         if (suggestion == null) {
             analytics.log(AnalyticsEvent.AiParseFailed(source, "incomplete"))
             return DomainResult.Failure(DomainError.ValidationFailed("AI parse incomplete"))
@@ -62,7 +65,7 @@ class SuggestAiParseUseCase(
      * implausible date (model hallucinations land in the far future) falls back to when the SMS
      * arrived — the same rule the template pipeline applies.
      */
-    private fun sanitize(raw: AiParsedSms, receivedAt: Instant): ParsedSmsData? {
+    private fun sanitize(raw: AiParsedSms, receivedAt: Instant, knownBrands: List<String>): ParsedSmsData? {
         val brand = raw.brandName?.trim()?.takeIf { it.isNotEmpty() } ?: return null
         val amountMinor = raw.amountMinor?.takeIf { it > 0 } ?: return null
         val currencyCode = raw.currencyCode?.trim()?.takeIf { it.isNotEmpty() }?.uppercase()
@@ -72,9 +75,51 @@ class SuggestAiParseUseCase(
             ?.takeIf { it <= clock.now() + 1.days }
             ?: receivedAt
         return ParsedSmsData(
-            brandName = brand,
+            brandName = canonicalize(brand, knownBrands),
             amount = Money(amountMinor, Currency(currencyCode)),
             occurredAt = occurredAt,
         )
+    }
+
+    /**
+     * Deterministic backstop under the prompt-side brand hints: snap the model's merchant string
+     * to an existing brand name so the suggestion shows exactly what Confirm will link. Match
+     * order — case-insensitive exact, then substring either way (the same containment rule
+     * `FindOrCreateBrandUseCase.findByNameLike` applies at link time), then a small edit
+     * distance for typos. [knownBrands] is usage-ordered, so ties go to the most-used brand.
+     */
+    private fun canonicalize(raw: String, knownBrands: List<String>): String {
+        knownBrands.firstOrNull { it.equals(raw, ignoreCase = true) }?.let { return it }
+        knownBrands.firstOrNull {
+            raw.contains(it, ignoreCase = true) || it.contains(raw, ignoreCase = true)
+        }?.let { return it }
+        if (raw.length >= MIN_TYPO_LENGTH) {
+            knownBrands.firstOrNull {
+                it.length >= MIN_TYPO_LENGTH &&
+                    levenshtein(raw.lowercase(), it.lowercase()) <= MAX_TYPO_DISTANCE
+            }?.let { return it }
+        }
+        return raw
+    }
+
+    private fun levenshtein(a: String, b: String): Int {
+        if (a == b) return 0
+        var previous = IntArray(b.length + 1) { it }
+        val current = IntArray(b.length + 1)
+        for (i in 1..a.length) {
+            current[0] = i
+            for (j in 1..b.length) {
+                val substitution = previous[j - 1] + if (a[i - 1] == b[j - 1]) 0 else 1
+                current[j] = minOf(previous[j] + 1, current[j - 1] + 1, substitution)
+            }
+            previous = current.copyInto(IntArray(b.length + 1))
+        }
+        return previous[b.length]
+    }
+
+    private companion object {
+        const val MAX_KNOWN_BRANDS = 50
+        const val MIN_TYPO_LENGTH = 4
+        const val MAX_TYPO_DISTANCE = 2
     }
 }

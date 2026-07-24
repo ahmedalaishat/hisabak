@@ -8,7 +8,7 @@ package com.hisabak.feature.sms.platform
  */
 interface AiSmsBridge {
     fun isAvailable(): Boolean
-    fun parse(body: String, completion: (AiSmsBridgeResult?) -> Unit)
+    fun parse(body: String, knownBrands: List<String>, completion: (AiSmsBridgeResult?) -> Unit)
 }
 
 class AiSmsBridgeResult(

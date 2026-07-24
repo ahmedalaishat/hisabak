@@ -54,7 +54,7 @@ class CaptureTransactionUseCaseTest {
             clock = clock,
         ),
         clock = clock,
-        suggestAiParse = SuggestAiParseUseCase(aiParser, smsRepo, Currency.AED, clock, FakeAnalytics()),
+        suggestAiParse = SuggestAiParseUseCase(aiParser, smsRepo, brandRepo, Currency.AED, clock, FakeAnalytics()),
         appScope = CoroutineScope(Dispatchers.Unconfined),
     )
 

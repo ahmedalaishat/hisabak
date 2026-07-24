@@ -51,6 +51,7 @@ val smsModule = module {
         SuggestAiParseUseCase(
             aiParser = get(),
             smsRepository = get(),
+            brandRepository = get(),
             defaultCurrency = get(),
             clock = get(),
             analytics = get(),

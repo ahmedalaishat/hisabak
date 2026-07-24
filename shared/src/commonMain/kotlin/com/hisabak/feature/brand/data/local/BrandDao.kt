@@ -35,6 +35,17 @@ interface BrandDao {
     @Query("SELECT COUNT(*) FROM brands")
     suspend fun count(): Int
 
+    @Query(
+        """
+        SELECT b.name FROM brands b
+        LEFT JOIN transactions t ON t.brandId = b.id
+        GROUP BY b.id
+        ORDER BY COUNT(t.id) DESC, b.name COLLATE NOCASE
+        LIMIT :limit
+        """,
+    )
+    suspend fun namesByUsage(limit: Int): List<String>
+
     // @Upsert avoids the REPLACE delete+reinsert, which would trip the transactions'
     // ON DELETE RESTRICT foreign key when editing a brand that has transactions.
     @Upsert

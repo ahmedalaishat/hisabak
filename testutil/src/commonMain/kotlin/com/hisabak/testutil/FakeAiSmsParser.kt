@@ -8,11 +8,14 @@ class FakeAiSmsParser : AiSmsParser {
     var availability: AiParserAvailability = AiParserAvailability.Ready
     var result: AiParsedSms? = null
     val parsedBodies = mutableListOf<String>()
+    var lastKnownBrands: List<String> = emptyList()
+        private set
 
     override suspend fun availability(): AiParserAvailability = availability
 
-    override suspend fun parse(body: String): AiParsedSms? {
+    override suspend fun parse(body: String, knownBrands: List<String>): AiParsedSms? {
         parsedBodies += body
+        lastKnownBrands = knownBrands
         return result
     }
 }

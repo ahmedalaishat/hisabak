@@ -67,7 +67,7 @@ class SmsInboxViewModelTest : MainDispatcherTest() {
         clock = clock,
     )
     private val suggestAiParse =
-        SuggestAiParseUseCase(aiParser, smsRepo, Currency.AED, clock, FakeAnalytics())
+        SuggestAiParseUseCase(aiParser, smsRepo, brandRepo, Currency.AED, clock, FakeAnalytics())
     private val limitMonitor = CategoryLimitMonitor(
         transactions = transactionRepo,
         brands = brandRepo,
