@@ -61,7 +61,9 @@ class SuggestAiParseUseCase(
 
     /**
      * Common guardrails regardless of which platform model produced the output: brand and a
-     * positive amount are required, and the currency defaults to the app currency. A model date
+     * positive amount are required, and the currency must look like an ISO-4217 code — models
+     * emit local abbreviations and symbols ("Dhs", "د.إ") that would abort [Currency]'s
+     * validation, so anything else falls back to the app currency. A model date
      * is trusted only inside a plausibility window around the SMS arrival — dateless messages
      * provoke hallucinated dates months in the past (observed on-device: "400 lulu" → Oct 2025),
      * and the far future is equally fictional — anything outside falls back to when the SMS
@@ -70,7 +72,8 @@ class SuggestAiParseUseCase(
     private fun sanitize(raw: AiParsedSms, receivedAt: Instant, knownBrands: List<String>): ParsedSmsData? {
         val brand = raw.brandName?.trim()?.takeIf { it.isNotEmpty() } ?: return null
         val amountMinor = raw.amountMinor?.takeIf { it > 0 } ?: return null
-        val currencyCode = raw.currencyCode?.trim()?.takeIf { it.isNotEmpty() }?.uppercase()
+        val currencyCode = raw.currencyCode?.trim()?.uppercase()
+            ?.takeIf { code -> code.length == 3 && code.all { it in 'A'..'Z' } }
             ?: defaultCurrency.code
         val occurredAt = raw.occurredAtEpochMillis
             ?.let(Instant::fromEpochMilliseconds)
