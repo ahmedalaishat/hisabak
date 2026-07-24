@@ -8,10 +8,16 @@ import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessage
 import com.hisabak.feature.sms.domain.SmsParser
 import com.hisabak.feature.sms.domain.SmsTemplateDetector
+import com.hisabak.feature.sms.domain.ai.AiParserAvailability
+import com.hisabak.feature.sms.domain.ai.AiSmsParser
+import com.hisabak.feature.sms.domain.ai.ConfirmAiSuggestionUseCase
+import com.hisabak.feature.sms.domain.ai.DismissAiSuggestionUseCase
+import com.hisabak.feature.sms.domain.ai.SuggestAiParseUseCase
 import com.hisabak.feature.sms.domain.capture.CaptureSource
 import com.hisabak.feature.sms.domain.capture.CaptureTransactionUseCase
 import com.hisabak.feature.sms.domain.usecase.DeleteSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ObserveSmsMessagesUseCase
+import com.hisabak.feature.sms.domain.SmsMessageId
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -26,12 +32,20 @@ class SmsInboxViewModel(
     private val deleteSms: DeleteSmsUseCase,
     private val detector: SmsTemplateDetector,
     private val parser: SmsParser,
+    private val aiParser: AiSmsParser,
+    private val suggestAiParse: SuggestAiParseUseCase,
+    private val confirmAiSuggestion: ConfirmAiSuggestionUseCase,
+    private val dismissAiSuggestion: DismissAiSuggestionUseCase,
 ) : BaseViewModel<SmsInboxIntent, SmsInboxUiState, SmsInboxEffect>() {
 
     override fun initialState() = SmsInboxUiState()
 
     init {
         observeBasedOnSearch()
+        viewModelScope.launch {
+            val ready = aiParser.availability() == AiParserAvailability.Ready
+            setState { copy(aiAvailable = ready) }
+        }
     }
 
     override fun onIntent(intent: SmsInboxIntent) {
@@ -43,6 +57,10 @@ class SmsInboxViewModel(
             SmsInboxIntent.IngestDraft -> ingestDraft()
             is SmsInboxIntent.Delete ->
                 viewModelScope.launch { deleteSms(intent.id) }
+            is SmsInboxIntent.SuggestParse -> suggestParse(intent.id)
+            is SmsInboxIntent.ConfirmSuggestion -> confirmSuggestion(intent.id)
+            is SmsInboxIntent.DismissSuggestion ->
+                viewModelScope.launch { dismissAiSuggestion(intent.id) }
             is SmsInboxIntent.PermissionChanged ->
                 setState { copy(autoImportGranted = intent.granted) }
             SmsInboxIntent.ConsumeEffect -> clearEffect()
@@ -88,6 +106,29 @@ class SmsInboxViewModel(
             .launchIn(viewModelScope)
     }
 
+    private fun suggestParse(id: SmsMessageId) {
+        if (id in state.value.suggestingIds) return
+        setState { copy(suggestingIds = suggestingIds + id) }
+        viewModelScope.launch {
+            val result = suggestAiParse(id, source = "manual")
+            setState { copy(suggestingIds = suggestingIds - id) }
+            // The stored suggestion arrives reactively through observeMessages; only failure
+            // needs an explicit signal.
+            if (result is DomainResult.Failure) sendEffect(SmsInboxEffect.AiParseFailed)
+        }
+    }
+
+    private fun confirmSuggestion(id: SmsMessageId) {
+        viewModelScope.launch {
+            when (val result = confirmAiSuggestion(id)) {
+                is DomainResult.Success ->
+                    sendEffect(SmsInboxEffect.TransactionCreated(amount = result.value.amount))
+                is DomainResult.Failure ->
+                    sendEffect(SmsInboxEffect.ParseFailed(reasonFor(result.error)))
+            }
+        }
+    }
+
     private fun toRow(msg: SmsMessage): SmsInboxRow = SmsInboxRow(
         id = msg.id,
         body = msg.body,
@@ -95,6 +136,8 @@ class SmsInboxViewModel(
         parsedBrand = msg.parsed?.brandName,
         parsedAmount = msg.parsed?.amount,
         isLinked = msg.isLinked,
+        suggestedBrand = msg.suggested?.brandName,
+        suggestedAmount = msg.suggested?.amount,
     )
 
     private fun reasonFor(error: DomainError): String = when (error) {

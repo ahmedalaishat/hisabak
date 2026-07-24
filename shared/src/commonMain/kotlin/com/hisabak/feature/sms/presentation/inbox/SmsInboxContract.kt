@@ -15,6 +15,8 @@ data class SmsInboxRow(
     val parsedBrand: String?,
     val parsedAmount: Money?,
     val isLinked: Boolean,
+    val suggestedBrand: String? = null,
+    val suggestedAmount: Money? = null,
 )
 
 data class SmsInboxUiState(
@@ -26,6 +28,9 @@ data class SmsInboxUiState(
     val isProcessing: Boolean = false,
     val isLoading: Boolean = true,
     val autoImportGranted: Boolean = false,
+    // On-device AI parse fallback: false (the default) hides every AI affordance.
+    val aiAvailable: Boolean = false,
+    val suggestingIds: Set<SmsMessageId> = emptySet(),
 ) : ViewState
 
 sealed interface SmsInboxIntent : ViewIntent {
@@ -33,6 +38,9 @@ sealed interface SmsInboxIntent : ViewIntent {
     data class DraftChanged(val body: String) : SmsInboxIntent
     data object IngestDraft : SmsInboxIntent
     data class Delete(val id: SmsMessageId) : SmsInboxIntent
+    data class SuggestParse(val id: SmsMessageId) : SmsInboxIntent
+    data class ConfirmSuggestion(val id: SmsMessageId) : SmsInboxIntent
+    data class DismissSuggestion(val id: SmsMessageId) : SmsInboxIntent
     data class PermissionChanged(val granted: Boolean) : SmsInboxIntent
     data object ConsumeEffect : SmsInboxIntent
 }
@@ -40,4 +48,5 @@ sealed interface SmsInboxIntent : ViewIntent {
 sealed interface SmsInboxEffect : ViewEffect {
     data class ParseFailed(val reason: String) : SmsInboxEffect
     data class TransactionCreated(val amount: Money) : SmsInboxEffect
+    data object AiParseFailed : SmsInboxEffect
 }

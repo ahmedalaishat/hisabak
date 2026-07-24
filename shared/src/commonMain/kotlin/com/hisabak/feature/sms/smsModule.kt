@@ -8,6 +8,10 @@ import com.hisabak.feature.sms.domain.SmsParser
 import com.hisabak.feature.sms.domain.SmsRepository
 import com.hisabak.feature.sms.domain.SmsTemplateDetector
 import com.hisabak.feature.sms.domain.SmsTransactionProcessor
+import com.hisabak.di.APPLICATION_SCOPE
+import com.hisabak.feature.sms.domain.ai.ConfirmAiSuggestionUseCase
+import com.hisabak.feature.sms.domain.ai.DismissAiSuggestionUseCase
+import com.hisabak.feature.sms.domain.ai.SuggestAiParseUseCase
 import com.hisabak.feature.sms.domain.capture.CaptureTransactionUseCase
 import com.hisabak.feature.sms.domain.usecase.DeleteSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.IngestSmsUseCase
@@ -34,7 +38,33 @@ val smsModule = module {
     }
 
     factory { ObserveSmsMessagesUseCase(get()) }
-    factory { IngestSmsUseCase(smsRepository = get(), processor = get(), clock = get()) }
+    factory {
+        IngestSmsUseCase(
+            smsRepository = get(),
+            processor = get(),
+            clock = get(),
+            suggestAiParse = get(),
+            appScope = get(APPLICATION_SCOPE),
+        )
+    }
+    factory {
+        SuggestAiParseUseCase(
+            aiParser = get(),
+            smsRepository = get(),
+            defaultCurrency = get(),
+            clock = get(),
+            analytics = get(),
+        )
+    }
+    factory {
+        ConfirmAiSuggestionUseCase(
+            smsRepository = get(),
+            processor = get(),
+            limitMonitor = get(),
+            analytics = get(),
+        )
+    }
+    factory { DismissAiSuggestionUseCase(smsRepository = get(), analytics = get()) }
     factory {
         CaptureTransactionUseCase(
             ingest = get(),
@@ -52,6 +82,10 @@ val smsModule = module {
             deleteSms = get(),
             detector = get(),
             parser = get(),
+            aiParser = get(),
+            suggestAiParse = get(),
+            confirmAiSuggestion = get(),
+            dismissAiSuggestion = get(),
         )
     }
 }

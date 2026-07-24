@@ -15,6 +15,9 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hisabak.BuildConfig
 import com.hisabak.core.presentation.LaunchedViewEffectHandler
+import com.hisabak.shared.resources.Res
+import com.hisabak.shared.resources.sms_ai_parse_failed
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -42,6 +45,7 @@ fun SmsInboxRoute(
         viewModel.onIntent(SmsInboxIntent.PermissionChanged(granted))
     }
 
+    val aiParseFailedText = stringResource(Res.string.sms_ai_parse_failed)
     LaunchedViewEffectHandler(
         effectFlow = viewModel.effect,
         onConsumeEffect = { viewModel.onIntent(SmsInboxIntent.ConsumeEffect) },
@@ -51,6 +55,8 @@ fun SmsInboxRoute(
                     snackbarHostState.showSnackbar("Could not parse: ${effect.reason}")
                 is SmsInboxEffect.TransactionCreated ->
                     snackbarHostState.showSnackbar("Transaction created: ${formatMoney(effect.amount)}")
+                SmsInboxEffect.AiParseFailed ->
+                    snackbarHostState.showSnackbar(aiParseFailedText)
             }
         },
     )
@@ -65,5 +71,8 @@ fun SmsInboxRoute(
         onDelete = { viewModel.onIntent(SmsInboxIntent.Delete(it)) },
         onEnableAutoImport = { permissionLauncher.launch(Manifest.permission.RECEIVE_SMS) },
         modifier = modifier,
+        onSuggestParse = { viewModel.onIntent(SmsInboxIntent.SuggestParse(it)) },
+        onConfirmSuggestion = { viewModel.onIntent(SmsInboxIntent.ConfirmSuggestion(it)) },
+        onDismissSuggestion = { viewModel.onIntent(SmsInboxIntent.DismissSuggestion(it)) },
     )
 }

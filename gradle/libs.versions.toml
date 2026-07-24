@@ -31,6 +31,7 @@ firebaseBom = "34.15.0"
 desugarJdkLibs = "2.1.5"
 biometric = "1.1.0"
 serializationJson = "1.8.0"
+mlkitGenai = "1.0.0-beta4"
 kotlinxDatetime = "0.8.0"
 playServicesAuth = "21.2.0"
 work = "2.10.0"
@@ -75,6 +76,7 @@ firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashly
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
+mlkit-genai-prompt = { group = "com.google.mlkit", name = "genai-prompt", version.ref = "mlkitGenai" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serializationJson" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }

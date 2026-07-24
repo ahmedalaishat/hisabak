@@ -72,6 +72,9 @@ fun SmsInboxScreen(
     onDelete: (SmsMessageId) -> Unit,
     onEnableAutoImport: () -> Unit,
     modifier: Modifier = Modifier,
+    onSuggestParse: (SmsMessageId) -> Unit = {},
+    onConfirmSuggestion: (SmsMessageId) -> Unit = {},
+    onDismissSuggestion: (SmsMessageId) -> Unit = {},
 ) {
     Box(modifier.fillMaxSize()) {
         LazyColumn(
@@ -110,8 +113,13 @@ fun SmsInboxScreen(
                 items(state.rows, key = { it.id.value }) { row ->
                     SmsRowCard(
                         row = row,
+                        aiAvailable = state.aiAvailable,
+                        isSuggesting = row.id in state.suggestingIds,
                         onImport = { onIngest() },
                         onDelete = { onDelete(row.id) },
+                        onSuggestParse = { onSuggestParse(row.id) },
+                        onConfirmSuggestion = { onConfirmSuggestion(row.id) },
+                        onDismissSuggestion = { onDismissSuggestion(row.id) },
                         modifier = Modifier.animateItem(),
                     )
                 }
@@ -245,8 +253,13 @@ private fun PasteParseCard(
 @Composable
 private fun SmsRowCard(
     row: SmsInboxRow,
+    aiAvailable: Boolean,
+    isSuggesting: Boolean,
     onImport: () -> Unit,
     onDelete: () -> Unit,
+    onSuggestParse: () -> Unit,
+    onConfirmSuggestion: () -> Unit,
+    onDismissSuggestion: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val status = when {
@@ -324,9 +337,75 @@ private fun SmsRowCard(
                     }
                 }
             }
+        } else if (row.suggestedBrand != null && row.suggestedAmount != null) {
+            // Unconfirmed AI parse: mirrors the parsed detail row, but badged as a suggestion —
+            // the StatusChip above deliberately stays Unparsed until the user confirms.
+            Spacer(Modifier.height(10.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Spacer(Modifier.height(10.dp))
+            Badge(
+                label = stringResource(Res.string.sms_ai_suggestion),
+                tone = BadgeTone.Info,
+                dot = true,
+            )
+            Spacer(Modifier.height(Spacing.s3))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        row.suggestedBrand,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    AmountText(
+                        value = row.suggestedAmount.amountMinor / 100.0,
+                        tone = AmountTone.Expense,
+                        showSign = false,
+                        size = 18.sp,
+                    )
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    HisabakButton(
+                        text = stringResource(Res.string.sms_ai_dismiss),
+                        onClick = onDismissSuggestion,
+                        variant = ButtonVariant.Ghost,
+                    )
+                    PrimaryPillButton(
+                        text = stringResource(Res.string.sms_ai_confirm),
+                        onClick = onConfirmSuggestion,
+                        leadingIcon = HugeIcons.Download,
+                    )
+                }
+            }
         } else {
             Spacer(Modifier.height(Spacing.s3))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s2, Alignment.End),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (aiAvailable && !row.isLinked) {
+                    if (isSuggesting) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    }
+                    HisabakButton(
+                        text = stringResource(Res.string.sms_ai_parse),
+                        onClick = onSuggestParse,
+                        variant = ButtonVariant.Secondary,
+                        leadingIcon = HugeIcons.Insights,
+                        enabled = !isSuggesting,
+                    )
+                }
                 IconButton(onClick = onDelete, modifier = Modifier.size(Sizing.controlHeightSm)) {
                     Icon(
                         HugeIcons.DeleteOutline,

@@ -152,6 +152,7 @@ dependencies {
     implementation(libs.koin.compose.viewmodel)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.biometric)
+    implementation(libs.mlkit.genai.prompt)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.play.services.auth)
     implementation(libs.androidx.work.runtime.ktx)

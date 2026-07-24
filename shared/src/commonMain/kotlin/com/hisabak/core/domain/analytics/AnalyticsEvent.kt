@@ -40,6 +40,32 @@ sealed class AnalyticsEvent(
         params = mapOf("reason" to reason),
     )
 
+    /** An on-device AI parse of an unmatched SMS started. [source] is "auto" or "manual". */
+    class AiParseAttempted(source: String) : AnalyticsEvent(
+        name = "ai_parse_attempted",
+        params = mapOf("source" to source),
+    )
+
+    /** The AI produced a complete suggestion (not yet confirmed). */
+    class AiParseSucceeded(source: String, amount: Money) : AnalyticsEvent(
+        name = "ai_parse_succeeded",
+        params = mapOf("source" to source, "amount_bucket" to amountBucket(amount)),
+    )
+
+    /** [reason] is "unavailable", "model_empty", or "incomplete" — never the message text. */
+    class AiParseFailed(source: String, reason: String) : AnalyticsEvent(
+        name = "ai_parse_failed",
+        params = mapOf("source" to source, "reason" to reason),
+    )
+
+    /** The user confirmed an AI suggestion into a transaction. */
+    class AiSuggestionConfirmed(amount: Money) : AnalyticsEvent(
+        name = "ai_suggestion_confirmed",
+        params = mapOf("amount_bucket" to amountBucket(amount)),
+    )
+
+    data object AiSuggestionDismissed : AnalyticsEvent("ai_suggestion_dismissed")
+
     /** [type] is a [CategoryType] name, lowercased. */
     class CategoryCreated(type: String, hasLimit: Boolean) : AnalyticsEvent(
         name = "category_created",

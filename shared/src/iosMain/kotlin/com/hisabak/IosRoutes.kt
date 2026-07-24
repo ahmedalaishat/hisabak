@@ -12,6 +12,7 @@ import com.hisabak.core.platform.security.IosBiometricAuthenticator
 import com.hisabak.core.presentation.LaunchedViewEffectHandler
 import com.hisabak.shared.resources.Res
 import com.hisabak.shared.resources.app_lock_prompt_title
+import com.hisabak.shared.resources.sms_ai_parse_failed
 import org.jetbrains.compose.resources.stringResource
 import com.hisabak.feature.settings.presentation.LANGUAGE_ARABIC
 import platform.Foundation.NSURL
@@ -68,6 +69,7 @@ internal fun IosSmsInboxRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val aiParseFailedText = stringResource(Res.string.sms_ai_parse_failed)
     LaunchedViewEffectHandler(
         effectFlow = viewModel.effect,
         onConsumeEffect = { viewModel.onIntent(SmsInboxIntent.ConsumeEffect) },
@@ -77,6 +79,8 @@ internal fun IosSmsInboxRoute(
                     snackbarHostState.showSnackbar("Could not parse: ${effect.reason}")
                 is SmsInboxEffect.TransactionCreated ->
                     snackbarHostState.showSnackbar("Transaction created: ${formatMoney(effect.amount)}")
+                SmsInboxEffect.AiParseFailed ->
+                    snackbarHostState.showSnackbar(aiParseFailedText)
             }
         },
     )
@@ -91,6 +95,9 @@ internal fun IosSmsInboxRoute(
         onDelete = { viewModel.onIntent(SmsInboxIntent.Delete(it)) },
         onEnableAutoImport = {},
         modifier = modifier,
+        onSuggestParse = { viewModel.onIntent(SmsInboxIntent.SuggestParse(it)) },
+        onConfirmSuggestion = { viewModel.onIntent(SmsInboxIntent.ConfirmSuggestion(it)) },
+        onDismissSuggestion = { viewModel.onIntent(SmsInboxIntent.DismissSuggestion(it)) },
     )
 }
 
