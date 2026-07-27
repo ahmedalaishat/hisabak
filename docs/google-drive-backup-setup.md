@@ -52,13 +52,17 @@ appears in that account's Drive App Data (not visible in the normal Drive UI).
 The iOS app authorizes with **ASWebAuthenticationSession + PKCE** (no Play Services, no client
 secret). One-time setup in the same GCP project:
 
-1. **APIs & Services → Credentials → Create credentials → OAuth client ID → iOS.**
-   Bundle ID: `com.hisabak`. (No SHA-1 — iOS clients key off the bundle id.)
-2. Copy the client id (`NNNN-xxxx.apps.googleusercontent.com`) into
-   `iosApp/Configuration/Config.xcconfig` as **`GOOGLE_OAUTH_CLIENT_ID=NNNN-xxxx.apps.googleusercontent.com`**
-   (Info.plist's `GoogleOAuthClientID` expands from it at build time).
-   While it's blank, the app reports Drive as unavailable ("Connect a Google account"
-   stays inert) — everything else about backup still works.
+1. **APIs & Services → Credentials → Create credentials → OAuth client ID → iOS**, one per
+   bundle id (no SHA-1 — iOS clients key off the bundle id):
+   - **prod:** `com.hisabak`
+   - **staging:** `com.hisabak.staging` (only if testing Drive there)
+2. Copy each client id (`NNNN-xxxx.apps.googleusercontent.com`) into its xcconfig as
+   **`GOOGLE_OAUTH_CLIENT_ID=NNNN-xxxx.apps.googleusercontent.com`** — prod into
+   `iosApp/Configuration/Config.xcconfig`, staging into `Staging.xcconfig` (which `#include`s
+   Config and must override it, or staging inherits the prod client and ships a client id that
+   doesn't match its own bundle id). Info.plist's `GoogleOAuthClientID` expands from it at
+   build time. While it's blank, the app reports Drive as unavailable ("Connect a Google
+   account" stays inert) — everything else about backup still works.
 3. The OAuth redirect uses the **reversed client id** as a custom URL scheme
    (`com.googleusercontent.apps.NNNN-xxxx:/oauth2redirect`); ASWebAuthenticationSession
    handles the callback directly, so no CFBundleURLTypes entry is needed.

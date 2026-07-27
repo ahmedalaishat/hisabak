@@ -7,3 +7,7 @@
 PRODUCT_BUNDLE_IDENTIFIER=com.hisabak.staging
 INFOPLIST_KEY_CFBundleDisplayName=Hisabak STG
 HISABAK_FLAVOR=staging
+
+// Drive backup: iOS OAuth clients key off the bundle id, so staging needs its own client —
+// the inherited prod one is registered to com.hisabak and doesn't describe this app.
+GOOGLE_OAUTH_CLIENT_ID=469916556187-ta7lijd07qn62p9e0mmasa4vsjparurl.apps.googleusercontent.com
