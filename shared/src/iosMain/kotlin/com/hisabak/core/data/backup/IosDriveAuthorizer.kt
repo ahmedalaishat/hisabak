@@ -89,6 +89,12 @@ class IosDriveAuthorizer : DriveAuthorizer {
         val client = clientId ?: throw BackupException(BackupError.AuthRequired)
         val refresh = refreshTokenStore.get() ?: throw BackupException(BackupError.AuthRequired)
         val tokens = runCatching { refreshAccessToken(client, refresh) }.getOrElse {
+            // A refresh token is bound to the client id that issued it, so one left behind by a
+            // different client (or revoked upstream) can never succeed. Drop it — otherwise every
+            // later call retries the same dead token and backup wedges permanently, and the
+            // Keychain outlives an app reinstall, so there'd be no way out from the device.
+            refreshTokenStore.clear()
+            cachedToken = null
             throw BackupException(BackupError.AuthRequired)
         }
         cache(tokens)
@@ -105,13 +111,16 @@ class IosDriveAuthorizer : DriveAuthorizer {
     private suspend fun authorizationCode(client: String, verifier: String): String =
         withContext(Dispatchers.Main) {
             val scheme = reversedClientScheme(client)
-            val authUrl = "https://accounts.google.com/o/oauth2/v2/auth" +
-                "?client_id=${client.percentEncoded()}" +
-                "&redirect_uri=${"$scheme:/oauth2redirect".percentEncoded()}" +
-                "&response_type=code" +
-                "&scope=${DRIVE_APPDATA_SCOPE.percentEncoded()}" +
-                "&code_challenge=${codeChallenge(verifier)}" +
-                "&code_challenge_method=S256"
+            // Parameter set lives in commonMain so the JVM suite can guard it; see
+            // googleAuthorizationParams. This path only runs once the silent refresh has failed,
+            // so its forced consent screen isn't part of the common flow.
+            val authUrl = "https://accounts.google.com/o/oauth2/v2/auth?" +
+                googleAuthorizationParams(
+                    clientId = client,
+                    redirectUri = "$scheme:/oauth2redirect",
+                    scope = DRIVE_APPDATA_SCOPE,
+                    codeChallenge = codeChallenge(verifier),
+                ).joinToString("&") { (name, value) -> "$name=${value.percentEncoded()}" }
             suspendCancellableCoroutine { cont ->
                 val session = ASWebAuthenticationSession(
                     uRL = NSURL(string = authUrl),
