@@ -243,6 +243,13 @@ class FakeSmsRepository(initial: List<SmsMessage> = emptyList()) : SmsRepository
         return DomainResult.Success(Unit)
     }
 
+    override suspend fun unlinkTransaction(transactionId: TransactionId): DomainResult<Unit> {
+        items.value = items.value.map {
+            if (it.transactionId == transactionId) it.copy(transactionId = null) else it
+        }
+        return DomainResult.Success(Unit)
+    }
+
     override suspend fun existsByContent(body: String, receivedAt: Instant): Boolean =
         items.value.any { it.body == body && it.receivedAt == receivedAt }
 }

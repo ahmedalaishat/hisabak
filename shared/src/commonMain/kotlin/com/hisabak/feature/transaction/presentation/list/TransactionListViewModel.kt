@@ -3,8 +3,6 @@ package com.hisabak.feature.transaction.presentation.list
 import androidx.lifecycle.viewModelScope
 import com.hisabak.core.common.Clock
 import com.hisabak.core.common.SummaryPeriod
-import com.hisabak.core.domain.analytics.Analytics
-import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.core.presentation.BaseViewModel
 import com.hisabak.feature.brand.domain.Brand
 import com.hisabak.feature.brand.domain.BrandId
@@ -14,7 +12,6 @@ import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.category.domain.usecase.ObserveCategoriesUseCase
 import com.hisabak.feature.transaction.domain.Transaction
-import com.hisabak.feature.transaction.domain.usecase.DeleteTransactionUseCase
 import com.hisabak.feature.transaction.domain.usecase.ObserveTransactionsUseCase
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
@@ -33,10 +30,8 @@ class TransactionListViewModel(
     private val observeTransactions: ObserveTransactionsUseCase,
     private val observeBrands: ObserveBrandsUseCase,
     private val observeCategories: ObserveCategoriesUseCase,
-    private val deleteTransaction: DeleteTransactionUseCase,
     private val clock: Clock,
     private val filterBus: TransactionListFilterBus,
-    private val analytics: Analytics,
 ) : BaseViewModel<TransactionListIntent, TransactionListUiState, TransactionListEffect>() {
 
     override fun initialState() = TransactionListUiState()
@@ -80,11 +75,6 @@ class TransactionListViewModel(
                 setState { copy(dateRange = intent.range) }
             TransactionListIntent.ClearFilters ->
                 setState { copy(brandFilter = null, categoryFilter = null, dateRange = DateRangeFilter.ALL) }
-            is TransactionListIntent.Delete ->
-                viewModelScope.launch {
-                    deleteTransaction(intent.id)
-                    analytics.log(AnalyticsEvent.TransactionDeleted)
-                }
             TransactionListIntent.ConsumeEffect -> clearEffect()
         }
     }

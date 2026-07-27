@@ -15,6 +15,7 @@ import com.hisabak.feature.category.domain.usecase.ObserveCategoriesUseCase
 import com.hisabak.feature.transaction.domain.TransactionId
 import com.hisabak.feature.transaction.domain.TransactionRepository
 import com.hisabak.feature.transaction.domain.usecase.CreateTransactionUseCase
+import com.hisabak.feature.transaction.domain.usecase.DeleteTransactionUseCase
 import com.hisabak.feature.transaction.domain.usecase.UpdateTransactionUseCase
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -31,6 +32,7 @@ class TransactionEditViewModel(
     private val observeCategories: ObserveCategoriesUseCase,
     private val createTransaction: CreateTransactionUseCase,
     private val updateTransaction: UpdateTransactionUseCase,
+    private val deleteTransaction: DeleteTransactionUseCase,
     private val analytics: Analytics,
 ) : BaseViewModel<TransactionEditIntent, TransactionEditUiState, TransactionEditEffect>() {
 
@@ -86,6 +88,11 @@ class TransactionEditViewModel(
             TransactionEditIntent.DatePickerDismissed ->
                 setState { copy(showDatePicker = false) }
             TransactionEditIntent.Save -> save()
+            TransactionEditIntent.DeleteRequested ->
+                setState { copy(showDeleteConfirm = true) }
+            TransactionEditIntent.DeleteDismissed ->
+                setState { copy(showDeleteConfirm = false) }
+            TransactionEditIntent.DeleteConfirmed -> delete()
             TransactionEditIntent.ConsumeEffect -> clearEffect()
         }
     }
@@ -105,6 +112,7 @@ class TransactionEditViewModel(
                             selectedType = type ?: selectedType,
                             noteInput = tx.note.orEmpty(),
                             occurredAt = tx.occurredAt,
+                            fromSms = tx.sourceSmsId != null,
                         )
                     }
                 }
@@ -118,6 +126,23 @@ class TransactionEditViewModel(
     private suspend fun resolveBrandType(brandId: BrandId): CategoryType? {
         val categoryId = observeBrands().first().firstOrNull { it.id == brandId }?.categoryId ?: return null
         return observeCategories().first().firstOrNull { it.id == categoryId }?.type
+    }
+
+    private fun delete() {
+        val id = transactionId ?: return
+        setState { copy(showDeleteConfirm = false, isDeleting = true, generalError = null) }
+        viewModelScope.launch {
+            when (val result = deleteTransaction(id)) {
+                is DomainResult.Success -> {
+                    analytics.log(AnalyticsEvent.TransactionDeleted)
+                    setState { copy(isDeleting = false) }
+                    sendEffect(TransactionEditEffect.Deleted)
+                }
+                is DomainResult.Failure -> setState {
+                    copy(isDeleting = false, generalError = result.error.message)
+                }
+            }
+        }
     }
 
     private fun save() {

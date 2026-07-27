@@ -25,7 +25,7 @@ fun TransactionEditRoute(
         onConsumeEffect = { viewModel.onIntent(TransactionEditIntent.ConsumeEffect) },
     ) { effect ->
         when (effect) {
-            TransactionEditEffect.Saved -> onDone()
+            TransactionEditEffect.Saved, TransactionEditEffect.Deleted -> onDone()
         }
     }
 
@@ -40,5 +40,8 @@ fun TransactionEditRoute(
         onDateDismiss = { viewModel.onIntent(TransactionEditIntent.DatePickerDismissed) },
         onSave = { viewModel.onIntent(TransactionEditIntent.Save) },
         onCancel = onCancel,
+        onDeleteRequest = { viewModel.onIntent(TransactionEditIntent.DeleteRequested) },
+        onDeleteConfirm = { viewModel.onIntent(TransactionEditIntent.DeleteConfirmed) },
+        onDeleteDismiss = { viewModel.onIntent(TransactionEditIntent.DeleteDismissed) },
     )
 }

@@ -35,6 +35,9 @@ interface SmsDao {
     @Query("DELETE FROM sms_messages WHERE id = :id")
     suspend fun deleteById(id: String)
 
+    @Query("UPDATE sms_messages SET transactionId = NULL WHERE transactionId = :transactionId")
+    suspend fun clearTransactionLink(transactionId: String)
+
     @Query("SELECT * FROM sms_messages")
     suspend fun getAllForBackup(): List<SmsMessageEntity>
 

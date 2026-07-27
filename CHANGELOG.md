@@ -7,6 +7,10 @@ All notable changes to Hisabak are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **Delete a transaction** — added one by mistake? Open it from the Transactions tab and use
+  "Delete transaction" at the bottom of the sheet; a confirmation step guards the tap. The
+  amount comes straight back out of your totals and budgets. If the transaction was captured
+  from a bank message, that message returns to the SMS inbox so you can import it again.
 - **AI parsing for unrecognized bank messages** — when a bank SMS doesn't match any known
   format, the app's on-device AI (Gemini Nano on Android, Apple Intelligence on iOS) now
   reads it and proposes the transaction as a suggestion you confirm with one tap; a

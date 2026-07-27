@@ -15,9 +15,13 @@ data class TransactionEditUiState(
     val occurredAt: Instant = Instant.fromEpochMilliseconds(0),
     val selectedType: CategoryType = CategoryType.EXPENSES,
     val showDatePicker: Boolean = false,
+    val showDeleteConfirm: Boolean = false,
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
+    val isDeleting: Boolean = false,
     val isNew: Boolean = true,
+    /** Drives the confirm copy: a captured transaction's SMS returns to the inbox on delete. */
+    val fromSms: Boolean = false,
     val amountError: String? = null,
     val brandError: String? = null,
     val generalError: String? = null,
@@ -29,7 +33,7 @@ data class TransactionEditUiState(
     )
 
     val canSave: Boolean
-        get() = !isSaving && amountInput.isNotBlank() && selectedBrandId != null
+        get() = !isSaving && !isDeleting && amountInput.isNotBlank() && selectedBrandId != null
 }
 
 sealed interface TransactionEditIntent : ViewIntent {
@@ -41,9 +45,13 @@ sealed interface TransactionEditIntent : ViewIntent {
     data object DatePickerOpened : TransactionEditIntent
     data object DatePickerDismissed : TransactionEditIntent
     data object Save : TransactionEditIntent
+    data object DeleteRequested : TransactionEditIntent
+    data object DeleteConfirmed : TransactionEditIntent
+    data object DeleteDismissed : TransactionEditIntent
     data object ConsumeEffect : TransactionEditIntent
 }
 
 sealed interface TransactionEditEffect : ViewEffect {
     data object Saved : TransactionEditEffect
+    data object Deleted : TransactionEditEffect
 }

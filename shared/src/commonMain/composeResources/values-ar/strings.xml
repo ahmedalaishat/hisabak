@@ -34,6 +34,11 @@
     <string name="brand_edit_title">تعديل العلامة</string>
     <string name="transaction_new_title">معاملة جديدة</string>
     <string name="transaction_edit_title">تعديل المعاملة</string>
+    <string name="transaction_delete_title">حذف هذه المعاملة؟</string>
+    <string name="transaction_delete_body">ستُحذف من إجمالياتك وميزانياتك. لا يمكن التراجع عن هذا.</string>
+    <string name="transaction_delete_body_sms">ستُحذف من إجمالياتك وميزانياتك، وستعود رسالة البنك إلى صندوق الرسائل لتتمكن من استيرادها مرة أخرى.</string>
+    <string name="transaction_delete_action">حذف المعاملة</string>
+    <string name="transaction_deleting">جارٍ الحذف…</string>
     <string name="settings_group_backup_security">النسخ الاحتياطي والأمان</string>
     <string name="settings_group_preferences">التفضيلات</string>
     <string name="settings_theme">المظهر</string>
