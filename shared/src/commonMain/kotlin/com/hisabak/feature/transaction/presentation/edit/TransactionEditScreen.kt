@@ -23,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -81,6 +82,9 @@ fun TransactionEditScreen(
     onDateDismiss: () -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
+    onDeleteRequest: () -> Unit,
+    onDeleteConfirm: () -> Unit,
+    onDeleteDismiss: () -> Unit,
 ) {
     if (state.isLoading) {
         Box(
@@ -196,6 +200,46 @@ fun TransactionEditScreen(
             onClick = onCancel,
             variant = ButtonVariant.Ghost,
             fullWidth = true,
+        )
+        // Editing only — there is nothing to delete before the first save.
+        if (!state.isNew) {
+            HisabakButton(
+                text = stringResource(
+                    if (state.isDeleting) Res.string.transaction_deleting
+                    else Res.string.transaction_delete_action,
+                ),
+                onClick = onDeleteRequest,
+                variant = ButtonVariant.Danger,
+                enabled = !state.isDeleting && !state.isSaving,
+                leadingIcon = HugeIcons.DeleteOutline,
+                fullWidth = true,
+            )
+        }
+    }
+
+    if (state.showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = onDeleteDismiss,
+            title = { Text(stringResource(Res.string.transaction_delete_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        if (state.fromSms) Res.string.transaction_delete_body_sms
+                        else Res.string.transaction_delete_body,
+                    ),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = onDeleteConfirm) {
+                    Text(
+                        stringResource(Res.string.action_delete),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDeleteDismiss) { Text(stringResource(Res.string.action_cancel)) }
+            },
         )
     }
 

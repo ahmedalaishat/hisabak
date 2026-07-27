@@ -23,7 +23,7 @@ val transactionModule = module {
     factory { GetTransactionsPageUseCase(get()) }
     factory { CreateTransactionUseCase(get(), get()) }
     factory { UpdateTransactionUseCase(get()) }
-    factory { DeleteTransactionUseCase(get()) }
+    factory { DeleteTransactionUseCase(get(), get()) }
     factory { ReassignBrandTransactionsUseCase(get()) }
 
     viewModel {
@@ -31,10 +31,8 @@ val transactionModule = module {
             observeTransactions = get(),
             observeBrands = get(),
             observeCategories = get(),
-            deleteTransaction = get(),
             clock = get(),
             filterBus = get(),
-            analytics = get(),
         )
     }
 
@@ -48,6 +46,7 @@ val transactionModule = module {
             observeCategories = get(),
             createTransaction = get(),
             updateTransaction = get(),
+            deleteTransaction = get(),
             analytics = get(),
         )
     }

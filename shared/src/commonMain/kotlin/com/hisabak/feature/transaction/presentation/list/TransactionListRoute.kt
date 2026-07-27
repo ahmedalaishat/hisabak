@@ -22,7 +22,6 @@ fun TransactionListRoute(
         onCategoryFilterChange = { viewModel.onIntent(TransactionListIntent.CategoryFilterChanged(it)) },
         onDateRangeChange = { viewModel.onIntent(TransactionListIntent.DateRangeChanged(it)) },
         onClearFilters = { viewModel.onIntent(TransactionListIntent.ClearFilters) },
-        onDelete = { viewModel.onIntent(TransactionListIntent.Delete(it)) },
         onAdd = onAdd,
         onEdit = onEdit,
     )

@@ -8,6 +8,7 @@ import com.hisabak.feature.sms.data.local.toEntity
 import com.hisabak.feature.sms.domain.SmsMessage
 import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsRepository
+import com.hisabak.feature.transaction.domain.TransactionId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlin.time.Instant
@@ -33,6 +34,11 @@ class RoomSmsRepository(
 
     override suspend fun delete(id: SmsMessageId): DomainResult<Unit> {
         dao.deleteById(id.value)
+        return DomainResult.Success(Unit)
+    }
+
+    override suspend fun unlinkTransaction(transactionId: TransactionId): DomainResult<Unit> {
+        dao.clearTransactionLink(transactionId.value)
         return DomainResult.Success(Unit)
     }
 

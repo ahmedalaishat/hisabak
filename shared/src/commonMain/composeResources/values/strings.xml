@@ -34,6 +34,11 @@
     <string name="brand_edit_title">Edit brand</string>
     <string name="transaction_new_title">New transaction</string>
     <string name="transaction_edit_title">Edit transaction</string>
+    <string name="transaction_delete_title">Delete this transaction?</string>
+    <string name="transaction_delete_body">It will be removed from your totals and budgets. This can't be undone.</string>
+    <string name="transaction_delete_body_sms">It will be removed from your totals and budgets, and its bank message goes back to the SMS inbox so you can import it again.</string>
+    <string name="transaction_delete_action">Delete transaction</string>
+    <string name="transaction_deleting">Deleting…</string>
     <string name="settings_group_backup_security">Backup &amp; security</string>
     <string name="settings_group_preferences">Preferences</string>
     <string name="settings_theme">Theme</string>

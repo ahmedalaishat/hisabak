@@ -92,7 +92,6 @@ fun TransactionListScreen(
     onCategoryFilterChange: (CategoryId?) -> Unit,
     onDateRangeChange: (DateRangeFilter) -> Unit,
     onClearFilters: () -> Unit,
-    onDelete: (TransactionId) -> Unit,
     onAdd: () -> Unit,
     onEdit: (TransactionId) -> Unit,
 ) {

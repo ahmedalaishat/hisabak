@@ -8,16 +8,19 @@ import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.category.domain.usecase.ObserveCategoriesUseCase
 import com.hisabak.feature.transaction.domain.TransactionId
 import com.hisabak.feature.transaction.domain.usecase.CreateTransactionUseCase
+import com.hisabak.feature.transaction.domain.usecase.DeleteTransactionUseCase
 import com.hisabak.feature.transaction.domain.usecase.UpdateTransactionUseCase
 import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.testutil.FakeAnalytics
 import com.hisabak.testutil.FakeBrandRepository
 import com.hisabak.testutil.FakeCategoryRepository
+import com.hisabak.testutil.FakeSmsRepository
 import com.hisabak.testutil.FakeTransactionRepository
 import com.hisabak.testutil.MainDispatcherTest
 import com.hisabak.testutil.TestClock
 import com.hisabak.testutil.brand
 import com.hisabak.testutil.category
+import com.hisabak.testutil.smsMessage
 import com.hisabak.testutil.transaction
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -47,6 +50,7 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
     )
 
     private val analytics = FakeAnalytics()
+    private val smsRepo = FakeSmsRepository()
 
     private fun viewModel(transactionId: TransactionId? = null) = TransactionEditViewModel(
         transactionId = transactionId,
@@ -57,6 +61,7 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
         observeCategories = ObserveCategoriesUseCase(catRepo),
         createTransaction = CreateTransactionUseCase(txRepo, clock),
         updateTransaction = UpdateTransactionUseCase(txRepo),
+        deleteTransaction = DeleteTransactionUseCase(txRepo, smsRepo),
         analytics = analytics,
     )
 
@@ -194,5 +199,80 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
         assertEquals(BrandId("b-uncat"), updated.brandId) // brand preserved, still uncategorized
         assertEquals(2_500L, updated.amount.amountMinor)
         assertEquals(TransactionEditEffect.Saved, vm.effect.value)
+    }
+
+    @Test
+    fun `delete is confirmed before it runs`() = runTest {
+        txRepo.emit(listOf(transaction(id = "t1", brandId = "b-exp")))
+        val vm = viewModel(TransactionId("t1"))
+        advanceUntilIdle()
+
+        vm.onIntent(TransactionEditIntent.DeleteRequested)
+        advanceUntilIdle()
+
+        // Asking is not doing: the row survives until the dialog is confirmed.
+        assertTrue(vm.state.value.showDeleteConfirm)
+        assertEquals(1, txRepo.current.size)
+        assertNull(vm.effect.value)
+
+        vm.onIntent(TransactionEditIntent.DeleteDismissed)
+        advanceUntilIdle()
+
+        assertEquals(false, vm.state.value.showDeleteConfirm)
+        assertEquals(1, txRepo.current.size)
+        assertTrue(analytics.logged.isEmpty(), "a dismissed dialog must not log a delete")
+    }
+
+    @Test
+    fun `confirming delete removes the transaction and emits Deleted`() = runTest {
+        txRepo.emit(listOf(transaction(id = "t1", brandId = "b-exp")))
+        val vm = viewModel(TransactionId("t1"))
+        advanceUntilIdle()
+
+        vm.onIntent(TransactionEditIntent.DeleteRequested)
+        vm.onIntent(TransactionEditIntent.DeleteConfirmed)
+        advanceUntilIdle()
+
+        assertTrue(txRepo.current.isEmpty())
+        assertEquals(false, vm.state.value.showDeleteConfirm)
+        assertEquals(false, vm.state.value.isDeleting)
+        assertEquals(TransactionEditEffect.Deleted, vm.effect.value)
+        assertEquals(listOf("transaction_deleted"), analytics.names())
+    }
+
+    @Test
+    fun `deleting a captured transaction returns its SMS to the inbox`() = runTest {
+        smsRepo.upsert(
+            smsMessage(id = "s1", body = "Purchase of AED 10.00 at Carrefour")
+                .copy(transactionId = TransactionId("t1")),
+        )
+        txRepo.emit(listOf(transaction(id = "t1", brandId = "b-exp", sourceSmsId = "s1")))
+        val vm = viewModel(TransactionId("t1"))
+        advanceUntilIdle()
+
+        // The confirm copy warns that the message comes back.
+        assertTrue(vm.state.value.fromSms)
+
+        vm.onIntent(TransactionEditIntent.DeleteConfirmed)
+        advanceUntilIdle()
+
+        // The message survives, but no longer points at the deleted row — so the inbox
+        // shows it as importable again rather than Linked-to-nothing.
+        val message = smsRepo.current.single()
+        assertNull(message.transactionId)
+        assertEquals(false, message.isLinked)
+    }
+
+    @Test
+    fun `a new transaction has nothing to delete`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onIntent(TransactionEditIntent.DeleteConfirmed)
+        advanceUntilIdle()
+
+        assertEquals(false, vm.state.value.isDeleting)
+        assertNull(vm.effect.value)
+        assertTrue(analytics.logged.isEmpty())
     }
 }

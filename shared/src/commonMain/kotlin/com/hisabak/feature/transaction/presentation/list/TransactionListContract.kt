@@ -67,7 +67,6 @@ sealed interface TransactionListIntent : ViewIntent {
     data class CategoryFilterChanged(val id: CategoryId?) : TransactionListIntent
     data class DateRangeChanged(val range: DateRangeFilter) : TransactionListIntent
     data object ClearFilters : TransactionListIntent
-    data class Delete(val id: TransactionId) : TransactionListIntent
     data object ConsumeEffect : TransactionListIntent
 }
 
