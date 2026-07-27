@@ -88,7 +88,8 @@ Everything below is built and shipping today:
   trends, category and brand breakdowns, and period filters (this/last month, this/last year, all
   time) across Summary, Trends, and Categories tabs.
 - [x] 🧾 **Transactions** — searchable, filterable list (by brand, category, date range), with
-  uncategorized spending surfaced for quick cleanup.
+  uncategorized spending surfaced for quick cleanup. Add, edit, or delete an entry (deletion is
+  confirmed first, and hands any bank message that created it back to the SMS inbox).
 - [x] 🗂️ **Organize** — categories (income / expense / savings / investment) with colors and
   icons, and brands mapped to categories. Safe deletion with brand-merge and confirmation.
 - [x] 🛎️ **Notifications center** — unread badge on the bell, swipe-to-dismiss, and mark-all-read.
