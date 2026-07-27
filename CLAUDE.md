@@ -205,6 +205,9 @@ progress — see `docs/kmp-migration.md`):
   configurations (`Staging.xcconfig` — bundle id `com.hisabak.staging`, "Hisabak STG", seeded demo
   data via the `HisabakFlavor` Info.plist key read by the shared `AppConfig`; `smsAutoCapture`
   stays false on iOS — no SMS API, the Shortcuts action is the near-automatic capture path).
+  `Staging.xcconfig` `#include`s `Config.xcconfig`, so anything it doesn't override is inherited
+  — note it carries **its own `GOOGLE_OAUTH_CLIENT_ID`**, since iOS OAuth clients key off the
+  bundle id and the prod client is registered to `com.hisabak`.
 
 Package layout (unchanged by the migration — files move between modules, packages stay):
 
