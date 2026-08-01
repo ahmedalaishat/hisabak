@@ -9,17 +9,13 @@ import com.hisabak.core.domain.analytics.Analytics
 import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.core.presentation.BaseViewModel
 import com.hisabak.feature.brand.domain.BrandId
-import com.hisabak.feature.brand.domain.usecase.FindOrCreateBrandUseCase
 import com.hisabak.feature.brand.domain.usecase.ObserveBrandsUseCase
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.category.domain.usecase.ObserveCategoriesUseCase
-import com.hisabak.feature.sms.domain.ai.AiParserAvailability
-import com.hisabak.feature.sms.domain.ai.AiSmsParser
 import com.hisabak.feature.transaction.domain.TransactionId
 import com.hisabak.feature.transaction.domain.TransactionRepository
 import com.hisabak.feature.transaction.domain.usecase.CreateTransactionUseCase
 import com.hisabak.feature.transaction.domain.usecase.DeleteTransactionUseCase
-import com.hisabak.feature.transaction.domain.usecase.ParseSmartInputUseCase
 import com.hisabak.feature.transaction.domain.usecase.UpdateTransactionUseCase
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -37,22 +33,13 @@ class TransactionEditViewModel(
     private val createTransaction: CreateTransactionUseCase,
     private val updateTransaction: UpdateTransactionUseCase,
     private val deleteTransaction: DeleteTransactionUseCase,
-    private val aiParser: AiSmsParser,
-    private val parseSmartInput: ParseSmartInputUseCase,
-    private val findOrCreateBrand: FindOrCreateBrandUseCase,
     private val analytics: Analytics,
 ) : BaseViewModel<TransactionEditIntent, TransactionEditUiState, TransactionEditEffect>() {
 
     override fun initialState() = TransactionEditUiState(isNew = transactionId == null)
 
     init {
-        if (transactionId == null) {
-            setState { copy(occurredAt = clock.now()) }
-            viewModelScope.launch {
-                val ready = aiParser.availability() == AiParserAvailability.Ready
-                if (ready) setState { copy(smartAvailable = true) }
-            }
-        }
+        if (transactionId == null) setState { copy(occurredAt = clock.now()) }
         viewModelScope.launch {
             val selectedTypeFlow = state.map { it.selectedType }.distinctUntilChanged()
             val selectedBrandIdFlow = state.map { it.selectedBrandId }.distinctUntilChanged()
@@ -89,7 +76,7 @@ class TransactionEditViewModel(
             is TransactionEditIntent.AmountChanged ->
                 setState { copy(amountInput = intent.value, amountError = null) }
             is TransactionEditIntent.BrandSelected ->
-                setState { copy(selectedBrandId = intent.brandId, brandError = null, pendingBrandName = null) }
+                setState { copy(selectedBrandId = intent.brandId, brandError = null) }
             is TransactionEditIntent.NoteChanged ->
                 setState { copy(noteInput = intent.value) }
             is TransactionEditIntent.TypeSelected ->
@@ -104,10 +91,6 @@ class TransactionEditViewModel(
                 }
             is TransactionEditIntent.DirectionChanged ->
                 setState { copy(isWithdrawal = intent.withdrawal) }
-            is TransactionEditIntent.SmartInputChanged ->
-                setState { copy(smartInput = intent.value, smartParseFailed = false) }
-            TransactionEditIntent.SmartParseRequested -> smartParse()
-            TransactionEditIntent.CreateSuggestedBrand -> createSuggestedBrand()
             is TransactionEditIntent.DateChanged ->
                 setState { copy(occurredAt = intent.instant, showDatePicker = false) }
             TransactionEditIntent.DatePickerOpened ->
@@ -154,49 +137,6 @@ class TransactionEditViewModel(
     private suspend fun resolveBrandType(brandId: BrandId): CategoryType? {
         val categoryId = observeBrands().first().firstOrNull { it.id == brandId }?.categoryId ?: return null
         return observeCategories().first().firstOrNull { it.id == categoryId }?.type
-    }
-
-    private fun smartParse() {
-        val text = state.value.smartInput.trim()
-        if (text.isEmpty() || state.value.isSmartParsing) return
-        setState { copy(isSmartParsing = true, smartParseFailed = false, generalError = null) }
-        viewModelScope.launch {
-            when (val result = parseSmartInput(text)) {
-                is DomainResult.Success -> {
-                    val parse = result.value
-                    val type = parse.brandId?.let { resolveBrandType(it) }
-                    setState {
-                        val newType = type ?: selectedType
-                        copy(
-                            isSmartParsing = false,
-                            amountInput = formatAmountInput(parse.amount),
-                            occurredAt = parse.occurredAt,
-                            selectedBrandId = parse.brandId,
-                            selectedType = newType,
-                            // Same normalization as TypeSelected: direction only exists for bucket types.
-                            isWithdrawal = isWithdrawal && newType.hasDirection,
-                            pendingBrandName = parse.brandName.takeIf { parse.brandId == null },
-                            amountError = null,
-                            brandError = null,
-                        )
-                    }
-                }
-                is DomainResult.Failure ->
-                    setState { copy(isSmartParsing = false, smartParseFailed = true) }
-            }
-        }
-    }
-
-    private fun createSuggestedBrand() {
-        val name = state.value.pendingBrandName ?: return
-        viewModelScope.launch {
-            when (val result = findOrCreateBrand(name)) {
-                is DomainResult.Success -> setState {
-                    copy(selectedBrandId = result.value.id, pendingBrandName = null, brandError = null)
-                }
-                is DomainResult.Failure -> setState { copy(generalError = result.error.message) }
-            }
-        }
     }
 
     private fun delete() {

@@ -8,7 +8,8 @@ import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsRepository
 import com.hisabak.feature.sms.domain.SmsTransactionProcessor
 import com.hisabak.feature.sms.domain.ai.SuggestAiParseUseCase
-import com.hisabak.feature.transaction.domain.Transaction
+import com.hisabak.feature.sms.domain.capture.CaptureResult
+import com.hisabak.feature.sms.domain.capture.CaptureSource
 import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -22,8 +23,9 @@ class IngestSmsUseCase(
 ) {
     suspend operator fun invoke(
         body: String,
+        source: CaptureSource,
         receivedAt: Instant? = null,
-    ): DomainResult<Transaction> {
+    ): DomainResult<CaptureResult> {
         // Broadcasts can be redelivered; (body, receivedAt) is a stable key, so skip a capture
         // we already stored. Manual paste passes no receivedAt and is never deduped.
         if (receivedAt != null && smsRepository.existsByContent(body, receivedAt)) {
@@ -37,15 +39,18 @@ class IngestSmsUseCase(
         )
         // Pass the received time so an SMS with no parseable date is dated when it arrived,
         // not at clock.now().
-        return smsRepository.upsert(message)
+        val result = smsRepository.upsert(message)
             .flatMap { processor.process(message, defaultDate = occurredFallback) }
-            .also { result ->
-                // Confirm-first AI fallback: the capture verdict stays regex-only and returns
-                // unchanged; the AI runs detached (inference can take seconds) and, at best,
-                // stores a suggestion on the already-persisted message for the inbox to show.
-                if (result is DomainResult.Failure && result.error is DomainError.ValidationFailed) {
-                    appScope.launch { suggestAiParse(message.id, source = "auto") }
-                }
+        if (result is DomainResult.Failure && result.error is DomainError.ValidationFailed) {
+            // No template matched, but the message is stored. The paste flow has a screen to
+            // drive: it gets the id back as a success and runs the AI suggestion itself (with
+            // a visible spinner). Background sources keep the detached confirm-first fallback
+            // and today's failure contract — their adapters have no UI to update.
+            if (source == CaptureSource.MANUAL_PASTE) {
+                return DomainResult.Success(CaptureResult.StoredUnparsed(message.id))
             }
+            appScope.launch { suggestAiParse(message.id, source = "auto") }
+        }
+        return result.map { CaptureResult.Imported(it) }
     }
 }

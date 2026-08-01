@@ -6,7 +6,6 @@ import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.feature.notification.domain.CategoryLimitMonitor
 import com.hisabak.feature.notification.domain.TransactionRecordedNotifier
 import com.hisabak.feature.sms.domain.usecase.IngestSmsUseCase
-import com.hisabak.feature.transaction.domain.Transaction
 import kotlin.time.Instant
 
 /**
@@ -30,15 +29,21 @@ class CaptureTransactionUseCase(
         rawText: String,
         source: CaptureSource,
         receivedAt: Instant? = null,
-    ): DomainResult<Transaction> {
-        val result = ingest(rawText, receivedAt)
+    ): DomainResult<CaptureResult> {
+        val result = ingest(rawText, source, receivedAt)
         when (result) {
-            is DomainResult.Success -> {
-                analytics.log(AnalyticsEvent.SmsCaptured(source = source.name.lowercase(), amount = result.value.amount))
-                if (source.notifiesOnRecord) recordedNotifier.notify(result.value)
-                // Re-check budgets now, while we hold the captured transaction — covers background
-                // captures (SMS broadcast / share) where the app-scoped monitor may not run. Idempotent.
-                limitMonitor.evaluateNow()
+            is DomainResult.Success -> when (val outcome = result.value) {
+                is CaptureResult.Imported -> {
+                    analytics.log(AnalyticsEvent.SmsCaptured(source = source.name.lowercase(), amount = outcome.transaction.amount))
+                    if (source.notifiesOnRecord) recordedNotifier.notify(outcome.transaction)
+                    // Re-check budgets now, while we hold the captured transaction — covers background
+                    // captures (SMS broadcast / share) where the app-scoped monitor may not run. Idempotent.
+                    limitMonitor.evaluateNow()
+                }
+                // Stored for the confirm-first flow — no transaction yet, so no notifier or
+                // budget re-check; keep the analytics continuity of the old failure signal.
+                is CaptureResult.StoredUnparsed ->
+                    analytics.log(AnalyticsEvent.SmsParseFailed(reason = "validationfailed"))
             }
             is DomainResult.Failure ->
                 // The error *type* only — never the raw message text, to keep analytics PII-free.

@@ -16,13 +16,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -30,8 +28,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -48,7 +44,6 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
@@ -83,9 +78,6 @@ fun TransactionEditScreen(
     onNoteChange: (String) -> Unit,
     onTypeSelected: (CategoryType) -> Unit,
     onDirectionChange: (Boolean) -> Unit,
-    onSmartInputChange: (String) -> Unit,
-    onSmartParse: () -> Unit,
-    onCreateSuggestedBrand: () -> Unit,
     onDateClick: () -> Unit,
     onDateSelected: (Instant) -> Unit,
     onDateDismiss: () -> Unit,
@@ -119,16 +111,6 @@ fun TransactionEditScreen(
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
-
-        if (state.isNew && state.smartAvailable) {
-            SmartInputField(
-                value = state.smartInput,
-                parsing = state.isSmartParsing,
-                failed = state.smartParseFailed,
-                onValueChange = onSmartInputChange,
-                onParse = onSmartParse,
-            )
-        }
 
         AmountHeroField(
             amountInput = state.amountInput,
@@ -189,15 +171,6 @@ fun TransactionEditScreen(
                         )
                     }
                 }
-            }
-            // A smart parse named a brand that doesn't exist yet — creating it is one tap.
-            state.pendingBrandName?.let { name ->
-                ColoredFilterChip(
-                    label = stringResource(Res.string.transaction_smart_create_brand, name),
-                    colorKey = null,
-                    selected = false,
-                    onClick = onCreateSuggestedBrand,
-                )
             }
             state.brandError?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -300,57 +273,6 @@ fun TransactionEditScreen(
             dismissButton = { TextButton(onClick = onDateDismiss) { Text(stringResource(Res.string.action_cancel)) } },
         ) {
             DatePicker(state = pickerState)
-        }
-    }
-}
-
-/** Free-text quick entry: type "lunch 45 yesterday", the on-device model fills the form below. */
-@Composable
-private fun SmartInputField(
-    value: String,
-    parsing: Boolean,
-    failed: Boolean,
-    onValueChange: (String) -> Unit,
-    onParse: () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sectionTitleGap)) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = { Text(stringResource(Res.string.transaction_smart_hint)) },
-            singleLine = true,
-            // readOnly, not disabled: a disabled field drops focus and the keyboard mid-parse.
-            readOnly = parsing,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
-            keyboardActions = KeyboardActions(onGo = { onParse() }),
-            trailingIcon = {
-                if (parsing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    IconButton(onClick = onParse, enabled = value.isNotBlank()) {
-                        Icon(
-                            imageVector = HugeIcons.Insights,
-                            contentDescription = stringResource(Res.string.transaction_smart_parse),
-                            tint = if (value.isNotBlank()) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                        )
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        if (failed) {
-            Text(
-                text = stringResource(Res.string.transaction_smart_failed),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-            )
         }
     }
 }

@@ -24,13 +24,6 @@ data class TransactionEditUiState(
     val isNew: Boolean = true,
     /** Drives the confirm copy: a captured transaction's SMS returns to the inbox on delete. */
     val fromSms: Boolean = false,
-    /** On-device AI is ready — the describe-it smart field renders (new transactions only). */
-    val smartAvailable: Boolean = false,
-    val smartInput: String = "",
-    val isSmartParsing: Boolean = false,
-    val smartParseFailed: Boolean = false,
-    /** A smart parse named a brand that doesn't exist yet — the sheet offers to create it. */
-    val pendingBrandName: String? = null,
     val amountError: String? = null,
     val brandError: String? = null,
     val generalError: String? = null,
@@ -42,7 +35,7 @@ data class TransactionEditUiState(
     )
 
     val canSave: Boolean
-        get() = !isSaving && !isDeleting && !isSmartParsing && amountInput.isNotBlank() && selectedBrandId != null
+        get() = !isSaving && !isDeleting && amountInput.isNotBlank() && selectedBrandId != null
 }
 
 sealed interface TransactionEditIntent : ViewIntent {
@@ -52,9 +45,6 @@ sealed interface TransactionEditIntent : ViewIntent {
     data class DateChanged(val instant: Instant) : TransactionEditIntent
     data class TypeSelected(val type: CategoryType) : TransactionEditIntent
     data class DirectionChanged(val withdrawal: Boolean) : TransactionEditIntent
-    data class SmartInputChanged(val value: String) : TransactionEditIntent
-    data object SmartParseRequested : TransactionEditIntent
-    data object CreateSuggestedBrand : TransactionEditIntent
     data object DatePickerOpened : TransactionEditIntent
     data object DatePickerDismissed : TransactionEditIntent
     data object Save : TransactionEditIntent

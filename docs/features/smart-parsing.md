@@ -1,5 +1,10 @@
 # Smart parsing (free-text quick entry)
 
+> **Superseded by [`unified-capture.md`](unified-capture.md)** — the in-sheet "describe it"
+> field was removed after on-device feedback; free-text AI capture now lives in the SMS inbox
+> as a confirm-first suggestion. `AiSmsParser.parseFreeText` and both platform prompts survive
+> from this work; `ParseSmartInputUseCase` and the `smart_parse_*` events do not.
+
 ## Requirement
 Smart parsing: a 'describe it' free-text field in the add-transaction sheet (shown only when
 on-device AI is available) that parses the user's natural-language input — e.g. '100 at noon',

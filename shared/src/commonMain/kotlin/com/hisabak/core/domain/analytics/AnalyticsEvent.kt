@@ -79,21 +79,6 @@ sealed class AnalyticsEvent(
         params = mapOf("enabled" to enabled),
     )
 
-    /** A free-text smart parse in the add-transaction sheet started. */
-    data object SmartParseAttempted : AnalyticsEvent("smart_parse_attempted")
-
-    /** The AI turned the typed note into a pre-filled transaction (not yet saved). */
-    class SmartParseSucceeded(amount: Money, matchedBrand: Boolean) : AnalyticsEvent(
-        name = "smart_parse_succeeded",
-        params = mapOf("amount_bucket" to amountBucket(amount), "matched_brand" to matchedBrand),
-    )
-
-    /** [reason] is "unavailable", "model_empty", or "incomplete" — never the typed text. */
-    class SmartParseFailed(reason: String) : AnalyticsEvent(
-        name = "smart_parse_failed",
-        params = mapOf("reason" to reason),
-    )
-
     /** [type] is a [CategoryType] name, lowercased. */
     class CategoryCreated(type: String, hasLimit: Boolean) : AnalyticsEvent(
         name = "category_created",

@@ -13,6 +13,7 @@ import com.hisabak.feature.sms.domain.ai.AiSmsParser
 import com.hisabak.feature.sms.domain.ai.ConfirmAiSuggestionUseCase
 import com.hisabak.feature.sms.domain.ai.DismissAiSuggestionUseCase
 import com.hisabak.feature.sms.domain.ai.SuggestAiParseUseCase
+import com.hisabak.feature.sms.domain.capture.CaptureResult
 import com.hisabak.feature.sms.domain.capture.CaptureSource
 import com.hisabak.feature.sms.domain.capture.CaptureTransactionUseCase
 import com.hisabak.feature.sms.domain.usecase.DeleteSmsUseCase
@@ -83,8 +84,23 @@ class SmsInboxViewModel(
         viewModelScope.launch {
             when (val result = capture(body, CaptureSource.MANUAL_PASTE)) {
                 is DomainResult.Success -> {
-                    sendEffect(SmsInboxEffect.TransactionCreated(amount = result.value.amount))
                     setState { copy(draftBody = "", draftPreview = null, isProcessing = false) }
+                    when (val outcome = result.value) {
+                        is CaptureResult.Imported ->
+                            sendEffect(SmsInboxEffect.TransactionCreated(amount = outcome.transaction.amount))
+                        // No template matched, but the text is safely in the inbox. With AI
+                        // ready, drive a confirm-first suggestion on that row (spinner while it
+                        // thinks); without it, say why nothing parsed — the row still offers
+                        // Create template. Ask the parser directly, not state.aiAvailable —
+                        // the init coroutine populating that flag races an eager first paste,
+                        // and losing the race must not cost the suggestion.
+                        is CaptureResult.StoredUnparsed ->
+                            if (aiParser.availability() == AiParserAvailability.Ready) {
+                                suggestPastedEntry(outcome.messageId)
+                            } else {
+                                sendEffect(SmsInboxEffect.ParseFailed("No SMS template matched"))
+                            }
+                    }
                 }
                 is DomainResult.Failure -> {
                     sendEffect(SmsInboxEffect.ParseFailed(reasonFor(result.error)))
@@ -92,6 +108,13 @@ class SmsInboxViewModel(
                 }
             }
         }
+    }
+
+    private suspend fun suggestPastedEntry(id: SmsMessageId) {
+        setState { copy(suggestingIds = suggestingIds + id) }
+        val result = suggestAiParse(id, source = "paste", freeText = true)
+        setState { copy(suggestingIds = suggestingIds - id) }
+        if (result is DomainResult.Failure) sendEffect(SmsInboxEffect.AiParseFailed)
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)

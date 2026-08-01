@@ -53,6 +53,71 @@ class SuggestAiParseUseCaseTest {
     }
 
     @Test
+    fun `free-text mode uses the note prompt with today's date context`() = runTest {
+        val message = storedMessage()
+        aiParser.freeTextResult = AiParsedSms("Noon", 12_50, "AED", null)
+
+        val result = suggest(message.id, source = "paste", freeText = true)
+
+        assertTrue(result is DomainResult.Success)
+        assertEquals(listOf(message.body), aiParser.parsedFreeTexts)
+        assertTrue(aiParser.parsedBodies.isEmpty())
+        // TestClock is 2026-06-17 UTC, a Wednesday.
+        assertEquals("2026-06-17, Wednesday", aiParser.lastTodayIso)
+        assertEquals("Noon", smsRepo.current.single().suggested?.brandName)
+    }
+
+    @Test
+    fun `free-text mode accepts dates up to a year back but not the future`() = runTest {
+        val message = storedMessage()
+        val monthsAgo = receivedAt.minus(60.days)
+        aiParser.freeTextResult = AiParsedSms("Noon", 12_50, "AED", monthsAgo.toEpochMilliseconds())
+        suggest(message.id, source = "paste", freeText = true)
+        assertEquals(monthsAgo, smsRepo.current.single().suggested?.occurredAt)
+
+        smsRepo.upsert(smsRepo.current.single().copy(suggested = null))
+        val future = clock.now().plus(30.days)
+        aiParser.freeTextResult = AiParsedSms("Noon", 12_50, "AED", future.toEpochMilliseconds())
+        suggest(message.id, source = "paste", freeText = true)
+        // A future date is always a hallucination — fall back to when the text arrived.
+        assertEquals(receivedAt, smsRepo.current.single().suggested?.occurredAt)
+    }
+
+    @Test
+    fun `an absurd model amount is rejected as incomplete`() = runTest {
+        val message = storedMessage()
+        aiParser.freeTextResult = AiParsedSms("Noon", Long.MAX_VALUE / 2, "AED", null)
+
+        val result = suggest(message.id, source = "paste", freeText = true)
+
+        assertTrue(result is DomainResult.Failure)
+        assertEquals(null, smsRepo.current.single().suggested)
+    }
+
+    @Test
+    fun `the paste source reaches analytics without any text`() = runTest {
+        val message = storedMessage()
+        aiParser.freeTextResult = AiParsedSms("Noon", 12_50, "AED", null)
+
+        suggest(message.id, source = "paste", freeText = true)
+
+        val attempted = analytics.logged.first { it.name == "ai_parse_attempted" }
+        assertEquals("paste", attempted.params["source"])
+        assertTrue(analytics.logged.flatMap { it.params.values }.none { it == message.body })
+    }
+
+    @Test
+    fun `sms mode keeps the tight seven-day window`() = runTest {
+        val message = storedMessage()
+        val monthsAgo = receivedAt.minus(60.days)
+        aiParser.result = AiParsedSms("Noon", 12_50, "AED", monthsAgo.toEpochMilliseconds())
+
+        suggest(message.id, source = "auto")
+
+        assertEquals(receivedAt, smsRepo.current.single().suggested?.occurredAt)
+    }
+
+    @Test
     fun `a complete model result is stored as a suggestion`() = runTest {
         aiParser.result = AiParsedSms("Noon", 12_50, "AED", null)
         val message = storedMessage()
