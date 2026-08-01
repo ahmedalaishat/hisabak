@@ -233,6 +233,8 @@
     <string name="sms_template_error_amount_invalid">The tagged amount isn't a number</string>
     <string name="sms_template_error_anchor">Too little fixed text remains — tag fewer parts, or use a longer message</string>
     <string name="sms_create_template">Create template</string>
+    <string name="sms_template_save">Save template</string>
+    <string name="sms_template_save_import">Save template &amp; transaction</string>
     <string name="transaction_empty_filtered_title">No matching transactions</string>
     <string name="transaction_empty_filtered_subtitle">Try a different period, brand or category</string>
     <string name="transaction_empty_title">No transactions yet</string>

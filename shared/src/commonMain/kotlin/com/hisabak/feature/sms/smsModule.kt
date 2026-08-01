@@ -89,7 +89,14 @@ val smsModule = module {
         )
     }
     factory { DeleteSmsUseCase(get()) }
-    factory { ReparseSmsMessageUseCase(smsRepository = get(), processor = get()) }
+    factory {
+        ReparseSmsMessageUseCase(
+            smsRepository = get(),
+            templateRepository = get(),
+            parser = get(),
+            processor = get(),
+        )
+    }
 
     factory { ObserveSmsTemplatesUseCase(get()) }
     factory { SaveSmsTemplateUseCase(repository = get(), clock = get(), analytics = get()) }

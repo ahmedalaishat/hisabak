@@ -32,7 +32,10 @@ class SmsTemplateEditViewModel(
     private val reparseSms: ReparseSmsMessageUseCase,
 ) : BaseViewModel<SmsTemplateEditIntent, SmsTemplateEditUiState, SmsTemplateEditEffect>() {
 
-    override fun initialState() = SmsTemplateEditUiState(isLoading = templateId != null || sampleSmsId != null)
+    override fun initialState() = SmsTemplateEditUiState(
+        isLoading = templateId != null || sampleSmsId != null,
+        importsSample = sampleSmsId != null,
+    )
 
     private val patternForPreview = MutableStateFlow("")
 
