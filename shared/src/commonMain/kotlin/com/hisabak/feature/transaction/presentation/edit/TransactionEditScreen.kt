@@ -65,6 +65,8 @@ import com.hisabak.ui.components.ButtonVariant
 import com.hisabak.ui.components.ColoredFilterChip
 import com.hisabak.ui.components.DirhamGlyph
 import com.hisabak.ui.components.HisabakButton
+import com.hisabak.ui.components.NoticeCard
+import com.hisabak.ui.components.NoticeTone
 import com.hisabak.ui.components.SegmentOption
 import com.hisabak.ui.components.SegmentedControl
 import com.hisabak.ui.theme.HisabakTheme
@@ -84,6 +86,7 @@ fun TransactionEditScreen(
     onNoteChange: (String) -> Unit,
     onTypeSelected: (CategoryType) -> Unit,
     onDirectionChange: (Boolean) -> Unit,
+    onEditBrand: (BrandId) -> Unit,
     onDateClick: () -> Unit,
     onDateSelected: (Instant) -> Unit,
     onDateDismiss: () -> Unit,
@@ -203,6 +206,17 @@ fun TransactionEditScreen(
                     stringResource(Res.string.transaction_error_brand),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            // An uncategorized brand keeps this transaction out of every breakdown — the
+            // notice IS the fix: tap-through to the brand editor, and the sheet survives in
+            // the back stack, so coming back shows the chip colored and the note gone.
+            val selectedBrand = state.brandOptions.firstOrNull { it.id == state.selectedBrandId }
+            if (selectedBrand != null && selectedBrand.categoryColor == null) {
+                NoticeCard(
+                    text = stringResource(Res.string.transaction_brand_uncategorized),
+                    tone = NoticeTone.Info,
+                    onClick = { onEditBrand(selectedBrand.id) },
                 )
             }
         }

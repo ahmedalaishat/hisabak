@@ -408,6 +408,7 @@ private fun HisabakNav(slots: PlatformSlots) {
                     transactionId = key.id?.let(::TransactionId),
                     onDone = { navigator.goBack() },
                     onCancel = { navigator.goBack() },
+                    onEditBrand = { id -> navigator.navigate(BrandEditKey(id = id.value)) },
                 )
             }
             entry<BrandEditKey>(metadata = fullScreenTransition()) { key ->
