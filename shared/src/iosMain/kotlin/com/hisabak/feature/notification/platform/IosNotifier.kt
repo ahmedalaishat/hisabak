@@ -8,6 +8,8 @@ import com.hisabak.shared.resources.Res
 import com.hisabak.shared.resources.notification_budget_level_title
 import com.hisabak.shared.resources.notification_budget_message
 import com.hisabak.shared.resources.notification_budget_reached_title
+import com.hisabak.shared.resources.notification_review_message
+import com.hisabak.shared.resources.notification_review_title
 import com.hisabak.shared.resources.notification_tx_recorded
 import com.hisabak.shared.resources.notification_tx_recorded_title
 import com.hisabak.shared.resources.notification_tx_recorded_uncategorized
