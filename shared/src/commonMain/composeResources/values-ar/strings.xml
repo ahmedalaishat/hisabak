@@ -284,7 +284,7 @@
     <string name="sms_auto_off_badge">الاستيراد متوقف</string>
     <string name="sms_enable">تفعيل</string>
     <string name="sms_paste_title">إضافة من نص</string>
-    <string name="sms_paste_placeholder">الصق رسالة بنكية أو اكتب "غداء 45 أمس"</string>
+    <string name="sms_paste_placeholder">الصق رسالة بنكية أو صف معاملة…</string>
     <string name="sms_parsing">جارٍ التحليل…</string>
     <string name="sms_parse_import">تحليل واستيراد</string>
     <string name="sms_import">استيراد</string>
