@@ -198,6 +198,7 @@
     <string name="action_update">Update</string>
     <string name="transaction_error_amount">Enter a positive amount</string>
     <string name="transaction_error_brand">Pick a brand</string>
+    <string name="transaction_brand_uncategorized">No category yet — tap to categorize this brand</string>
     <string name="transaction_direction_deposit">Deposit</string>
     <string name="transaction_direction_withdrawal">Withdrawal</string>
     <string name="settings_sms_templates">SMS parsing</string>

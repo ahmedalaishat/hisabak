@@ -1,5 +1,6 @@
 package com.hisabak.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,6 +32,8 @@ fun NoticeCard(
     text: String,
     tone: NoticeTone,
     modifier: Modifier = Modifier,
+    /** Makes the whole card tappable — for notices that are also the fix ("tap to…"). */
+    onClick: (() -> Unit)? = null,
 ) {
     val colors = HisabakTheme.colors
     val (background, accent) = when (tone) {
@@ -44,7 +47,9 @@ fun NoticeCard(
         NoticeTone.Error -> HugeIcons.ErrorOutline
     }
     SurfaceCard(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .let { m -> if (onClick != null) m.clickable(onClick = onClick) else m },
         backgroundColor = background,
         borderColor = Color.Transparent,
     ) {

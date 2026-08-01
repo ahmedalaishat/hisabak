@@ -13,6 +13,7 @@ fun TransactionEditRoute(
     transactionId: TransactionId?,
     onDone: () -> Unit,
     onCancel: () -> Unit,
+    onEditBrand: (com.hisabak.feature.brand.domain.BrandId) -> Unit = {},
     viewModel: TransactionEditViewModel = koinViewModel(
         key = transactionId?.value ?: "new",
         parameters = { parametersOf(transactionId) },
@@ -36,6 +37,7 @@ fun TransactionEditRoute(
         onNoteChange = { viewModel.onIntent(TransactionEditIntent.NoteChanged(it)) },
         onTypeSelected = { viewModel.onIntent(TransactionEditIntent.TypeSelected(it)) },
         onDirectionChange = { viewModel.onIntent(TransactionEditIntent.DirectionChanged(it)) },
+        onEditBrand = onEditBrand,
         onDateClick = { viewModel.onIntent(TransactionEditIntent.DatePickerOpened) },
         onDateSelected = { viewModel.onIntent(TransactionEditIntent.DateChanged(it)) },
         onDateDismiss = { viewModel.onIntent(TransactionEditIntent.DatePickerDismissed) },

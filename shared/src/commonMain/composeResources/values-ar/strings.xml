@@ -198,6 +198,7 @@
     <string name="action_update">تحديث</string>
     <string name="transaction_error_amount">أدخل مبلغًا موجبًا</string>
     <string name="transaction_error_brand">اختر علامة</string>
+    <string name="transaction_brand_uncategorized">لا فئة بعد — اضغط لتصنيف هذه العلامة</string>
     <string name="transaction_direction_deposit">إيداع</string>
     <string name="transaction_direction_withdrawal">سحب</string>
     <string name="settings_sms_templates">تحليل الرسائل</string>
