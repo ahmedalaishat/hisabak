@@ -92,7 +92,7 @@ class ParseSmartInputUseCaseTest {
     }
 
     @Test
-    fun `dates in the back window are kept, future and ancient dates fall back to now`() = runTest {
+    fun `dates in the back window are kept while future and ancient dates fall back to now`() = runTest {
         val yesterday = clock.now - 1.days
         aiParser.freeTextResult = AiParsedSms("Lulu", 5_000L, null, yesterday.toEpochMilliseconds())
         assertEquals(yesterday, success(useCase()("lulu 50 yesterday")).occurredAt)

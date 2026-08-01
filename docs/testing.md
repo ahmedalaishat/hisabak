@@ -24,7 +24,9 @@ Reports: `androidApp/build/reports/tests/testProdDebugUnitTest/index.html` and
   entities/use cases, SMS parsing, backup engine policy, seed data, **and all ViewModel
   tests**). Written with **kotlin-test** (`kotlin.test.Test`, `assertEquals`,
   `assertFailsWith`, …) so they also compile for the iOS targets (test names must avoid
-  characters Kotlin/Native rejects, e.g. commas); they run on the JVM via
+  characters Kotlin/Native rejects — `,` `;` `:` — enforced by a fast grep in both the
+  Stop hook and the required Unit-tests CI job, since the JVM compiles them fine and only
+  the non-required iOS compile job would catch it otherwise); they run on the JVM via
   `:shared:testAndroidHostTest`.
 - **`androidApp/src/test/`** — only the JVM-bound tests remain (`AesGcmBackupCryptoTest`,
   `DatabaseDecryptionMigrationTest`, `BackupUseCasesTest` which drives the JVM crypto
