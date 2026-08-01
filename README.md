@@ -92,6 +92,10 @@ Everything below is built and shipping today:
   confirmed first, and hands any bank message that created it back to the SMS inbox).
 - [x] 🗂️ **Organize** — categories (income / expense / savings / investment) with colors and
   icons, and brands mapped to categories. Safe deletion with brand-merge and confirmation.
+- [x] 🧩 **Custom SMS templates** — teach the app your bank's message format by example:
+  paste a sample (or start from an unparsed inbox message), confirm the highlighted
+  amount/brand/date, and future messages parse instantly. Specificity-ranked matching and a
+  save-time preview keep a bad template from breaking the built-ins. Backed up with your data.
 - [x] ✨ **Smart entry** — on devices with on-device AI, describe a transaction in your own
   words ("lunch 45 yesterday") and the add sheet fills itself in for you to review; recognizes
   your existing brands and resolves relative dates. Fully on-device.

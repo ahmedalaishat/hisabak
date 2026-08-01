@@ -4,7 +4,8 @@ import kotlinx.serialization.Serializable
 
 /**
  * A logical snapshot of the user's financial data — the wire format for backups, decoupled from the
- * Room entities so the schema can evolve independently. Records mirror the 5 financial tables;
+ * Room entities so the schema can evolve independently. Records mirror the financial tables
+ * plus the SMS parse templates;
  * added fields use defaults so older backups decode forward.
  * Excludes ephemeral/derived tables (notifications, category limit alerts) and app settings.
  */
@@ -15,9 +16,14 @@ data class BackupData(
     val brands: List<BrandRecord> = emptyList(),
     val transactions: List<TransactionRecord> = emptyList(),
     val smsMessages: List<SmsMessageRecord> = emptyList(),
+    val smsTemplates: List<SmsTemplateRecord> = emptyList(),
 ) {
+    /** User-data record count — the "nothing to back up" gate. Templates are excluded: the 10
+     *  seeded defaults always exist, and counting them would make an empty install look
+     *  backup-worthy. */
     val totalRecords: Int
-        get() = categories.size + categoryLimits.size + brands.size + transactions.size + smsMessages.size
+        get() = categories.size + categoryLimits.size + brands.size + transactions.size +
+            smsMessages.size
 }
 
 @Serializable
@@ -53,6 +59,16 @@ data class TransactionRecord(
     val note: String? = null,
     val occurredAtMillis: Long,
     val sourceSmsId: String? = null,
+)
+
+@Serializable
+data class SmsTemplateRecord(
+    val id: String,
+    val pattern: String,
+    val sampleBody: String? = null,
+    val isDefault: Boolean,
+    val enabled: Boolean = true,
+    val createdAtMillis: Long,
 )
 
 @Serializable

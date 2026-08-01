@@ -7,6 +7,15 @@ All notable changes to Hisabak are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **Teach the app your bank's SMS format** — Settings → SMS parsing lists the parse templates
+  (the built-ins plus your own) and lets you create new ones *by example*: paste a bank message
+  (or tap "Create template" on an unparsed message in the SMS inbox), confirm what the app
+  highlighted as the amount, brand, date, and changing text like balances, and save. From then
+  on, messages in that format parse instantly on any device — no AI needed. Safety rails keep a
+  badly-made template from breaking anything: more specific templates always win, a template
+  whose amount lands on non-numeric text is skipped, and before saving you're warned if a
+  draft also matches lots of unrelated stored messages. Templates can be turned off (built-ins
+  too), your own can be edited and deleted, and they're included in Drive backups.
 - **Smart entry — describe a transaction in your own words** — on devices with on-device AI,
   the add-transaction sheet gains a "describe it" field: type (or dictate) something like
   "lunch 45 yesterday" or "100 at noon" and the AI fills in the amount, brand, type, and date

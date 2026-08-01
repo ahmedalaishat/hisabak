@@ -28,6 +28,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun SettingsRoute(
     onOpenBackup: () -> Unit,
+    onOpenSmsTemplates: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
@@ -99,6 +100,7 @@ fun SettingsRoute(
             }
         },
         onOpenBackup = onOpenBackup,
+        onOpenSmsTemplates = onOpenSmsTemplates,
         passphraseReminderVisible = passphraseReminderVisible,
         onConfirmRemembered = viewModel::confirmPassphraseRemembered,
         onVerifyPassphrase = viewModel::verifyPassphrase,

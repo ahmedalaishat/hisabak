@@ -66,6 +66,19 @@ sealed class AnalyticsEvent(
 
     data object AiSuggestionDismissed : AnalyticsEvent("ai_suggestion_dismissed")
 
+    /** A user saved a parse template from a tagged sample ([edited] = replacing an existing one). */
+    class SmsTemplateCreated(edited: Boolean) : AnalyticsEvent(
+        name = "sms_template_created",
+        params = mapOf("edited" to edited),
+    )
+
+    data object SmsTemplateDeleted : AnalyticsEvent("sms_template_deleted")
+
+    class SmsTemplateToggled(enabled: Boolean) : AnalyticsEvent(
+        name = "sms_template_toggled",
+        params = mapOf("enabled" to enabled),
+    )
+
     /** A free-text smart parse in the add-transaction sheet started. */
     data object SmartParseAttempted : AnalyticsEvent("smart_parse_attempted")
 

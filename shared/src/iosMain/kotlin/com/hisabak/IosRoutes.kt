@@ -63,6 +63,7 @@ internal fun IosRestoreRoute(viewModel: RestoreViewModel = koinViewModel()) {
 
 @Composable
 internal fun IosSmsInboxRoute(
+    onCreateTemplate: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SmsInboxViewModel = koinViewModel(),
 ) {
@@ -87,6 +88,7 @@ internal fun IosSmsInboxRoute(
 
     SmsInboxScreen(
         state = state,
+        onCreateTemplate = { onCreateTemplate(it.value) },
         snackbarHostState = snackbarHostState,
         autoImportAvailable = false,
         onSearchChange = { viewModel.onIntent(SmsInboxIntent.SearchChanged(it)) },
@@ -108,6 +110,7 @@ internal fun IosSmsInboxRoute(
 @Composable
 internal fun IosSettingsRoute(
     onOpenBackup: () -> Unit,
+    onOpenSmsTemplates: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
@@ -150,6 +153,7 @@ internal fun IosSettingsRoute(
             }
         },
         onOpenBackup = onOpenBackup,
+        onOpenSmsTemplates = onOpenSmsTemplates,
         passphraseReminderVisible = passphraseReminderVisible,
         onConfirmRemembered = viewModel::confirmPassphraseRemembered,
         onVerifyPassphrase = viewModel::verifyPassphrase,

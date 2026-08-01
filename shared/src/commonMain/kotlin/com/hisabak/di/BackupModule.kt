@@ -24,6 +24,7 @@ val backupModule = module {
             brandDao = get(),
             transactionDao = get(),
             smsDao = get(),
+            smsTemplateDao = get(),
         )
     }
     single<BackupCodec> { JsonBackupCodec() }

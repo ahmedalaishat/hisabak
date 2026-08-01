@@ -22,9 +22,15 @@ fun MainViewController(): UIViewController {
                 PlatformSlots(
                     onboarding = { IosOnboardingRoute() },
                     restore = { IosRestoreRoute() },
-                    smsInbox = { modifier -> IosSmsInboxRoute(modifier = modifier) },
-                    settings = { onOpenBackup, modifier ->
-                        IosSettingsRoute(onOpenBackup = onOpenBackup, modifier = modifier)
+                    smsInbox = { onCreateTemplate, modifier ->
+                        IosSmsInboxRoute(onCreateTemplate = onCreateTemplate, modifier = modifier)
+                    },
+                    settings = { onOpenBackup, onOpenSmsTemplates, modifier ->
+                        IosSettingsRoute(
+                            onOpenBackup = onOpenBackup,
+                            onOpenSmsTemplates = onOpenSmsTemplates,
+                            modifier = modifier,
+                        )
                     },
                     backup = { modifier -> IosBackupRoute(modifier = modifier) },
                     appLockGate = { content -> IosAppLockGate(content = content) },

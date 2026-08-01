@@ -76,9 +76,15 @@ class MainActivity : FragmentActivity() {
     private fun androidPlatformSlots() = PlatformSlots(
         onboarding = { OnboardingRoute() },
         restore = { RestoreRoute() },
-        smsInbox = { modifier -> SmsInboxRoute(modifier = modifier) },
-        settings = { onOpenBackup, modifier ->
-            SettingsRoute(onOpenBackup = onOpenBackup, modifier = modifier)
+        smsInbox = { onCreateTemplate, modifier ->
+            SmsInboxRoute(onCreateTemplate = onCreateTemplate, modifier = modifier)
+        },
+        settings = { onOpenBackup, onOpenSmsTemplates, modifier ->
+            SettingsRoute(
+                onOpenBackup = onOpenBackup,
+                onOpenSmsTemplates = onOpenSmsTemplates,
+                modifier = modifier,
+            )
         },
         backup = { modifier -> BackupRoute(modifier = modifier) },
         appLockGate = { content -> AppLockGate(content = content) },

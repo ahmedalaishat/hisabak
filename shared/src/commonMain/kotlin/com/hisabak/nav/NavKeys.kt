@@ -20,3 +20,8 @@ data object NotificationsKey : NavKey
 
 // Full-screen child opened from Settings → Data.
 data object BackupKey : NavKey
+
+// Full-screen children for SMS parse templates: the manager (from Settings) and the
+// define-by-sample editor (from the manager, or from an unparsed inbox message).
+data object SmsTemplatesKey : NavKey
+data class SmsTemplateEditKey(val templateId: String?, val sampleSmsId: String?) : NavKey
