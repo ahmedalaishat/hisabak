@@ -315,7 +315,7 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `smart parse fills amount, brand, type and date from the model output`() = runTest {
+    fun `smart parse fills amount and brand and type and date from the model output`() = runTest {
         aiParser.availability = AiParserAvailability.Ready
         aiParser.freeTextResult = AiParsedSms(
             brandName = "Salary",
@@ -341,7 +341,7 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `smart parse with an unknown brand offers to create it, and the tap selects it`() = runTest {
+    fun `smart parse with an unknown brand offers to create it and the tap selects it`() = runTest {
         aiParser.availability = AiParserAvailability.Ready
         aiParser.freeTextResult = AiParsedSms(
             brandName = "Noon",
@@ -370,7 +370,7 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `creating a suggested brand that containment-matches an existing one links it, not a duplicate`() = runTest {
+    fun `creating a suggested brand that containment-matches an existing one links it instead of duplicating`() = runTest {
         // FindOrCreateBrand applies the same containment rule the SMS confirm flow uses at link
         // time, so "Create 'Noon'" can resolve to an existing "Noon Food" — the selected chip
         // then shows the real brand, keeping the outcome visible rather than duplicating brands.
