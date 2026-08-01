@@ -39,6 +39,8 @@ fun HisabakButton(
     leadingIcon: ImageVector? = null,
     enabled: Boolean = true,
     fullWidth: Boolean = false,
+    /** Custom leading composable (e.g. an animated icon); wins over [leadingIcon]. */
+    leadingContent: (@Composable () -> Unit)? = null,
 ) {
     val c = HisabakTheme.colors
     val cs = MaterialTheme.colorScheme
@@ -82,7 +84,9 @@ fun HisabakButton(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.s3, Alignment.CenterHorizontally),
     ) {
-        if (leadingIcon != null) {
+        if (leadingContent != null) {
+            leadingContent()
+        } else if (leadingIcon != null) {
             Icon(
                 imageVector = leadingIcon,
                 contentDescription = null,

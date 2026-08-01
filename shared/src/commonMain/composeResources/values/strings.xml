@@ -367,6 +367,7 @@
     <string name="shortcut_capture_failure">Couldn't read a transaction from that text. It's saved in your SMS inbox.</string>
     <string name="sms_ai_suggestion">AI suggestion</string>
     <string name="sms_ai_parse">Parse with AI</string>
+    <string name="sms_ai_parsing">Parsing…</string>
     <string name="sms_ai_confirm">Confirm</string>
     <string name="sms_ai_dismiss">Dismiss</string>
     <string name="sms_ai_parse_failed">Couldn't read this message with AI</string>

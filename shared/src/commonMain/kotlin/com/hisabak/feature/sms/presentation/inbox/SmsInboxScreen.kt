@@ -1,5 +1,12 @@
 package com.hisabak.feature.sms.presentation.inbox
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.graphicsLayer
 import com.hisabak.ui.icons.HugeIcons
 
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +35,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -447,15 +455,23 @@ private fun SmsRowCard(
                     )
                 }
                 if (aiAvailable && !row.isLinked) {
-                    if (isSuggesting) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    }
+                    // While the model thinks, the action itself becomes the indicator: label
+                    // swaps and the icon pulses — no separate progress circle.
                     HisabakButton(
-                        text = stringResource(Res.string.sms_ai_parse),
+                        text = stringResource(
+                            if (isSuggesting) Res.string.sms_ai_parsing else Res.string.sms_ai_parse,
+                        ),
                         onClick = onSuggestParse,
                         variant = ButtonVariant.Secondary,
                         leadingIcon = HugeIcons.Insights,
-                        enabled = !isSuggesting,
+                        // Stays visually alive while parsing — the ViewModel already ignores
+                        // re-taps for an in-flight id, so no disabled dimming over the pulse.
+                        enabled = true,
+                        leadingContent = if (isSuggesting) {
+                            { PulsingAiIcon() }
+                        } else {
+                            null
+                        },
                     )
                 }
                 IconButton(onClick = onDelete, modifier = Modifier.size(Sizing.controlHeightSm)) {
@@ -469,6 +485,42 @@ private fun SmsRowCard(
             }
         }
     }
+}
+
+/** The AI-thinking indicator: the action's own icon breathes instead of a progress circle. */
+@Composable
+private fun PulsingAiIcon() {
+    val transition = rememberInfiniteTransition(label = "aiThinking")
+    val alpha by transition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 550, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "alpha",
+    )
+    val scale by transition.animateFloat(
+        initialValue = 0.85f,
+        targetValue = 1.12f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 550, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "scale",
+    )
+    Icon(
+        imageVector = HugeIcons.Insights,
+        contentDescription = null,
+        tint = HisabakTheme.colors.info,
+        modifier = Modifier
+            .size(Sizing.iconSm)
+            .graphicsLayer {
+                this.alpha = alpha
+                scaleX = scale
+                scaleY = scale
+            },
+    )
 }
 
 fun formatMoney(money: Money): String {
