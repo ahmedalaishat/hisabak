@@ -49,7 +49,12 @@ class Navigator(val state: NavigationState) {
         if (route in state.backStacks.keys) {
             state.topLevelRoute = route
         } else {
-            state.backStacks[state.topLevelRoute]?.add(route)
+            val stack = state.backStacks[state.topLevelRoute] ?: return
+            // Double-tap guard: keys are data classes, so a second tap pushes an EQUAL key and
+            // duplicate keys crash the saveable-state holder ("Key … was used multiple times",
+            // observed on device via Review transaction). Re-navigating to the top is a no-op.
+            if (stack.lastOrNull() == route) return
+            stack.add(route)
         }
     }
 
