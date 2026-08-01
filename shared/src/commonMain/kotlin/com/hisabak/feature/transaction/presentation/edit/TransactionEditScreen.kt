@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -28,15 +29,19 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
@@ -44,6 +49,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
@@ -110,17 +116,33 @@ fun TransactionEditScreen(
             .imePadding(),
         verticalArrangement = Arrangement.spacedBy(Spacing.s5),
     ) {
-        Text(
-            text = stringResource(if (state.isNew) Res.string.transaction_new_title else Res.string.transaction_edit_title),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(if (state.isNew) Res.string.transaction_new_title else Res.string.transaction_edit_title),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onCancel) {
+                // The stroke set has no dedicated X — a 45°-rotated plus is the same glyph.
+                Icon(
+                    imageVector = HugeIcons.Add,
+                    contentDescription = stringResource(Res.string.action_close),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.rotate(45f),
+                )
+            }
+        }
 
         AmountHeroField(
             amountInput = state.amountInput,
-            error = state.amountError,
+            error = if (state.amountInvalid) stringResource(Res.string.transaction_error_amount) else null,
             type = state.selectedType,
             withdrawal = state.selectedType.hasDirection && state.isWithdrawal,
+            autoFocus = state.isNew,
             onAmountChange = onAmountChange,
         )
 
@@ -176,8 +198,12 @@ fun TransactionEditScreen(
                     }
                 }
             }
-            state.brandError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            if (state.brandMissing) {
+                Text(
+                    stringResource(Res.string.transaction_error_brand),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
         }
 
@@ -203,6 +229,8 @@ fun TransactionEditScreen(
             value = state.noteInput,
             onValueChange = onNoteChange,
             label = { Text(stringResource(Res.string.transaction_note_label)) },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { keyboard?.hide() }),
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -211,19 +239,19 @@ fun TransactionEditScreen(
         }
 
         HisabakButton(
-            text = stringResource(if (state.isSaving) Res.string.action_saving else Res.string.action_save),
+            text = stringResource(
+                when {
+                    state.isSaving -> Res.string.action_saving
+                    state.isNew -> Res.string.action_save
+                    else -> Res.string.action_update
+                },
+            ),
             onClick = {
                 keyboard?.hide()
                 onSave()
             },
             variant = ButtonVariant.Primary,
             enabled = state.canSave,
-            fullWidth = true,
-        )
-        HisabakButton(
-            text = stringResource(Res.string.action_cancel),
-            onClick = onCancel,
-            variant = ButtonVariant.Ghost,
             fullWidth = true,
         )
         // Editing only — there is nothing to delete before the first save.
@@ -294,6 +322,7 @@ private fun AmountHeroField(
     error: String?,
     type: CategoryType,
     withdrawal: Boolean,
+    autoFocus: Boolean,
     onAmountChange: (String) -> Unit,
 ) {
     val c = HisabakTheme.colors
@@ -311,6 +340,10 @@ private fun AmountHeroField(
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
     val tapSource = remember { MutableInteractionSource() }
+    // A new transaction is here for its amount — put the cursor there with the keyboard ready.
+    LaunchedEffect(autoFocus) {
+        if (autoFocus) focusRequester.requestFocus()
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()

@@ -194,6 +194,10 @@
     <string name="transaction_search_placeholder">Search transactions...</string>
     <string name="transaction_no_brands">No brands for this type. Add one from the Manage tab first.</string>
     <string name="transaction_note_label">Note (optional)</string>
+    <string name="action_close">Close</string>
+    <string name="action_update">Update</string>
+    <string name="transaction_error_amount">Enter a positive amount</string>
+    <string name="transaction_error_brand">Pick a brand</string>
     <string name="transaction_direction_deposit">Deposit</string>
     <string name="transaction_direction_withdrawal">Withdrawal</string>
     <string name="settings_sms_templates">SMS parsing</string>

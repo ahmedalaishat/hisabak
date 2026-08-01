@@ -101,7 +101,7 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
         vm.onIntent(TransactionEditIntent.Save)
         advanceUntilIdle()
 
-        assertTrue(vm.state.value.amountError != null)
+        assertTrue(vm.state.value.amountInvalid)
         assertTrue(txRepo.current.isEmpty())
         assertNull(vm.effect.value)
         assertTrue(analytics.logged.isEmpty(), "validation failure must not log analytics")
@@ -117,7 +117,7 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
         vm.onIntent(TransactionEditIntent.Save)
         advanceUntilIdle()
 
-        assertTrue(vm.state.value.amountError != null)
+        assertTrue(vm.state.value.amountInvalid)
         assertTrue(txRepo.current.isEmpty())
     }
 
@@ -130,7 +130,7 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
         vm.onIntent(TransactionEditIntent.Save)
         advanceUntilIdle()
 
-        assertTrue(vm.state.value.brandError != null)
+        assertTrue(vm.state.value.brandMissing)
         assertTrue(txRepo.current.isEmpty())
     }
 
@@ -293,7 +293,7 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
         vm.onIntent(TransactionEditIntent.Save)
         advanceUntilIdle()
 
-        assertTrue(vm.state.value.amountError != null)
+        assertTrue(vm.state.value.amountInvalid)
         assertTrue(txRepo.current.isEmpty())
     }
 
