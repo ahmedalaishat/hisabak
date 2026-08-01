@@ -18,13 +18,29 @@ struct CaptureTransactionIntent: AppIntent {
         Summary("Capture transaction from \(\.$message)")
     }
 
-    func perform() async throws -> some IntentResult & ProvidesDialog {
-        let dialog = await withCheckedContinuation { continuation in
-            ShortcutCaptureKt.captureFromShortcut(text: message) { _, outcome in
-                continuation.resume(returning: outcome)
+    func perform() async throws -> some IntentResult & ReturnsValue<Bool> & ProvidesDialog {
+        let (dialog, needsReview) = await withCheckedContinuation { continuation in
+            ShortcutCaptureKt.captureFromShortcut(text: message) { outcome, needsReview in
+                continuation.resume(returning: (outcome, needsReview.boolValue))
             }
         }
-        return .result(dialog: IntentDialog(stringLiteral: dialog))
+        // The returned flag lets a shortcut branch: If [Needs review] -> Open SMS inbox.
+        return .result(value: needsReview, dialog: IntentDialog(stringLiteral: dialog))
+    }
+}
+
+/// Opens the app straight on the SMS inbox — the review counterpart of the capture action.
+/// Useful as the If-branch after a capture that returned needs-review, from Spotlight, or as
+/// a home-screen shortcut.
+struct OpenSmsInboxIntent: AppIntent {
+    static let title: LocalizedStringResource = "Open SMS inbox"
+    static let description = IntentDescription("Opens Hisabak on the SMS inbox for review.")
+    static let openAppWhenRun = true
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        ShortcutCaptureKt.openInboxFromShortcut()
+        return .result()
     }
 }
 
@@ -35,6 +51,12 @@ struct HisabakAppShortcuts: AppShortcutsProvider {
             phrases: ["Capture a transaction in \(.applicationName)"],
             shortTitle: "Capture transaction",
             systemImageName: "text.viewfinder"
+        )
+        AppShortcut(
+            intent: OpenSmsInboxIntent(),
+            phrases: ["Review messages in \(.applicationName)"],
+            shortTitle: "Open SMS inbox",
+            systemImageName: "tray.full"
         )
     }
 }
