@@ -284,7 +284,7 @@
     <string name="sms_auto_off_badge">Auto-import off</string>
     <string name="sms_enable">Enable</string>
     <string name="sms_paste_title">Add from text</string>
-    <string name="sms_paste_placeholder">Paste a bank message, or type "lunch 45 yesterday"</string>
+    <string name="sms_paste_placeholder">Paste a bank message or describe a transaction…</string>
     <string name="sms_parsing">Parsing…</string>
     <string name="sms_parse_import">Parse &amp; import</string>
     <string name="sms_import">Import</string>
