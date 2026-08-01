@@ -39,6 +39,7 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
         listOf(
             brand(id = "b-exp", name = "Carrefour", categoryId = CategoryId("c-exp")),
             brand(id = "b-inc", name = "Salary", categoryId = CategoryId("c-inc")),
+            brand(id = "b-sav", name = "Omar", categoryId = CategoryId("c-sav")),
             brand(id = "b-uncat", name = "Starbucks", categoryId = null),
         ),
     )
@@ -46,6 +47,7 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
         listOf(
             category(id = "c-exp", type = CategoryType.EXPENSES),
             category(id = "c-inc", type = CategoryType.INCOME),
+            category(id = "c-sav", type = CategoryType.SAVINGS),
         ),
     )
 
@@ -199,6 +201,100 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
         assertEquals(BrandId("b-uncat"), updated.brandId) // brand preserved, still uncategorized
         assertEquals(2_500L, updated.amount.amountMinor)
         assertEquals(TransactionEditEffect.Saved, vm.effect.value)
+    }
+
+    @Test
+    fun `a savings withdrawal saves a negative amount`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.onIntent(TransactionEditIntent.TypeSelected(CategoryType.SAVINGS))
+        vm.onIntent(TransactionEditIntent.DirectionChanged(withdrawal = true))
+        vm.onIntent(TransactionEditIntent.AmountChanged("1000.00"))
+        vm.onIntent(TransactionEditIntent.BrandSelected(BrandId("b-sav")))
+
+        vm.onIntent(TransactionEditIntent.Save)
+        advanceUntilIdle()
+
+        assertEquals(-100_000L, txRepo.current.single().amount.amountMinor)
+        assertEquals(TransactionEditEffect.Saved, vm.effect.value)
+    }
+
+    @Test
+    fun `a savings deposit stays positive`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.onIntent(TransactionEditIntent.TypeSelected(CategoryType.SAVINGS))
+        vm.onIntent(TransactionEditIntent.AmountChanged("2000.00"))
+        vm.onIntent(TransactionEditIntent.BrandSelected(BrandId("b-sav")))
+
+        vm.onIntent(TransactionEditIntent.Save)
+        advanceUntilIdle()
+
+        assertEquals(200_000L, txRepo.current.single().amount.amountMinor)
+    }
+
+    @Test
+    fun `editing a withdrawal loads a positive input with the toggle on and keeps the sign`() = runTest {
+        txRepo.emit(listOf(transaction(id = "t-wd", amountMinor = -100_000L, brandId = "b-sav")))
+        val vm = viewModel(TransactionId("t-wd"))
+        advanceUntilIdle()
+
+        assertEquals("1000.00", vm.state.value.amountInput)
+        assertTrue(vm.state.value.isWithdrawal)
+        assertEquals(CategoryType.SAVINGS, vm.state.value.selectedType)
+
+        // Saving without touching the direction keeps the withdrawal negative.
+        vm.onIntent(TransactionEditIntent.Save)
+        advanceUntilIdle()
+
+        assertEquals(-100_000L, txRepo.current.single().amount.amountMinor)
+    }
+
+    @Test
+    fun `switching type away from savings clears the withdrawal direction`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.onIntent(TransactionEditIntent.TypeSelected(CategoryType.SAVINGS))
+        vm.onIntent(TransactionEditIntent.DirectionChanged(withdrawal = true))
+
+        vm.onIntent(TransactionEditIntent.TypeSelected(CategoryType.EXPENSES))
+        vm.onIntent(TransactionEditIntent.AmountChanged("50.00"))
+        vm.onIntent(TransactionEditIntent.BrandSelected(BrandId("b-exp")))
+        vm.onIntent(TransactionEditIntent.Save)
+        advanceUntilIdle()
+
+        assertEquals(false, vm.state.value.isWithdrawal)
+        assertEquals(5_000L, txRepo.current.single().amount.amountMinor) // an expense never saves negative
+    }
+
+    @Test
+    fun `a withdrawal keeps its sign when its brand has lost its category`() = runTest {
+        // The brand was re-categorized to None after the withdrawal was recorded: the type is
+        // unknown, so re-saving must preserve the stored sign, not silently flip it positive.
+        txRepo.emit(listOf(transaction(id = "t-wd", amountMinor = -100_000L, brandId = "b-uncat")))
+        val vm = viewModel(TransactionId("t-wd"))
+        advanceUntilIdle()
+
+        vm.onIntent(TransactionEditIntent.Save)
+        advanceUntilIdle()
+
+        assertEquals(-100_000L, txRepo.current.single().amount.amountMinor)
+    }
+
+    @Test
+    fun `zero is rejected even as a withdrawal`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.onIntent(TransactionEditIntent.TypeSelected(CategoryType.SAVINGS))
+        vm.onIntent(TransactionEditIntent.DirectionChanged(withdrawal = true))
+        vm.onIntent(TransactionEditIntent.AmountChanged("0"))
+        vm.onIntent(TransactionEditIntent.BrandSelected(BrandId("b-sav")))
+
+        vm.onIntent(TransactionEditIntent.Save)
+        advanceUntilIdle()
+
+        assertTrue(vm.state.value.amountError != null)
+        assertTrue(txRepo.current.isEmpty())
     }
 
     @Test

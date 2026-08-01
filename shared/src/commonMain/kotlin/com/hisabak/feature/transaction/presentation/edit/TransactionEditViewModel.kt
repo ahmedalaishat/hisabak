@@ -80,7 +80,17 @@ class TransactionEditViewModel(
             is TransactionEditIntent.NoteChanged ->
                 setState { copy(noteInput = intent.value) }
             is TransactionEditIntent.TypeSelected ->
-                setState { copy(selectedType = intent.type, selectedBrandId = null, brandError = null) }
+                setState {
+                    copy(
+                        selectedType = intent.type,
+                        selectedBrandId = null,
+                        brandError = null,
+                        // Direction only exists for bucket types — never let a stale toggle sign an expense.
+                        isWithdrawal = isWithdrawal && intent.type.hasDirection,
+                    )
+                }
+            is TransactionEditIntent.DirectionChanged ->
+                setState { copy(isWithdrawal = intent.withdrawal) }
             is TransactionEditIntent.DateChanged ->
                 setState { copy(occurredAt = intent.instant, showDatePicker = false) }
             TransactionEditIntent.DatePickerOpened ->
@@ -108,6 +118,7 @@ class TransactionEditViewModel(
                         copy(
                             isLoading = false,
                             amountInput = formatAmountInput(tx.amount),
+                            isWithdrawal = tx.amount.isNegative,
                             selectedBrandId = tx.brandId,
                             selectedType = type ?: selectedType,
                             noteInput = tx.note.orEmpty(),
@@ -147,8 +158,8 @@ class TransactionEditViewModel(
 
     private fun save() {
         val s = state.value
-        val money = Money.parseMajor(s.amountInput, currency)
-        if (money == null || !money.isPositive) {
+        val entered = Money.parseMajor(s.amountInput, currency)
+        if (entered == null || !entered.isPositive) {
             setState { copy(amountError = "Enter a positive amount") }
             return
         }
@@ -159,6 +170,10 @@ class TransactionEditViewModel(
         }
         setState { copy(isSaving = true, generalError = null) }
         viewModelScope.launch {
+            // The sign follows the brand's actual type, not the type filter: a loaded withdrawal
+            // whose brand has lost its category (type unknown) must keep its sign rather than
+            // silently flipping positive; only a definitively income/expense brand forces positive.
+            val money = if (s.isWithdrawal && resolveBrandType(brandId)?.hasDirection != false) -entered else entered
             val note = s.noteInput.trim().ifEmpty { null }
 
             val result: DomainResult<Unit> = if (transactionId == null) {
@@ -202,8 +217,10 @@ class TransactionEditViewModel(
     }
 }
 
+/** The field is positive-only — a withdrawal's sign lives in the direction toggle, not the input. */
 private fun formatAmountInput(money: Money): String {
-    val whole = money.amountMinor / 100
-    val frac = kotlin.math.abs(money.amountMinor % 100)
+    val minor = kotlin.math.abs(money.amountMinor)
+    val whole = minor / 100
+    val frac = minor % 100
     return "$whole.${frac.toString().padStart(2, '0')}"
 }

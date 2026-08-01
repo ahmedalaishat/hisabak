@@ -102,4 +102,32 @@ class BrandListViewModelTest : MainDispatcherTest() {
         assertEquals(1_500L, rows.getValue(BrandId("b1")).totalMinor)
         assertEquals(250L, rows.getValue(BrandId("b2")).totalMinor)
     }
+
+    @Test
+    fun `withdrawals net against the brand total down to zero`() = runTest {
+        // Lend 2k, get 1k back → 1k outstanding; b2 is fully repaid → 0, with its count kept
+        // so the row still shows the total instead of hiding it.
+        val txRepo = FakeTransactionRepository(
+            listOf(
+                transaction(id = "t1", brandId = "b1", amountMinor = 2_000_00L),
+                transaction(id = "t2", brandId = "b1", amountMinor = -1_000_00L),
+                transaction(id = "t3", brandId = "b2", amountMinor = 500_00L),
+                transaction(id = "t4", brandId = "b2", amountMinor = -500_00L),
+            ),
+        )
+        val vm = BrandListViewModel(
+            observeBrands = ObserveBrandsUseCase(brandRepo),
+            observeCategories = ObserveCategoriesUseCase(catRepo),
+            observeTransactions = ObserveTransactionsUseCase(txRepo),
+            deleteBrand = DeleteBrandUseCase(brandRepo),
+            reassignBrandTransactions = ReassignBrandTransactionsUseCase(txRepo),
+            analytics = analytics,
+        )
+        advanceUntilIdle()
+
+        val rows = vm.state.value.rows.associateBy { it.id }
+        assertEquals(1_000_00L, rows.getValue(BrandId("b1")).totalMinor)
+        assertEquals(0L, rows.getValue(BrandId("b2")).totalMinor)
+        assertEquals(2, rows.getValue(BrandId("b2")).transactionCount)
+    }
 }

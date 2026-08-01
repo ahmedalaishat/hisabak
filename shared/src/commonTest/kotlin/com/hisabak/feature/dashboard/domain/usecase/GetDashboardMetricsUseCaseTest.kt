@@ -71,6 +71,42 @@ class GetDashboardMetricsUseCaseTest {
     }
 
     @Test
+    fun `a savings withdrawal nets the savings total and releases cash`() = runTest {
+        val categories = FakeCategoryRepository(
+            listOf(
+                category(id = "inc", type = CategoryType.INCOME),
+                category(id = "sav", type = CategoryType.SAVINGS),
+            ),
+        )
+        val brands = FakeBrandRepository(
+            listOf(
+                brand(id = "bi", categoryId = CategoryId("inc")),
+                brand(id = "bs", categoryId = CategoryId("sav")),
+            ),
+        )
+        val transactions = FakeTransactionRepository(
+            listOf(
+                transaction(id = "t1", amountMinor = 5_000_00, brandId = "bi"),
+                transaction(id = "t2", amountMinor = 2_000_00, brandId = "bs"), // lend / deposit
+                transaction(id = "t3", amountMinor = -1_000_00, brandId = "bs"), // repayment / withdrawal
+            ),
+        )
+        val useCase = GetDashboardMetricsUseCase(
+            observeTransactions = ObserveTransactionsUseCase(transactions),
+            observeCategories = ObserveCategoriesUseCase(categories),
+            observeBrands = ObserveBrandsUseCase(brands),
+            observeCategoryLimits = ObserveCategoryLimitsUseCase(FakeCategoryLimitRepository()),
+            currency = Currency.AED,
+            clock = TestClock(),
+        )
+
+        val snapshot = useCase(flowOf(SummaryPeriod.ALL)).first()
+
+        assertEquals(aed(1_000_00), snapshot.totalSavings) // 2k out, 1k back
+        assertEquals(aed(4_000_00), snapshot.totalCash) // netWorth 5k - net savings 1k
+    }
+
+    @Test
     fun `transactions whose brand has no category surface as uncategorized`() = runTest {
         val categories = FakeCategoryRepository(listOf(category(id = "exp", type = CategoryType.EXPENSES)))
         val brands = FakeBrandRepository(listOf(brand(id = "borphan", categoryId = null)))

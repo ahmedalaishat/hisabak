@@ -275,6 +275,11 @@ Pattern: `List` → tap row or FAB → push `Edit(id?)` destination → Save/Can
 
 ### Transaction
 - `id`, `amount: Money`, `brandId`, `note?`, `occurredAt: Instant`, `sourceSmsId?`
+- `amount` is signed for savings/investment-type brands: deposits positive, withdrawals
+  **negative** (the edit sheet's deposit/withdrawal toggle). Income/expense amounts are always
+  positive — direction comes from the category type. Downstream sums are raw, so buckets and
+  brand totals net naturally (this is how lending is tracked: person-brand in a savings
+  category, repayments as withdrawals).
 
 ### Brand
 - `id`, `name`, `categoryId?`

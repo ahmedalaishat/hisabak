@@ -253,11 +253,11 @@ private fun CategoryTile(
                 label = row.type.displayName(),
                 tone = row.type.badgeTone(),
             )
-            if (row.totalMinor > 0L) {
+            if (row.transactionCount > 0) {
                 AmountText(
                     value = row.totalMinor / 100.0,
                     tone = AmountTone.Neutral,
-                    showSign = false,
+                    showSign = true,
                     size = 13.sp,
                     weight = FontWeight.SemiBold,
                 )

@@ -77,6 +77,7 @@ fun TransactionEditScreen(
     onBrandSelected: (BrandId) -> Unit,
     onNoteChange: (String) -> Unit,
     onTypeSelected: (CategoryType) -> Unit,
+    onDirectionChange: (Boolean) -> Unit,
     onDateClick: () -> Unit,
     onDateSelected: (Instant) -> Unit,
     onDateDismiss: () -> Unit,
@@ -115,6 +116,7 @@ fun TransactionEditScreen(
             amountInput = state.amountInput,
             error = state.amountError,
             type = state.selectedType,
+            withdrawal = state.selectedType.hasDirection && state.isWithdrawal,
             onAmountChange = onAmountChange,
         )
 
@@ -129,6 +131,19 @@ fun TransactionEditScreen(
             onSelect = onTypeSelected,
             modifier = Modifier.fillMaxWidth(),
         )
+
+        if (state.selectedType.hasDirection) {
+            val tone = if (state.selectedType == CategoryType.SAVINGS) BadgeTone.Savings else BadgeTone.Investment
+            SegmentedControl(
+                options = listOf(
+                    SegmentOption(false, stringResource(Res.string.transaction_direction_deposit), tone),
+                    SegmentOption(true, stringResource(Res.string.transaction_direction_withdrawal), tone),
+                ),
+                selected = state.isWithdrawal,
+                onSelect = onDirectionChange,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.sectionTitleGap)) {
             Text(
@@ -268,6 +283,7 @@ private fun AmountHeroField(
     amountInput: String,
     error: String?,
     type: CategoryType,
+    withdrawal: Boolean,
     onAmountChange: (String) -> Unit,
 ) {
     val c = HisabakTheme.colors
@@ -307,6 +323,10 @@ private fun AmountHeroField(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (withdrawal) {
+                Text("−", style = heroStyle)
+                Spacer(Modifier.width(Spacing.s1))
+            }
             DirhamGlyph(size = 44.sp * 0.82f, tint = color)
             Spacer(Modifier.width(Spacing.s2))
             Box(contentAlignment = Alignment.CenterStart) {

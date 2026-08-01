@@ -14,6 +14,8 @@ data class TransactionEditUiState(
     val noteInput: String = "",
     val occurredAt: Instant = Instant.fromEpochMilliseconds(0),
     val selectedType: CategoryType = CategoryType.EXPENSES,
+    /** Savings/investment only: the entry takes money out of the bucket (stored negative). */
+    val isWithdrawal: Boolean = false,
     val showDatePicker: Boolean = false,
     val showDeleteConfirm: Boolean = false,
     val isLoading: Boolean = false,
@@ -42,6 +44,7 @@ sealed interface TransactionEditIntent : ViewIntent {
     data class NoteChanged(val value: String) : TransactionEditIntent
     data class DateChanged(val instant: Instant) : TransactionEditIntent
     data class TypeSelected(val type: CategoryType) : TransactionEditIntent
+    data class DirectionChanged(val withdrawal: Boolean) : TransactionEditIntent
     data object DatePickerOpened : TransactionEditIntent
     data object DatePickerDismissed : TransactionEditIntent
     data object Save : TransactionEditIntent

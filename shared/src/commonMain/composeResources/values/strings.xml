@@ -194,6 +194,8 @@
     <string name="transaction_search_placeholder">Search transactions...</string>
     <string name="transaction_no_brands">No brands for this type. Add one from the Manage tab first.</string>
     <string name="transaction_note_label">Note (optional)</string>
+    <string name="transaction_direction_deposit">Deposit</string>
+    <string name="transaction_direction_withdrawal">Withdrawal</string>
     <string name="transaction_empty_filtered_title">No matching transactions</string>
     <string name="transaction_empty_filtered_subtitle">Try a different period, brand or category</string>
     <string name="transaction_empty_title">No transactions yet</string>

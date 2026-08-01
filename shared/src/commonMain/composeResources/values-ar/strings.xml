@@ -194,6 +194,8 @@
     <string name="transaction_search_placeholder">ابحث في المعاملات...</string>
     <string name="transaction_no_brands">لا توجد علامات لهذا النوع. أضف واحدة من تبويب الإدارة أولاً.</string>
     <string name="transaction_note_label">ملاحظة (اختياري)</string>
+    <string name="transaction_direction_deposit">إيداع</string>
+    <string name="transaction_direction_withdrawal">سحب</string>
     <string name="transaction_empty_filtered_title">لا توجد معاملات مطابقة</string>
     <string name="transaction_empty_filtered_subtitle">جرّب فترة أو علامة أو فئة مختلفة</string>
     <string name="transaction_empty_title">لا توجد معاملات بعد</string>
