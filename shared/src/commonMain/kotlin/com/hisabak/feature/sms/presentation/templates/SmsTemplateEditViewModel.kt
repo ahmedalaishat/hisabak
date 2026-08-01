@@ -11,6 +11,7 @@ import com.hisabak.feature.sms.domain.template.PreviewSmsTemplateUseCase
 import com.hisabak.feature.sms.domain.template.SaveSmsTemplateUseCase
 import com.hisabak.feature.sms.domain.template.TagRole
 import com.hisabak.feature.sms.domain.template.TagSpan
+import com.hisabak.feature.sms.domain.usecase.ReparseSmsMessageUseCase
 import com.hisabak.feature.sms.domain.template.deriveTemplatePattern
 import com.hisabak.feature.sms.domain.template.previewFields
 import com.hisabak.feature.sms.domain.template.reconstructSpans
@@ -28,6 +29,7 @@ class SmsTemplateEditViewModel(
     private val smsRepository: SmsRepository,
     private val saveTemplate: SaveSmsTemplateUseCase,
     private val previewTemplate: PreviewSmsTemplateUseCase,
+    private val reparseSms: ReparseSmsMessageUseCase,
 ) : BaseViewModel<SmsTemplateEditIntent, SmsTemplateEditUiState, SmsTemplateEditEffect>() {
 
     override fun initialState() = SmsTemplateEditUiState(isLoading = templateId != null || sampleSmsId != null)
@@ -134,6 +136,9 @@ class SmsTemplateEditViewModel(
         viewModelScope.launch {
             when (val result = saveTemplate(templateId, s.sample, spans)) {
                 is DomainResult.Success -> {
+                    // The template was defined from a specific inbox message — parse it through
+                    // the format it just taught instead of leaving it sitting unparsed.
+                    sampleSmsId?.let { reparseSms(it) }
                     setState { copy(isSaving = false) }
                     sendEffect(SmsTemplateEditEffect.Saved)
                 }

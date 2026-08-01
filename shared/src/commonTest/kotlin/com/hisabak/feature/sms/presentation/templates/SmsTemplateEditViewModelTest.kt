@@ -1,18 +1,29 @@
 package com.hisabak.feature.sms.presentation.templates
 
+import com.hisabak.core.common.Currency
+import com.hisabak.feature.brand.domain.usecase.FindOrCreateBrandUseCase
+import com.hisabak.feature.sms.data.parser.ObservingSmsTemplateDetector
+import com.hisabak.feature.sms.data.parser.TemplateSmsParser
 import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsTemplateId
+import com.hisabak.feature.sms.domain.SmsTransactionProcessor
 import com.hisabak.feature.sms.domain.template.PreviewSmsTemplateUseCase
 import com.hisabak.feature.sms.domain.template.SaveSmsTemplateUseCase
 import com.hisabak.feature.sms.domain.template.TagRole
 import com.hisabak.feature.sms.domain.template.TemplateValidationError
+import com.hisabak.feature.sms.domain.usecase.ReparseSmsMessageUseCase
 import com.hisabak.testutil.FakeAnalytics
+import com.hisabak.testutil.FakeBrandRepository
 import com.hisabak.testutil.FakeSmsRepository
 import com.hisabak.testutil.FakeSmsTemplateRepository
+import com.hisabak.testutil.FakeTransactionRepository
 import com.hisabak.testutil.MainDispatcherTest
 import com.hisabak.testutil.TestClock
 import com.hisabak.testutil.parserTemplate
 import com.hisabak.testutil.smsMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -31,6 +42,9 @@ class SmsTemplateEditViewModelTest : MainDispatcherTest() {
     private val tabby =
         "You spent AED 35.00 at HARDEES-WTC MALL. Your available Tabby Card limit is now AED 8,342.27."
 
+    private val txRepo = FakeTransactionRepository()
+    private val brandRepo = FakeBrandRepository()
+
     private fun viewModel(templateId: SmsTemplateId? = null, smsId: SmsMessageId? = null) =
         SmsTemplateEditViewModel(
             templateId = templateId,
@@ -39,6 +53,22 @@ class SmsTemplateEditViewModelTest : MainDispatcherTest() {
             smsRepository = smsRepo,
             saveTemplate = SaveSmsTemplateUseCase(templateRepo, clock, analytics),
             previewTemplate = PreviewSmsTemplateUseCase(smsRepo),
+            reparseSms = ReparseSmsMessageUseCase(
+                smsRepository = smsRepo,
+                // An observing detector over the same template repo — the template saved a
+                // moment ago is what the reparse must find, exactly as in production.
+                processor = SmsTransactionProcessor(
+                    detector = ObservingSmsTemplateDetector(
+                        templateRepo,
+                        CoroutineScope(Dispatchers.Unconfined),
+                    ),
+                    parser = TemplateSmsParser(Currency.AED, TimeZone.UTC),
+                    findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo),
+                    transactionRepository = txRepo,
+                    smsRepository = smsRepo,
+                    clock = clock,
+                ),
+            ),
         )
 
     @Test
@@ -96,6 +126,22 @@ class SmsTemplateEditViewModelTest : MainDispatcherTest() {
 
         assertEquals(SmsTemplateEditEffect.Saved, vm.effect.value)
         assertEquals(tabby, templateRepo.current.single().sampleBody)
+    }
+
+    @Test
+    fun `saving a template made from an inbox message imports that message through it`() = runTest {
+        smsRepo.upsert(smsMessage(id = "s9", body = tabby))
+        val vm = viewModel(smsId = SmsMessageId("s9"))
+        advanceUntilIdle()
+
+        vm.onIntent(SmsTemplateEditIntent.Save)
+        advanceUntilIdle()
+
+        assertEquals(SmsTemplateEditEffect.Saved, vm.effect.value)
+        val message = smsRepo.current.single()
+        assertTrue(message.isLinked)
+        assertEquals("HARDEES-WTC MALL", message.parsed?.brandName)
+        assertEquals(3_500L, txRepo.current.single().amount.amountMinor)
     }
 
     @Test
