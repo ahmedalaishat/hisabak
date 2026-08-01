@@ -9,7 +9,11 @@ package com.hisabak.feature.sms.domain
 fun rankTemplates(templates: List<SmsParserTemplate>): List<SmsParserTemplate> =
     templates.sortedWith(
         compareByDescending<SmsParserTemplate> { literalAnchorLength(it.pattern) }
-            .thenBy { it.isDefault },
+            .thenBy { it.isDefault }
+            // Fully deterministic tail: without it, ties fall back to DB order, and an
+            // enabled-toggle (REPLACE = delete + re-insert) visibly reshuffles the list.
+            .thenBy { it.createdAt }
+            .thenBy { it.id.value },
     )
 
 /** Non-whitespace literal characters outside `{placeholder}` markers. */

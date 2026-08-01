@@ -53,7 +53,9 @@ class RoomSmsTemplateRepository(
                     sampleBody = null,
                     isDefault = true,
                     enabled = true,
-                    createdAtMillis = clock.now().toEpochMilliseconds(),
+                    // Staggered so createdAt is a usable tie-break — one shared timestamp
+                    // would leave sibling defaults order-ambiguous.
+                    createdAtMillis = clock.now().toEpochMilliseconds() + index,
                 )
             },
         )
