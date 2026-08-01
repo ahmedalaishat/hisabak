@@ -233,6 +233,7 @@
     <string name="sms_template_error_amount_invalid">المبلغ المحدد ليس رقمًا</string>
     <string name="sms_template_error_anchor">النص الثابت المتبقي قليل جدًا — حدد أجزاء أقل أو استخدم رسالة أطول</string>
     <string name="sms_create_template">إنشاء قالب</string>
+    <string name="sms_template_save_import">حفظ واستيراد</string>
     <string name="transaction_empty_filtered_title">لا توجد معاملات مطابقة</string>
     <string name="transaction_empty_filtered_subtitle">جرّب فترة أو علامة أو فئة مختلفة</string>
     <string name="transaction_empty_title">لا توجد معاملات بعد</string>

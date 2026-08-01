@@ -21,6 +21,8 @@ data class SmsTemplateEditUiState(
     /** How widely the draft matches the stored inbox (debounced; null while computing). */
     val inboxPreview: TemplatePreview? = null,
     val validationError: TemplateValidationError? = null,
+    /** Opened from an inbox message — saving also imports that message, and the button says so. */
+    val importsSample: Boolean = false,
     /** Viewing a shipped default: pattern only, nothing editable. */
     val isDefaultTemplate: Boolean = false,
     val isLoading: Boolean = false,

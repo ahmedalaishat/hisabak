@@ -108,6 +108,7 @@ class SmsTemplateEditViewModelTest : MainDispatcherTest() {
 
         assertEquals(tabby, vm.state.value.sample)
         assertTrue(vm.state.value.pattern.contains("{amount}"))
+        assertTrue(vm.state.value.importsSample) // the save button reads "Save & import"
     }
 
     @Test
