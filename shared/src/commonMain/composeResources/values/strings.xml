@@ -196,10 +196,6 @@
     <string name="transaction_note_label">Note (optional)</string>
     <string name="transaction_direction_deposit">Deposit</string>
     <string name="transaction_direction_withdrawal">Withdrawal</string>
-    <string name="transaction_smart_hint">Describe it — "lunch 45 yesterday"</string>
-    <string name="transaction_smart_parse">Smart fill</string>
-    <string name="transaction_smart_failed">Couldn't turn that into a transaction — include an amount and a name</string>
-    <string name="transaction_smart_create_brand">Create "%1$s"</string>
     <string name="settings_sms_templates">SMS parsing</string>
     <string name="settings_sms_templates_hint">Teach the app your bank's message formats</string>
     <string name="sms_templates_title">SMS parsing</string>
@@ -287,8 +283,8 @@
     <string name="sms_auto_disabled_body">Turn it on to log transactions from SMS.</string>
     <string name="sms_auto_off_badge">Auto-import off</string>
     <string name="sms_enable">Enable</string>
-    <string name="sms_paste_title">Paste an SMS</string>
-    <string name="sms_paste_placeholder">Paste a bank message…</string>
+    <string name="sms_paste_title">Add from text</string>
+    <string name="sms_paste_placeholder">Paste a bank message, or type "lunch 45 yesterday"</string>
     <string name="sms_parsing">Parsing…</string>
     <string name="sms_parse_import">Parse &amp; import</string>
     <string name="sms_import">Import</string>

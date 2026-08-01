@@ -10,6 +10,7 @@ import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessage
 import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsTransactionProcessor
+import com.hisabak.feature.sms.domain.ai.AiParsedSms
 import com.hisabak.feature.sms.domain.ai.AiParserAvailability
 import com.hisabak.feature.sms.domain.ai.ConfirmAiSuggestionUseCase
 import com.hisabak.feature.sms.domain.ai.DismissAiSuggestionUseCase
@@ -112,6 +113,74 @@ class SmsInboxViewModelTest : MainDispatcherTest() {
         confirmAiSuggestion = ConfirmAiSuggestionUseCase(smsRepo, processor, limitMonitor, FakeAnalytics()),
         dismissAiSuggestion = DismissAiSuggestionUseCase(smsRepo, FakeAnalytics()),
     )
+
+    @Test
+    fun `an unmatched paste with ai ready stores the entry and drives a confirm-first suggestion`() = runTest {
+        aiParser.freeTextResult = AiParsedSms("Noon", 12_50, "AED", null)
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onIntent(SmsInboxIntent.DraftChanged("lunch 12.50 at noon yesterday"))
+        vm.onIntent(SmsInboxIntent.IngestDraft)
+        advanceUntilIdle()
+
+        // No dead-end error: the draft cleared, the row exists, the suggestion arrived through
+        // the free-text prompt, and nothing was auto-created.
+        assertNull(vm.effect.value)
+        assertEquals("", vm.state.value.draftBody)
+        assertEquals("Noon", smsRepo.current.single().suggested?.brandName)
+        assertEquals(1, aiParser.parsedFreeTexts.size)
+        assertTrue(aiParser.parsedBodies.isEmpty())
+        assertTrue(transactionRepo.current.isEmpty())
+        assertTrue(vm.state.value.suggestingIds.isEmpty()) // spinner cleared after completion
+    }
+
+    @Test
+    fun `an eager paste before the availability flag settles still gets its suggestion`() = runTest {
+        // The paste path asks the parser directly rather than trusting state.aiAvailable,
+        // which an init coroutine populates — losing that race must not cost the suggestion.
+        aiParser.freeTextResult = AiParsedSms("Noon", 12_50, "AED", null)
+        val vm = viewModel()
+        // Deliberately no advanceUntilIdle: state.aiAvailable may still be false here.
+
+        vm.onIntent(SmsInboxIntent.DraftChanged("coffee 12.50"))
+        vm.onIntent(SmsInboxIntent.IngestDraft)
+        advanceUntilIdle()
+
+        assertEquals("Noon", smsRepo.current.single().suggested?.brandName)
+        assertNull(vm.effect.value)
+    }
+
+    @Test
+    fun `an unmatched paste with a failing model surfaces the ai snackbar`() = runTest {
+        aiParser.freeTextResult = null
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onIntent(SmsInboxIntent.DraftChanged("gibberish"))
+        vm.onIntent(SmsInboxIntent.IngestDraft)
+        advanceUntilIdle()
+
+        assertEquals(SmsInboxEffect.AiParseFailed, vm.effect.value)
+        assertEquals(1, smsRepo.current.size) // still stored for template-teaching
+        assertTrue(vm.state.value.suggestingIds.isEmpty())
+    }
+
+    @Test
+    fun `an unmatched paste without ai keeps the clear parse-failed error and clears the draft`() = runTest {
+        aiParser.availability = AiParserAvailability.Unavailable
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onIntent(SmsInboxIntent.DraftChanged("lunch 45"))
+        vm.onIntent(SmsInboxIntent.IngestDraft)
+        advanceUntilIdle()
+
+        assertTrue(vm.effect.value is SmsInboxEffect.ParseFailed)
+        assertEquals("", vm.state.value.draftBody) // it IS stored — keeping the text invites double-pastes
+        assertEquals(1, smsRepo.current.size)
+        assertTrue(aiParser.parsedFreeTexts.isEmpty())
+    }
 
     @Test
     fun `a parseable draft yields a live preview of brand and amount`() = runTest {

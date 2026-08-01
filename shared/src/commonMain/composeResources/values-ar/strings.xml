@@ -196,10 +196,6 @@
     <string name="transaction_note_label">ملاحظة (اختياري)</string>
     <string name="transaction_direction_deposit">إيداع</string>
     <string name="transaction_direction_withdrawal">سحب</string>
-    <string name="transaction_smart_hint">صِفها — "غداء 45 أمس"</string>
-    <string name="transaction_smart_parse">تعبئة ذكية</string>
-    <string name="transaction_smart_failed">تعذّر تحويل النص إلى معاملة — أضف مبلغًا واسمًا</string>
-    <string name="transaction_smart_create_brand">إنشاء "%1$s"</string>
     <string name="settings_sms_templates">تحليل الرسائل</string>
     <string name="settings_sms_templates_hint">علّم التطبيق صيغ رسائل بنكك</string>
     <string name="sms_templates_title">تحليل الرسائل</string>
@@ -287,8 +283,8 @@
     <string name="sms_auto_disabled_body">فعّله لتسجيل المعاملات من الرسائل.</string>
     <string name="sms_auto_off_badge">الاستيراد متوقف</string>
     <string name="sms_enable">تفعيل</string>
-    <string name="sms_paste_title">الصق رسالة</string>
-    <string name="sms_paste_placeholder">الصق رسالة بنكية…</string>
+    <string name="sms_paste_title">إضافة من نص</string>
+    <string name="sms_paste_placeholder">الصق رسالة بنكية أو اكتب "غداء 45 أمس"</string>
     <string name="sms_parsing">جارٍ التحليل…</string>
     <string name="sms_parse_import">تحليل واستيراد</string>
     <string name="sms_import">استيراد</string>

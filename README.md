@@ -96,9 +96,9 @@ Everything below is built and shipping today:
   paste a sample (or start from an unparsed inbox message), confirm the highlighted
   amount/brand/date, and future messages parse instantly. Specificity-ranked matching and a
   save-time preview keep a bad template from breaking the built-ins. Backed up with your data.
-- [x] ✨ **Smart entry** — on devices with on-device AI, describe a transaction in your own
-  words ("lunch 45 yesterday") and the add sheet fills itself in for you to review; recognizes
-  your existing brands and resolves relative dates. Fully on-device.
+- [x] ✨ **Smart capture** — the SMS inbox takes anything: auto-captured bank SMS, pasted
+  messages, or plain notes ("lunch 45 yesterday"). Known formats import instantly; everything
+  else gets an on-device AI suggestion you confirm with one tap. Fully on-device.
 - [x] 💸 **Savings & investment withdrawals** — savings/investment entries have a deposit or
   withdrawal direction, so taking money back out nets your buckets and returns it to cash.
   Doubles as a loan ledger: keep a person as a brand in a savings category and their brand

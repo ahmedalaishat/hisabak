@@ -111,12 +111,14 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   auto-created transaction). The port is `AiSmsParser` + `SuggestAiParse/ConfirmAiSuggestion/
   DismissAiSuggestionUseCase` in `feature/sms/domain/ai/` (commonMain; the shared `sanitize`
   step owns acceptance rules, prompts live platform-side). The same port's `parseFreeText`
-  powers **smart entry**: a "describe it" field in the add-transaction sheet
-  (`ParseSmartInputUseCase`, `feature/transaction/domain/usecase/`) turns typed notes
-  ("lunch 45 yesterday") into a pre-filled sheet — its prompt carries today's date so relative
-  wording resolves, its sanitize allows up to a year back but never the future, and saving is
-  the confirmation. Brand snapping is the shared `canonicalizeBrand`
-  (`feature/sms/domain/ai/BrandCanonicalizer.kt`). Parsing is **brand-aware**: the
+  powers the inbox's **free-text capture**: an unmatched manual paste comes back from ingest
+  as `CaptureResult.StoredUnparsed` (a success, paste-source only — background sources keep
+  the detached fallback) and `SmsInboxViewModel` drives
+  `SuggestAiParseUseCase(freeText = true)` with a visible spinner — the note prompt carries
+  today's date so relative wording resolves, and its plausibility window reaches a year back
+  (vs 7 days for live SMS), never the future. Brand snapping is the shared `canonicalizeBrand`
+  (`feature/sms/domain/ai/BrandCanonicalizer.kt`). The add-transaction sheet is deliberately
+  manual-only — every AI affordance is confirm-first and lives in the inbox. Parsing is **brand-aware**: the
   top-50 most-used brand names go into the prompt, and `canonicalize` (exact/substring/
   Levenshtein≤2) snaps the model's merchant string to an existing brand deterministically. Android:
   `GeminiNanoSmsParser` over the ML Kit GenAI **Prompt API** (`com.google.mlkit:genai-prompt`,

@@ -6,16 +6,11 @@ import com.hisabak.feature.brand.domain.usecase.ObserveBrandsUseCase
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.category.domain.usecase.ObserveCategoriesUseCase
-import com.hisabak.feature.brand.domain.usecase.FindOrCreateBrandUseCase
-import com.hisabak.feature.sms.domain.ai.AiParsedSms
-import com.hisabak.feature.sms.domain.ai.AiParserAvailability
 import com.hisabak.feature.transaction.domain.TransactionId
 import com.hisabak.feature.transaction.domain.usecase.CreateTransactionUseCase
 import com.hisabak.feature.transaction.domain.usecase.DeleteTransactionUseCase
-import com.hisabak.feature.transaction.domain.usecase.ParseSmartInputUseCase
 import com.hisabak.feature.transaction.domain.usecase.UpdateTransactionUseCase
 import com.hisabak.core.domain.analytics.AnalyticsEvent
-import com.hisabak.testutil.FakeAiSmsParser
 import com.hisabak.testutil.FakeAnalytics
 import com.hisabak.testutil.FakeBrandRepository
 import com.hisabak.testutil.FakeCategoryRepository
@@ -58,7 +53,6 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
 
     private val analytics = FakeAnalytics()
     private val smsRepo = FakeSmsRepository()
-    private val aiParser = FakeAiSmsParser().apply { availability = AiParserAvailability.Unavailable }
 
     private fun viewModel(transactionId: TransactionId? = null) = TransactionEditViewModel(
         transactionId = transactionId,
@@ -70,9 +64,6 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
         createTransaction = CreateTransactionUseCase(txRepo, clock),
         updateTransaction = UpdateTransactionUseCase(txRepo),
         deleteTransaction = DeleteTransactionUseCase(txRepo, smsRepo),
-        aiParser = aiParser,
-        parseSmartInput = ParseSmartInputUseCase(aiParser, brandRepo, Currency.AED, clock, analytics),
-        findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo),
         analytics = analytics,
     )
 
@@ -304,126 +295,6 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
 
         assertTrue(vm.state.value.amountError != null)
         assertTrue(txRepo.current.isEmpty())
-    }
-
-    @Test
-    fun `smart field is hidden when the parser is unavailable`() = runTest {
-        val vm = viewModel()
-        advanceUntilIdle()
-
-        assertEquals(false, vm.state.value.smartAvailable)
-    }
-
-    @Test
-    fun `smart parse fills amount and brand and type and date from the model output`() = runTest {
-        aiParser.availability = AiParserAvailability.Ready
-        aiParser.freeTextResult = AiParsedSms(
-            brandName = "Salary",
-            amountMinor = 1_500_000L,
-            currencyCode = null,
-            occurredAtEpochMillis = null,
-        )
-        val vm = viewModel()
-        advanceUntilIdle()
-        assertTrue(vm.state.value.smartAvailable)
-
-        vm.onIntent(TransactionEditIntent.SmartInputChanged("salary 15k"))
-        vm.onIntent(TransactionEditIntent.SmartParseRequested)
-        advanceUntilIdle()
-
-        val s = vm.state.value
-        assertEquals("15000.00", s.amountInput)
-        assertEquals(BrandId("b-inc"), s.selectedBrandId)
-        assertEquals(CategoryType.INCOME, s.selectedType)
-        assertEquals(clock.now(), s.occurredAt)
-        assertNull(s.pendingBrandName)
-        assertEquals(false, s.smartParseFailed)
-    }
-
-    @Test
-    fun `smart parse with an unknown brand offers to create it and the tap selects it`() = runTest {
-        aiParser.availability = AiParserAvailability.Ready
-        aiParser.freeTextResult = AiParsedSms(
-            brandName = "Noon",
-            amountMinor = 10_000L,
-            currencyCode = "AED",
-            occurredAtEpochMillis = null,
-        )
-        val vm = viewModel()
-        advanceUntilIdle()
-
-        vm.onIntent(TransactionEditIntent.SmartInputChanged("100 at noon"))
-        vm.onIntent(TransactionEditIntent.SmartParseRequested)
-        advanceUntilIdle()
-
-        assertEquals("Noon", vm.state.value.pendingBrandName)
-        assertNull(vm.state.value.selectedBrandId)
-        assertEquals("100.00", vm.state.value.amountInput)
-
-        vm.onIntent(TransactionEditIntent.CreateSuggestedBrand)
-        advanceUntilIdle()
-
-        val created = brandRepo.current.first { it.name == "Noon" }
-        assertNull(created.categoryId) // uncategorized, like SMS-captured brands
-        assertEquals(created.id, vm.state.value.selectedBrandId)
-        assertNull(vm.state.value.pendingBrandName)
-    }
-
-    @Test
-    fun `creating a suggested brand that containment-matches an existing one links it instead of duplicating`() = runTest {
-        // FindOrCreateBrand applies the same containment rule the SMS confirm flow uses at link
-        // time, so "Create 'Noon'" can resolve to an existing "Noon Food" — the selected chip
-        // then shows the real brand, keeping the outcome visible rather than duplicating brands.
-        aiParser.availability = AiParserAvailability.Ready
-        aiParser.freeTextResult = AiParsedSms("Noon", 10_000L, null, null)
-        val vm = viewModel()
-        advanceUntilIdle()
-        vm.onIntent(TransactionEditIntent.SmartInputChanged("100 at noon"))
-        vm.onIntent(TransactionEditIntent.SmartParseRequested)
-        advanceUntilIdle()
-        assertEquals("Noon", vm.state.value.pendingBrandName)
-
-        // "Noon Food" appears before the chip is tapped (e.g. created from another screen).
-        brandRepo.upsert(brand(id = "b-noonfood", name = "Noon Food"))
-        vm.onIntent(TransactionEditIntent.CreateSuggestedBrand)
-        advanceUntilIdle()
-
-        assertEquals(BrandId("b-noonfood"), vm.state.value.selectedBrandId)
-        assertTrue(brandRepo.current.none { it.name == "Noon" })
-    }
-
-    @Test
-    fun `a failed smart parse flags the error and leaves the fields untouched`() = runTest {
-        aiParser.availability = AiParserAvailability.Ready
-        aiParser.freeTextResult = null // model returned nothing
-        val vm = viewModel()
-        advanceUntilIdle()
-        vm.onIntent(TransactionEditIntent.AmountChanged("42.00"))
-
-        vm.onIntent(TransactionEditIntent.SmartInputChanged("gibberish"))
-        vm.onIntent(TransactionEditIntent.SmartParseRequested)
-        advanceUntilIdle()
-
-        assertTrue(vm.state.value.smartParseFailed)
-        assertEquals("42.00", vm.state.value.amountInput)
-        assertNull(vm.state.value.selectedBrandId)
-    }
-
-    @Test
-    fun `picking a brand manually clears a pending smart brand`() = runTest {
-        aiParser.availability = AiParserAvailability.Ready
-        aiParser.freeTextResult = AiParsedSms("Noon", 10_000L, null, null)
-        val vm = viewModel()
-        advanceUntilIdle()
-        vm.onIntent(TransactionEditIntent.SmartInputChanged("100 at noon"))
-        vm.onIntent(TransactionEditIntent.SmartParseRequested)
-        advanceUntilIdle()
-        assertEquals("Noon", vm.state.value.pendingBrandName)
-
-        vm.onIntent(TransactionEditIntent.BrandSelected(BrandId("b-exp")))
-
-        assertNull(vm.state.value.pendingBrandName)
-        assertEquals(BrandId("b-exp"), vm.state.value.selectedBrandId)
     }
 
     @Test

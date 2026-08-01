@@ -19,13 +19,15 @@ All notable changes to Hisabak are documented here. Format based on
   template made from an inbox message imports that message through it on the spot, and the
   "Create template" action stays available even after the AI has offered its own suggestion —
   the suggestion is one-shot, a template covers every future message.
-- **Smart entry — describe a transaction in your own words** — on devices with on-device AI,
-  the add-transaction sheet gains a "describe it" field: type (or dictate) something like
-  "lunch 45 yesterday" or "100 at noon" and the AI fills in the amount, brand, type, and date
-  for you to review — nothing is saved until you tap Save. It recognizes your existing brands
-  (typos and abbreviations included), resolves wording like "yesterday" to a real date, and
-  offers one-tap brand creation when the name is new. Runs fully on-device — your text never
-  leaves the phone. On devices without AI support the sheet is unchanged.
+- **One capture box for everything** — the SMS tab's paste box now takes bank messages *and*
+  plain notes in your own words. A recognized bank format imports instantly, as before.
+  Anything else — "lunch 45 yesterday", "100 at noon", or an unrecognized bank SMS — lands in
+  the inbox and the on-device AI reads it while you watch, then offers the usual suggestion
+  card to confirm or dismiss: nothing is ever created without your tap. Typed notes understand
+  relative dates ("yesterday", "last friday") and shorthand like "15k", and pasted backlogs
+  may be dated up to a year back. Runs fully on-device — your text never leaves the phone.
+  Without AI support, unmatched text still lands in the inbox with a clear message and the
+  "Create template" path.
 - **Savings & investment withdrawals** — savings and investment transactions now have a
   direction: deposit or withdrawal. A withdrawal takes money back out of the bucket, so the
   dashboard Savings/Invest pills and your cash reflect it, and a brand's total shows the net

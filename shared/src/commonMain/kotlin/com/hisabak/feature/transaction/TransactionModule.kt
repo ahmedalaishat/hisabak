@@ -7,7 +7,6 @@ import com.hisabak.feature.transaction.domain.usecase.CreateTransactionUseCase
 import com.hisabak.feature.transaction.domain.usecase.DeleteTransactionUseCase
 import com.hisabak.feature.transaction.domain.usecase.GetTransactionsPageUseCase
 import com.hisabak.feature.transaction.domain.usecase.ObserveTransactionsUseCase
-import com.hisabak.feature.transaction.domain.usecase.ParseSmartInputUseCase
 import com.hisabak.feature.transaction.domain.usecase.ReassignBrandTransactionsUseCase
 import com.hisabak.feature.transaction.domain.usecase.UpdateTransactionUseCase
 import com.hisabak.feature.transaction.presentation.edit.TransactionEditViewModel
@@ -26,15 +25,6 @@ val transactionModule = module {
     factory { UpdateTransactionUseCase(get()) }
     factory { DeleteTransactionUseCase(get(), get()) }
     factory { ReassignBrandTransactionsUseCase(get()) }
-    factory {
-        ParseSmartInputUseCase(
-            aiParser = get(),
-            brandRepository = get(),
-            defaultCurrency = get(),
-            clock = get(),
-            analytics = get(),
-        )
-    }
 
     viewModel {
         TransactionListViewModel(
@@ -57,9 +47,6 @@ val transactionModule = module {
             createTransaction = get(),
             updateTransaction = get(),
             deleteTransaction = get(),
-            aiParser = get(),
-            parseSmartInput = get(),
-            findOrCreateBrand = get(),
             analytics = get(),
         )
     }
