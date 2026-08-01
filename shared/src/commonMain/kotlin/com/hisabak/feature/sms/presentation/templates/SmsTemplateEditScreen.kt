@@ -50,6 +50,7 @@ import com.hisabak.shared.resources.sms_template_role_skip
 import com.hisabak.shared.resources.sms_template_role_time
 import com.hisabak.shared.resources.sms_template_sample_hint
 import com.hisabak.shared.resources.sms_template_sample_label
+import com.hisabak.shared.resources.sms_template_save
 import com.hisabak.shared.resources.sms_template_save_import
 import com.hisabak.shared.resources.sms_template_tokens_hint
 import com.hisabak.ui.components.ButtonVariant
@@ -211,7 +212,7 @@ fun SmsTemplateEditScreen(
                 when {
                     state.isSaving -> Res.string.action_saving
                     state.importsSample -> Res.string.sms_template_save_import
-                    else -> Res.string.action_save
+                    else -> Res.string.sms_template_save
                 },
             ),
             onClick = onSave,
