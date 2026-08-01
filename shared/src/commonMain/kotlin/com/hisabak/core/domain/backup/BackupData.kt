@@ -4,7 +4,8 @@ import kotlinx.serialization.Serializable
 
 /**
  * A logical snapshot of the user's financial data — the wire format for backups, decoupled from the
- * Room entities so the schema can evolve independently. Records mirror the 5 financial tables;
+ * Room entities so the schema can evolve independently. Records mirror the financial tables
+ * plus the SMS parse templates;
  * added fields use defaults so older backups decode forward.
  * Excludes ephemeral/derived tables (notifications, category limit alerts) and app settings.
  */
