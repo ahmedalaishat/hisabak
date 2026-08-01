@@ -10,7 +10,9 @@ import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsTransactionProcessor
 import com.hisabak.testutil.FakeBrandRepository
 import com.hisabak.testutil.FakeSmsRepository
+import com.hisabak.testutil.FakeSmsTemplateRepository
 import com.hisabak.testutil.FakeTransactionRepository
+import com.hisabak.testutil.parserTemplate
 import com.hisabak.testutil.TestClock
 import com.hisabak.testutil.aed
 import com.hisabak.testutil.smsMessage
@@ -33,8 +35,15 @@ class ReparseSmsMessageUseCaseTest {
 
     private fun useCase(patterns: List<String>) = ReparseSmsMessageUseCase(
         smsRepository = smsRepo,
+        templateRepository = FakeSmsTemplateRepository(
+            patterns.mapIndexed { i, p -> parserTemplate(id = "tpl-$i", pattern = p) },
+        ),
+        parser = TemplateSmsParser(Currency.AED, TimeZone.UTC),
+        // The processor's own detector is deliberately EMPTY: reparse must detect from the
+        // template repository directly — going through the observing detector's async snapshot
+        // is exactly the race that broke save-then-reparse on device.
         processor = SmsTransactionProcessor(
-            detector = RegexSmsTemplateDetector(patterns),
+            detector = RegexSmsTemplateDetector(emptyList()),
             parser = TemplateSmsParser(Currency.AED, TimeZone.UTC),
             findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo),
             transactionRepository = txRepo,

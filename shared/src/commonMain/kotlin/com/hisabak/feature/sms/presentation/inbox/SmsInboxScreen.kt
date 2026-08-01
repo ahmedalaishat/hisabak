@@ -395,14 +395,6 @@ private fun SmsRowCard(
                     )
                     Spacer(Modifier.weight(1f))
                 }
-                // Teaching a template stays available alongside the AI suggestion — the
-                // suggestion is one-shot, a template covers every future message.
-                HisabakButton(
-                    text = stringResource(Res.string.sms_create_template),
-                    onClick = onCreateTemplate,
-                    variant = ButtonVariant.Ghost,
-                    leadingIcon = HugeIcons.ReceiptLong,
-                )
                 HisabakButton(
                     text = stringResource(Res.string.sms_ai_dismiss),
                     onClick = onDismissSuggestion,
@@ -412,6 +404,20 @@ private fun SmsRowCard(
                     text = stringResource(Res.string.sms_ai_confirm),
                     onClick = onConfirmSuggestion,
                     leadingIcon = HugeIcons.Download,
+                )
+            }
+            // Teaching a template stays available alongside the AI suggestion — the suggestion
+            // is one-shot, a template covers every future message. Its own row: three buttons
+            // plus the date don't fit one line.
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s2, Alignment.End),
+            ) {
+                HisabakButton(
+                    text = stringResource(Res.string.sms_create_template),
+                    onClick = onCreateTemplate,
+                    variant = ButtonVariant.Ghost,
+                    leadingIcon = HugeIcons.ReceiptLong,
                 )
             }
         } else {

@@ -2,7 +2,7 @@ package com.hisabak.feature.sms.presentation.templates
 
 import com.hisabak.core.common.Currency
 import com.hisabak.feature.brand.domain.usecase.FindOrCreateBrandUseCase
-import com.hisabak.feature.sms.data.parser.ObservingSmsTemplateDetector
+import com.hisabak.feature.sms.data.parser.RegexSmsTemplateDetector
 import com.hisabak.feature.sms.data.parser.TemplateSmsParser
 import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsTemplateId
@@ -21,8 +21,6 @@ import com.hisabak.testutil.MainDispatcherTest
 import com.hisabak.testutil.TestClock
 import com.hisabak.testutil.parserTemplate
 import com.hisabak.testutil.smsMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -55,13 +53,11 @@ class SmsTemplateEditViewModelTest : MainDispatcherTest() {
             previewTemplate = PreviewSmsTemplateUseCase(smsRepo),
             reparseSms = ReparseSmsMessageUseCase(
                 smsRepository = smsRepo,
-                // An observing detector over the same template repo — the template saved a
-                // moment ago is what the reparse must find, exactly as in production.
+                // Reads the same template repo the save writes to — no snapshot to race.
+                templateRepository = templateRepo,
+                parser = TemplateSmsParser(Currency.AED, TimeZone.UTC),
                 processor = SmsTransactionProcessor(
-                    detector = ObservingSmsTemplateDetector(
-                        templateRepo,
-                        CoroutineScope(Dispatchers.Unconfined),
-                    ),
+                    detector = RegexSmsTemplateDetector(emptyList()),
                     parser = TemplateSmsParser(Currency.AED, TimeZone.UTC),
                     findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo),
                     transactionRepository = txRepo,
