@@ -35,15 +35,23 @@ class SaveSmsTemplateUseCase(
         validate(sample, spans)?.let {
             return DomainResult.Failure(DomainError.ValidationFailed(it.name))
         }
-        val existing = existingId?.let { id ->
-            repository.observeAll().first().firstOrNull { it.id == id }
-        }
+        val all = repository.observeAll().first()
+        val existing = existingId?.let { id -> all.firstOrNull { it.id == id } }
         if (existing?.isDefault == true) {
             return DomainResult.Failure(DomainError.ValidationFailed("Default templates can't be edited"))
         }
+        val pattern = deriveTemplatePattern(sample, spans)
+        // Creating a template identical to a stored one (e.g. re-taught from a second message of
+        // the same format) reuses the existing row instead of stacking duplicates — success from
+        // the caller's view, so the save-and-import flow still imports the message.
+        if (existingId == null) {
+            all.firstOrNull { it.pattern == pattern }?.let { duplicate ->
+                return DomainResult.Success(duplicate)
+            }
+        }
         val template = SmsParserTemplate(
             id = existingId ?: SmsTemplateId.new(),
-            pattern = deriveTemplatePattern(sample, spans),
+            pattern = pattern,
             sampleBody = sample,
             isDefault = false,
             // An edit keeps the row's identity: a disabled template stays disabled, and the
