@@ -71,7 +71,7 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   generated `Res` class in `com.hisabak.shared.resources` — read via CMP's
   `stringResource`/`pluralStringResource` (`org.jetbrains.compose.resources`) — **don't hardcode
   UI text**. The only Android-resource strings left in `androidApp/src/main/res/values{,-ar}/`
-  are the 10 notification strings read via `Context.getString` outside Compose
+  are the notification strings read via `Context.getString` outside Compose
   (`AndroidNotificationStrings`, `SystemNotifier`) plus the flavor-generated `app_name`.
   The in-app language switch is framework-only (no appcompat, so Navigation 3's
   `NavDisplay` keeps its `ComponentActivity` dispatcher owner): the chosen tag is stored by
