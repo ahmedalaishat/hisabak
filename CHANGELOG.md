@@ -15,7 +15,10 @@ All notable changes to Hisabak are documented here. Format based on
   badly-made template from breaking anything: more specific templates always win, a template
   whose amount lands on non-numeric text is skipped, and before saving you're warned if a
   draft also matches lots of unrelated stored messages. Templates can be turned off (built-ins
-  too), your own can be edited and deleted, and they're included in Drive backups.
+  too), your own can be edited and deleted, and they're included in Drive backups. Saving a
+  template made from an inbox message imports that message through it on the spot, and the
+  "Create template" action stays available even after the AI has offered its own suggestion —
+  the suggestion is one-shot, a template covers every future message.
 - **Smart entry — describe a transaction in your own words** — on devices with on-device AI,
   the add-transaction sheet gains a "describe it" field: type (or dictate) something like
   "lunch 45 yesterday" or "100 at noon" and the AI fills in the amount, brand, type, and date

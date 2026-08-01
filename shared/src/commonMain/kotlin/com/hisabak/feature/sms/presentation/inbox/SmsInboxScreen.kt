@@ -395,6 +395,14 @@ private fun SmsRowCard(
                     )
                     Spacer(Modifier.weight(1f))
                 }
+                // Teaching a template stays available alongside the AI suggestion — the
+                // suggestion is one-shot, a template covers every future message.
+                HisabakButton(
+                    text = stringResource(Res.string.sms_create_template),
+                    onClick = onCreateTemplate,
+                    variant = ButtonVariant.Ghost,
+                    leadingIcon = HugeIcons.ReceiptLong,
+                )
                 HisabakButton(
                     text = stringResource(Res.string.sms_ai_dismiss),
                     onClick = onDismissSuggestion,

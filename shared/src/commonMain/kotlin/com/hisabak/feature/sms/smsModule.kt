@@ -24,6 +24,7 @@ import com.hisabak.feature.sms.domain.template.SetSmsTemplateEnabledUseCase
 import com.hisabak.feature.sms.domain.usecase.DeleteSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.IngestSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ObserveSmsMessagesUseCase
+import com.hisabak.feature.sms.domain.usecase.ReparseSmsMessageUseCase
 import com.hisabak.feature.sms.presentation.inbox.SmsInboxViewModel
 import com.hisabak.feature.sms.presentation.templates.SmsTemplateEditViewModel
 import com.hisabak.feature.sms.presentation.templates.SmsTemplatesViewModel
@@ -88,6 +89,7 @@ val smsModule = module {
         )
     }
     factory { DeleteSmsUseCase(get()) }
+    factory { ReparseSmsMessageUseCase(smsRepository = get(), processor = get()) }
 
     factory { ObserveSmsTemplatesUseCase(get()) }
     factory { SaveSmsTemplateUseCase(repository = get(), clock = get(), analytics = get()) }
@@ -111,6 +113,7 @@ val smsModule = module {
             smsRepository = get(),
             saveTemplate = get(),
             previewTemplate = get(),
+            reparseSms = get(),
         )
     }
 
