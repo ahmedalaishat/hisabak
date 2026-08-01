@@ -74,9 +74,9 @@ class TransactionEditViewModel(
     override fun onIntent(intent: TransactionEditIntent) {
         when (intent) {
             is TransactionEditIntent.AmountChanged ->
-                setState { copy(amountInput = intent.value, amountError = null) }
+                setState { copy(amountInput = intent.value, amountInvalid = false) }
             is TransactionEditIntent.BrandSelected ->
-                setState { copy(selectedBrandId = intent.brandId, brandError = null) }
+                setState { copy(selectedBrandId = intent.brandId, brandMissing = false) }
             is TransactionEditIntent.NoteChanged ->
                 setState { copy(noteInput = intent.value) }
             is TransactionEditIntent.TypeSelected ->
@@ -84,7 +84,7 @@ class TransactionEditViewModel(
                     copy(
                         selectedType = intent.type,
                         selectedBrandId = null,
-                        brandError = null,
+                        brandMissing = false,
                         // Direction only exists for bucket types — never let a stale toggle sign an expense.
                         isWithdrawal = isWithdrawal && intent.type.hasDirection,
                     )
@@ -160,12 +160,12 @@ class TransactionEditViewModel(
         val s = state.value
         val entered = Money.parseMajor(s.amountInput, currency)
         if (entered == null || !entered.isPositive) {
-            setState { copy(amountError = "Enter a positive amount") }
+            setState { copy(amountInvalid = true) }
             return
         }
         val brandId = s.selectedBrandId
         if (brandId == null) {
-            setState { copy(brandError = "Pick a brand") }
+            setState { copy(brandMissing = true) }
             return
         }
         setState { copy(isSaving = true, generalError = null) }

@@ -24,8 +24,9 @@ data class TransactionEditUiState(
     val isNew: Boolean = true,
     /** Drives the confirm copy: a captured transaction's SMS returns to the inbox on delete. */
     val fromSms: Boolean = false,
-    val amountError: String? = null,
-    val brandError: String? = null,
+    /** Flags, not strings — the screen owns wording so errors localize. */
+    val amountInvalid: Boolean = false,
+    val brandMissing: Boolean = false,
     val generalError: String? = null,
 ) : ViewState {
     data class BrandOption(
