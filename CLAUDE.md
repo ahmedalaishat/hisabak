@@ -93,6 +93,19 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   always read LTR (glyph · number · K/M-or-أ/م suffix) via a forced `LayoutDirection.Ltr`,
   with the number and suffix as separate `Text`s so Arabic-Indic digits don't bidi-reorder.
   Amounts keep the dirham glyph in both languages.
+- **SMS parse templates (user-manageable):** the regex templates live in Room (`sms_templates`,
+  seeded from the 10 Hisabi defaults in `DefaultSmsTemplates`; defaults are disable-only). The
+  detector is `ObservingSmsTemplateDetector` (data/parser) — a synchronous `detect` over a
+  compiled snapshot refreshed from `SmsTemplateRepository` on `APPLICATION_SCOPE`; matching is
+  **specificity-ranked** (`rankTemplates`: most literal anchor first, user templates over
+  defaults on ties) and a match whose `{amount}` capture isn't a positive number falls through.
+  Users create templates **by example** (Settings → SMS parsing, or "Create template" on an
+  unparsed inbox message): tag amount/brand/date/skip spans on a sample; the pure derivation /
+  reconstruction / suggestion logic is `feature/sms/domain/template/TemplateSample.kt`
+  (user templates store their sample so editing re-tags via `reconstructSpans`, which
+  `matchEntire`s). Save enforces a 10-char literal anchor minimum + a numeric amount tag, and
+  previews how many stored messages the draft also matches. Templates ride in the backup
+  envelope (schema v5).
 - **On-device AI (SMS parse fallback + smart entry):** bank SMS that match no regex template get
   parsed by the platform's on-device model into a **confirm-first suggestion** (never an
   auto-created transaction). The port is `AiSmsParser` + `SuggestAiParse/ConfirmAiSuggestion/
@@ -268,9 +281,9 @@ retained per tab when switching; the user always exits the app through the **Das
 |-----|---------------|-----------------|
 | Dashboard | DashboardKey | Single screen |
 | Transactions | TransactionsKey | List → Edit (bottom sheet) |
-| SMS | SmsKey | Single screen |
+| SMS | SmsKey | Inbox → template editor (full screen, from an unparsed message) |
 | Manage | ManageKey | Brands/Categories list → Edit (full screen) |
-| Settings | SettingsKey | Theme + language + app lock → Backup & restore (full screen) |
+| Settings | SettingsKey | Theme + language + app lock → Backup & restore / SMS parsing → template editor (full screen) |
 
 Pattern: `List` → tap row or FAB → push `Edit(id?)` destination → Save/Cancel calls
 `navigator.goBack()` → back to `List`.

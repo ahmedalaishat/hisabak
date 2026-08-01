@@ -22,6 +22,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun SmsInboxRoute(
+    onCreateTemplate: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SmsInboxViewModel = koinViewModel(),
 ) {
@@ -63,6 +64,7 @@ fun SmsInboxRoute(
 
     SmsInboxScreen(
         state = state,
+        onCreateTemplate = { onCreateTemplate(it.value) },
         snackbarHostState = snackbarHostState,
         autoImportAvailable = BuildConfig.SMS_AUTO_CAPTURE,
         onSearchChange = { viewModel.onIntent(SmsInboxIntent.SearchChanged(it)) },

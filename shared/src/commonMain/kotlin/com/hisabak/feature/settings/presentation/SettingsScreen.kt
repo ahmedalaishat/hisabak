@@ -70,6 +70,7 @@ fun SettingsScreen(
     onLanguageChange: (String) -> Unit,
     onAppLockChange: (Boolean) -> Unit,
     onOpenBackup: () -> Unit,
+    onOpenSmsTemplates: () -> Unit,
     passphraseReminderVisible: Boolean,
     onConfirmRemembered: () -> Unit,
     onVerifyPassphrase: (String, (Boolean) -> Unit) -> Unit,
@@ -106,6 +107,19 @@ fun SettingsScreen(
                 title = stringResource(Res.string.settings_backup_restore),
                 hint = stringResource(Res.string.settings_backup_restore_hint),
                 onClick = onOpenBackup,
+                trailing = {
+                    Icon(
+                        imageVector = HugeIcons.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+            )
+            SettingCard(
+                icon = HugeIcons.Message,
+                title = stringResource(Res.string.settings_sms_templates),
+                hint = stringResource(Res.string.settings_sms_templates_hint),
+                onClick = onOpenSmsTemplates,
                 trailing = {
                     Icon(
                         imageVector = HugeIcons.KeyboardArrowRight,

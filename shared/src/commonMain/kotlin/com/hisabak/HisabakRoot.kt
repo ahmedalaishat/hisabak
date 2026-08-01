@@ -58,14 +58,23 @@ import com.hisabak.nav.Navigator
 import com.hisabak.nav.NotificationsKey
 import com.hisabak.nav.SettingsKey
 import com.hisabak.nav.SmsKey
+import com.hisabak.nav.SmsTemplateEditKey
+import com.hisabak.nav.SmsTemplatesKey
 import com.hisabak.nav.TransactionEditKey
 import com.hisabak.nav.TransactionsKey
 import com.hisabak.nav.fullScreenTransition
 import com.hisabak.nav.rememberNavigationState
 import com.hisabak.nav.toEntries
+import com.hisabak.feature.sms.domain.SmsMessageId
+import com.hisabak.feature.sms.domain.SmsTemplateId
+import com.hisabak.feature.sms.presentation.templates.SmsTemplateEditRoute
+import com.hisabak.feature.sms.presentation.templates.SmsTemplatesRoute
 import com.hisabak.shared.resources.Res
 import com.hisabak.shared.resources.app_brand_name
 import com.hisabak.shared.resources.backup_title
+import com.hisabak.shared.resources.sms_template_edit_title
+import com.hisabak.shared.resources.sms_template_new_title
+import com.hisabak.shared.resources.sms_templates_title
 import com.hisabak.shared.resources.brand_edit_title
 import com.hisabak.shared.resources.brand_new_title
 import com.hisabak.shared.resources.category_edit_title
@@ -98,8 +107,8 @@ import org.koin.compose.koinInject
 class PlatformSlots(
     val onboarding: @Composable () -> Unit,
     val restore: @Composable () -> Unit,
-    val smsInbox: @Composable (Modifier) -> Unit,
-    val settings: @Composable (onOpenBackup: () -> Unit, Modifier) -> Unit,
+    val smsInbox: @Composable (onCreateTemplate: (String) -> Unit, Modifier) -> Unit,
+    val settings: @Composable (onOpenBackup: () -> Unit, onOpenSmsTemplates: () -> Unit, Modifier) -> Unit,
     val backup: @Composable (Modifier) -> Unit,
     val appLockGate: @Composable (content: @Composable () -> Unit) -> Unit = { it() },
     val notificationPermissionEffect: @Composable () -> Unit = {},
@@ -229,7 +238,8 @@ private fun HisabakNav(slots: PlatformSlots) {
     // Brand/Category edits and the notifications screen are full-screen pages with a back arrow.
     val leaf = navigationState.backStacks[navigationState.topLevelRoute]?.lastOrNull()
     val fullScreen = leaf is BrandEditKey || leaf is CategoryEditKey ||
-        leaf == NotificationsKey || leaf == BackupKey
+        leaf == NotificationsKey || leaf == BackupKey ||
+        leaf == SmsTemplatesKey || leaf is SmsTemplateEditKey
 
     val analytics = koinInject<Analytics>()
     val screenName = when (leaf) {
@@ -238,6 +248,8 @@ private fun HisabakNav(slots: PlatformSlots) {
         is CategoryEditKey -> "category_edit"
         NotificationsKey -> "notifications"
         BackupKey -> "backup"
+        SmsTemplatesKey -> "sms_templates"
+        is SmsTemplateEditKey -> "sms_template_edit"
         else -> when (currentTab) {
             RootTab.Dashboard -> "dashboard"
             RootTab.Transactions -> "transactions"
@@ -265,6 +277,17 @@ private fun HisabakNav(slots: PlatformSlots) {
                 )
                 BackupKey -> DetailTopBar(
                     title = stringResource(Res.string.backup_title),
+                    onBack = { navigator.goBack() },
+                )
+                SmsTemplatesKey -> DetailTopBar(
+                    title = stringResource(Res.string.sms_templates_title),
+                    onBack = { navigator.goBack() },
+                )
+                is SmsTemplateEditKey -> DetailTopBar(
+                    title = stringResource(
+                        if (leaf.templateId == null) Res.string.sms_template_new_title
+                        else Res.string.sms_template_edit_title,
+                    ),
                     onBack = { navigator.goBack() },
                 )
                 else -> HisabakTopBar(
@@ -319,13 +342,35 @@ private fun HisabakNav(slots: PlatformSlots) {
                 )
             }
             entry<SmsKey> {
-                slots.smsInbox(Modifier.fillMaxSize())
+                slots.smsInbox(
+                    { smsId -> navigator.navigate(SmsTemplateEditKey(templateId = null, sampleSmsId = smsId)) },
+                    Modifier.fillMaxSize(),
+                )
             }
             entry<SettingsKey> {
-                slots.settings({ navigator.navigate(BackupKey) }, Modifier.fillMaxSize())
+                slots.settings(
+                    { navigator.navigate(BackupKey) },
+                    { navigator.navigate(SmsTemplatesKey) },
+                    Modifier.fillMaxSize(),
+                )
             }
             entry<BackupKey>(metadata = fullScreenTransition()) {
                 slots.backup(Modifier.fillMaxSize())
+            }
+            entry<SmsTemplatesKey>(metadata = fullScreenTransition()) {
+                SmsTemplatesRoute(
+                    onAdd = { navigator.navigate(SmsTemplateEditKey(templateId = null, sampleSmsId = null)) },
+                    onOpen = { id -> navigator.navigate(SmsTemplateEditKey(templateId = id.value, sampleSmsId = null)) },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            entry<SmsTemplateEditKey>(metadata = fullScreenTransition()) { key ->
+                SmsTemplateEditRoute(
+                    templateId = key.templateId?.let(::SmsTemplateId),
+                    sampleSmsId = key.sampleSmsId?.let(::SmsMessageId),
+                    onDone = { navigator.goBack() },
+                    modifier = Modifier.fillMaxSize(),
+                )
             }
             entry<ManageKey> {
                 ManageRoute(

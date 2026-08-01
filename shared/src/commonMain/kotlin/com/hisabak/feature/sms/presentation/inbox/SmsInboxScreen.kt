@@ -76,6 +76,7 @@ fun SmsInboxScreen(
     onSuggestParse: (SmsMessageId) -> Unit = {},
     onConfirmSuggestion: (SmsMessageId) -> Unit = {},
     onDismissSuggestion: (SmsMessageId) -> Unit = {},
+    onCreateTemplate: (SmsMessageId) -> Unit = {},
 ) {
     Box(modifier.fillMaxSize()) {
         LazyColumn(
@@ -121,6 +122,7 @@ fun SmsInboxScreen(
                         onSuggestParse = { onSuggestParse(row.id) },
                         onConfirmSuggestion = { onConfirmSuggestion(row.id) },
                         onDismissSuggestion = { onDismissSuggestion(row.id) },
+                        onCreateTemplate = { onCreateTemplate(row.id) },
                         modifier = Modifier.animateItem(),
                     )
                 }
@@ -261,6 +263,7 @@ private fun SmsRowCard(
     onSuggestParse: () -> Unit,
     onConfirmSuggestion: () -> Unit,
     onDismissSuggestion: () -> Unit,
+    onCreateTemplate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val status = when {
@@ -418,6 +421,16 @@ private fun SmsRowCard(
                         dot = true,
                     )
                     Spacer(Modifier.weight(1f))
+                }
+                if (!row.isLinked && row.parsedAmount == null) {
+                    // Teach the app this bank's format — opens the template editor seeded
+                    // with this message as the sample.
+                    HisabakButton(
+                        text = stringResource(Res.string.sms_create_template),
+                        onClick = onCreateTemplate,
+                        variant = ButtonVariant.Ghost,
+                        leadingIcon = HugeIcons.ReceiptLong,
+                    )
                 }
                 if (aiAvailable && !row.isLinked) {
                     if (isSuggesting) {
