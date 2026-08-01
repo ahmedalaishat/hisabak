@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.graphics.Color
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -88,6 +89,13 @@ fun SmsInboxScreen(
     onReviewTransaction: (String) -> Unit = {},
     onImportParsed: (SmsMessageId) -> Unit = {},
 ) {
+    // Semantic dismissal point: Import means typing is done — the result appears where the
+    // keyboard was. (Buttons consume their taps, so the global tap-outside can't cover this.)
+    val focusManager = LocalFocusManager.current
+    val ingestAndDismiss = {
+        focusManager.clearFocus()
+        onIngest()
+    }
     Box(modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -97,7 +105,7 @@ fun SmsInboxScreen(
             if (autoImportAvailable) {
                 item { AutoImportBanner(granted = state.autoImportGranted, onEnable = onEnableAutoImport) }
             }
-            item { PasteParseCard(draft = state.draftBody, preview = state.draftPreview, isProcessing = state.isProcessing, onDraftChange = onDraftChange, onIngest = onIngest) }
+            item { PasteParseCard(draft = state.draftBody, preview = state.draftPreview, isProcessing = state.isProcessing, onDraftChange = onDraftChange, onIngest = ingestAndDismiss) }
             item {
                 SearchField(
                     value = state.search,
