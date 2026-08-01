@@ -60,6 +60,8 @@ import com.hisabak.shared.resources.sms_template_tokens_hint
 import com.hisabak.ui.components.ButtonVariant
 import com.hisabak.ui.components.ColoredFilterChip
 import com.hisabak.ui.components.HisabakButton
+import com.hisabak.ui.components.NoticeCard
+import com.hisabak.ui.components.NoticeTone
 import com.hisabak.ui.components.SurfaceCard
 import com.hisabak.ui.components.localizedFormatArg
 import com.hisabak.ui.components.tintPairForColor
@@ -92,10 +94,9 @@ fun SmsTemplateEditScreen(
         verticalArrangement = Arrangement.spacedBy(Spacing.s5),
     ) {
         if (state.isDefaultTemplate) {
-            Text(
+            NoticeCard(
                 text = stringResource(Res.string.sms_template_default_readonly),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                tone = NoticeTone.Info,
             )
             PatternCard(state.pattern)
             return@Column
@@ -173,40 +174,36 @@ fun SmsTemplateEditScreen(
             }
 
             state.inboxPreview?.let { preview ->
-                val text = if (preview.conflicts > 0) {
-                    stringResource(
-                        Res.string.sms_template_matches_conflicts,
-                        localizedFormatArg(preview.matches),
-                        localizedFormatArg(preview.conflicts),
+                if (preview.conflicts > 0) {
+                    NoticeCard(
+                        text = stringResource(
+                            Res.string.sms_template_matches_conflicts,
+                            localizedFormatArg(preview.matches),
+                            localizedFormatArg(preview.conflicts),
+                        ),
+                        tone = NoticeTone.Warning,
                     )
-                } else {
-                    stringResource(Res.string.sms_template_matches, localizedFormatArg(preview.matches))
+                } else if (preview.matches > 0) {
+                    NoticeCard(
+                        text = stringResource(Res.string.sms_template_matches, localizedFormatArg(preview.matches)),
+                        tone = NoticeTone.Info,
+                    )
                 }
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (preview.conflicts > 0) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                )
             }
         }
 
         state.duplicate?.let { duplicate ->
-            Text(
+            NoticeCard(
                 text = stringResource(
                     if (duplicate.enabled) Res.string.sms_template_exists
                     else Res.string.sms_template_exists_disabled,
                 ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                tone = NoticeTone.Info,
             )
         }
 
         state.validationError?.let { error ->
-            Text(
+            NoticeCard(
                 text = stringResource(
                     when (error) {
                         TemplateValidationError.MissingAmount -> Res.string.sms_template_error_amount_missing
@@ -214,12 +211,11 @@ fun SmsTemplateEditScreen(
                         TemplateValidationError.InsufficientAnchor -> Res.string.sms_template_error_anchor
                     },
                 ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
+                tone = NoticeTone.Error,
             )
         }
         state.generalError?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            NoticeCard(text = it, tone = NoticeTone.Error)
         }
 
         HisabakButton(
