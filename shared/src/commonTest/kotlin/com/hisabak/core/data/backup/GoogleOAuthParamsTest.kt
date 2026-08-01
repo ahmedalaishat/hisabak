@@ -36,7 +36,7 @@ class GoogleOAuthParamsTest {
     }
 
     @Test
-    fun `passes the caller's client, redirect and scope through unchanged`() {
+    fun `passes the caller's client and redirect and scope through unchanged`() {
         val p = params()
         assertEquals("123-abc.apps.googleusercontent.com", p["client_id"])
         assertEquals("com.googleusercontent.apps.123-abc:/oauth2redirect", p["redirect_uri"])
