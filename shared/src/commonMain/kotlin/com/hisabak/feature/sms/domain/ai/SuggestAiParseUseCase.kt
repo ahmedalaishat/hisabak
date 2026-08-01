@@ -80,52 +80,14 @@ class SuggestAiParseUseCase(
             ?.takeIf { it >= receivedAt - MAX_DATE_AGE && it <= clock.now() + 1.days }
             ?: receivedAt
         return ParsedSmsData(
-            brandName = canonicalize(brand, knownBrands),
+            brandName = canonicalizeBrand(brand, knownBrands),
             amount = Money(amountMinor, Currency(currencyCode)),
             occurredAt = occurredAt,
         )
     }
 
-    /**
-     * Deterministic backstop under the prompt-side brand hints: snap the model's merchant string
-     * to an existing brand name so the suggestion shows exactly what Confirm will link. Match
-     * order — case-insensitive exact, then substring either way (the same containment rule
-     * `FindOrCreateBrandUseCase.findByNameLike` applies at link time), then a small edit
-     * distance for typos. [knownBrands] is usage-ordered, so ties go to the most-used brand.
-     */
-    private fun canonicalize(raw: String, knownBrands: List<String>): String {
-        knownBrands.firstOrNull { it.equals(raw, ignoreCase = true) }?.let { return it }
-        knownBrands.firstOrNull {
-            raw.contains(it, ignoreCase = true) || it.contains(raw, ignoreCase = true)
-        }?.let { return it }
-        if (raw.length >= MIN_TYPO_LENGTH) {
-            knownBrands.firstOrNull {
-                it.length >= MIN_TYPO_LENGTH &&
-                    levenshtein(raw.lowercase(), it.lowercase()) <= MAX_TYPO_DISTANCE
-            }?.let { return it }
-        }
-        return raw
-    }
-
-    private fun levenshtein(a: String, b: String): Int {
-        if (a == b) return 0
-        var previous = IntArray(b.length + 1) { it }
-        val current = IntArray(b.length + 1)
-        for (i in 1..a.length) {
-            current[0] = i
-            for (j in 1..b.length) {
-                val substitution = previous[j - 1] + if (a[i - 1] == b[j - 1]) 0 else 1
-                current[j] = minOf(previous[j] + 1, current[j - 1] + 1, substitution)
-            }
-            previous = current.copyInto(IntArray(b.length + 1))
-        }
-        return previous[b.length]
-    }
-
     private companion object {
         const val MAX_KNOWN_BRANDS = 50
-        const val MIN_TYPO_LENGTH = 4
-        const val MAX_TYPO_DISTANCE = 2
 
         /** How far before the SMS arrival a model-claimed date is still believable. Bank alerts
          *  arrive near the transaction; a pasted backlog message older than this gets dated at

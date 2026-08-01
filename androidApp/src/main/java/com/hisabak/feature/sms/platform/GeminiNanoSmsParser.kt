@@ -47,6 +47,15 @@ class GeminiNanoSmsParser(private val appScope: CoroutineScope) : AiSmsParser {
         response.candidates.firstOrNull()?.text?.let(::decode)
     }.getOrNull()
 
+    override suspend fun parseFreeText(
+        text: String,
+        knownBrands: List<String>,
+        todayIso: String,
+    ): AiParsedSms? = runCatching {
+        val response = model.generateContent(freeTextPromptFor(text, knownBrands, todayIso))
+        response.candidates.firstOrNull()?.text?.let(::decode)
+    }.getOrNull()
+
     private fun promptFor(body: String, knownBrands: List<String>) = buildString {
         appendLine(
             """
@@ -68,6 +77,30 @@ class GeminiNanoSmsParser(private val appScope: CoroutineScope) : AiSmsParser {
         appendLine()
         appendLine("Message:")
         append(body)
+    }
+
+    private fun freeTextPromptFor(text: String, knownBrands: List<String>, todayIso: String) = buildString {
+        appendLine(
+            """
+            You extract a spending or income record from a short note a person typed, in English, Arabic, or both (e.g. "100 at noon", "lunch 45 yesterday", "salary 15k").
+            Reply with ONLY a JSON object, exactly this shape:
+            {"brand": string or null, "amount": number or null, "currency": string or null, "date": string or null}
+            Rules:
+            - Today is $todayIso.
+            - brand: the merchant, store, or payee named in the note. null if none is named.
+            - amount: the amount as a positive decimal number without separators; expand shorthand like "15k" to 15000.
+            - currency: the ISO 4217 code ONLY if the note states a currency; null otherwise.
+            - date: resolve wording like "yesterday", "last friday", or an explicit date against today's date, as ISO 8601 (e.g. 2026-07-31); null if the note has no date wording. Never produce a future date.
+            - If the note doesn't describe a purchase, payment, or income, use null for every field.
+            """.trimIndent(),
+        )
+        if (knownBrands.isNotEmpty()) {
+            appendLine("- Known brands: ${knownBrands.joinToString(", ")}")
+            appendLine("- If the named merchant matches a known brand - even with typos, different casing, or an abbreviation - use that brand name exactly as listed.")
+        }
+        appendLine()
+        appendLine("Note:")
+        append(text)
     }
 
     /** Defensive decode: models wrap JSON in prose/fences at will; null on anything unusable. */

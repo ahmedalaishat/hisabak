@@ -25,6 +25,14 @@ interface AiSmsParser {
      * merchant string (typos, casing, and abbreviations included). May be empty.
      */
     suspend fun parse(body: String, knownBrands: List<String>): AiParsedSms?
+
+    /**
+     * Same engine over the user's own words ("100 at noon", "lunch 45 yesterday") for the
+     * smart-entry field. Unlike [parse], the prompt carries [todayIso] (e.g. "2026-08-01,
+     * Saturday") so relative dates resolve to real ones — user text legitimately says
+     * "yesterday", where a bank SMS never does. Same never-throw and on-device rules.
+     */
+    suspend fun parseFreeText(text: String, knownBrands: List<String>, todayIso: String): AiParsedSms?
 }
 
 enum class AiParserAvailability { Ready, Unavailable }

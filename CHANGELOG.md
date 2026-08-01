@@ -7,6 +7,13 @@ All notable changes to Hisabak are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **Smart entry — describe a transaction in your own words** — on devices with on-device AI,
+  the add-transaction sheet gains a "describe it" field: type (or dictate) something like
+  "lunch 45 yesterday" or "100 at noon" and the AI fills in the amount, brand, type, and date
+  for you to review — nothing is saved until you tap Save. It recognizes your existing brands
+  (typos and abbreviations included), resolves wording like "yesterday" to a real date, and
+  offers one-tap brand creation when the name is new. Runs fully on-device — your text never
+  leaves the phone. On devices without AI support the sheet is unchanged.
 - **Savings & investment withdrawals** — savings and investment transactions now have a
   direction: deposit or withdrawal. A withdrawal takes money back out of the bucket, so the
   dashboard Savings/Invest pills and your cash reflect it, and a brand's total shows the net
