@@ -17,6 +17,7 @@ import com.hisabak.feature.sms.domain.ai.DismissAiSuggestionUseCase
 import com.hisabak.feature.sms.domain.ai.SuggestAiParseUseCase
 import com.hisabak.feature.sms.domain.capture.CaptureTransactionUseCase
 import com.hisabak.feature.sms.domain.usecase.DeleteSmsUseCase
+import com.hisabak.feature.sms.domain.usecase.ImportParsedSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.IngestSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ObserveSmsMessagesUseCase
 import com.hisabak.testutil.FakeAiSmsParser
@@ -106,6 +107,12 @@ class SmsInboxViewModelTest : MainDispatcherTest() {
     private fun viewModel() = SmsInboxViewModel(
         observeMessages = ObserveSmsMessagesUseCase(smsRepo),
         capture = capture,
+        importParsed = ImportParsedSmsUseCase(
+            smsRepository = smsRepo,
+            processor = processor,
+            limitMonitor = limitMonitor,
+            analytics = FakeAnalytics(),
+        ),
         deleteSms = DeleteSmsUseCase(smsRepo),
         detector = detector,
         parser = parser,
@@ -181,6 +188,25 @@ class SmsInboxViewModelTest : MainDispatcherTest() {
         assertEquals("", vm.state.value.draftBody) // it IS stored — keeping the text invites double-pastes
         assertEquals(1, smsRepo.current.size)
         assertTrue(aiParser.parsedFreeTexts.isEmpty())
+    }
+
+    @Test
+    fun `import on a parsed unlinked row recreates its transaction`() = runTest {
+        // The row a captured message becomes after its transaction is deleted: parsed, with
+        // Import — which must re-import THAT message, not the empty paste draft.
+        smsRepo.upsert(
+            smsMessage(id = "s1", body = "Purchase of AED 89.00 at Talabat done")
+                .copy(parsed = ParsedSmsData("Talabat", aed(89_00), clock.now())),
+        )
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onIntent(SmsInboxIntent.ImportParsed(SmsMessageId("s1")))
+        advanceUntilIdle()
+
+        assertEquals(SmsInboxEffect.TransactionCreated(aed(89_00)), vm.effect.value)
+        assertTrue(vm.state.value.rows.single().isLinked)
+        assertEquals(89_00L, transactionRepo.current.single().amount.amountMinor)
     }
 
     @Test

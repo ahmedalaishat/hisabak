@@ -17,6 +17,7 @@ import com.hisabak.feature.sms.domain.capture.CaptureResult
 import com.hisabak.feature.sms.domain.capture.CaptureSource
 import com.hisabak.feature.sms.domain.capture.CaptureTransactionUseCase
 import com.hisabak.feature.sms.domain.usecase.DeleteSmsUseCase
+import com.hisabak.feature.sms.domain.usecase.ImportParsedSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ObserveSmsMessagesUseCase
 import com.hisabak.feature.sms.domain.SmsMessageId
 import kotlinx.coroutines.flow.debounce
@@ -30,6 +31,7 @@ import kotlinx.coroutines.launch
 class SmsInboxViewModel(
     private val observeMessages: ObserveSmsMessagesUseCase,
     private val capture: CaptureTransactionUseCase,
+    private val importParsed: ImportParsedSmsUseCase,
     private val deleteSms: DeleteSmsUseCase,
     private val detector: SmsTemplateDetector,
     private val parser: SmsParser,
@@ -56,6 +58,14 @@ class SmsInboxViewModel(
             is SmsInboxIntent.DraftChanged ->
                 setState { copy(draftBody = intent.body, draftPreview = previewOf(intent.body)) }
             SmsInboxIntent.IngestDraft -> ingestDraft()
+            is SmsInboxIntent.ImportParsed -> viewModelScope.launch {
+                when (val result = importParsed(intent.id)) {
+                    is DomainResult.Success ->
+                        sendEffect(SmsInboxEffect.TransactionCreated(amount = result.value.amount))
+                    is DomainResult.Failure ->
+                        sendEffect(SmsInboxEffect.ParseFailed(reasonFor(result.error)))
+                }
+            }
             is SmsInboxIntent.Delete ->
                 viewModelScope.launch { deleteSms(intent.id) }
             is SmsInboxIntent.SuggestParse -> suggestParse(intent.id)

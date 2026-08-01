@@ -41,6 +41,8 @@ sealed interface SmsInboxIntent : ViewIntent {
     data class SearchChanged(val query: String) : SmsInboxIntent
     data class DraftChanged(val body: String) : SmsInboxIntent
     data object IngestDraft : SmsInboxIntent
+    /** Re-import a parsed-but-unlinked row (its transaction was deleted). */
+    data class ImportParsed(val id: SmsMessageId) : SmsInboxIntent
     data class Delete(val id: SmsMessageId) : SmsInboxIntent
     data class SuggestParse(val id: SmsMessageId) : SmsInboxIntent
     data class ConfirmSuggestion(val id: SmsMessageId) : SmsInboxIntent
