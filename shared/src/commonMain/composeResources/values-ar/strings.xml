@@ -383,6 +383,7 @@
     <string name="shortcut_capture_failure">تعذّر قراءة معاملة من هذا النص. حُفظ في صندوق الرسائل.</string>
     <string name="sms_ai_suggestion">اقتراح الذكاء الاصطناعي</string>
     <string name="sms_ai_parse">تحليل بالذكاء الاصطناعي</string>
+    <string name="sms_ai_parsing">جارٍ التحليل…</string>
     <string name="sms_ai_confirm">تأكيد</string>
     <string name="sms_ai_dismiss">تجاهل</string>
     <string name="sms_ai_parse_failed">تعذّرت قراءة هذه الرسالة بالذكاء الاصطناعي</string>
