@@ -283,7 +283,7 @@ retained per tab when switching; the user always exits the app through the **Das
 |-----|---------------|-----------------|
 | Dashboard | DashboardKey | Single screen |
 | Transactions | TransactionsKey | List → Edit (bottom sheet) |
-| SMS | SmsKey | Inbox → template editor (full screen, from an unparsed message) |
+| SMS | SmsKey | Inbox → template editor (full screen) / transaction sheet (review of an AI-parsed entry) |
 | Manage | ManageKey | Brands/Categories list → Edit (full screen) |
 | Settings | SettingsKey | Theme + language + app lock → Backup & restore / SMS parsing → template editor (full screen) |
 

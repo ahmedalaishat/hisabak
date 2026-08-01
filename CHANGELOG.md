@@ -27,7 +27,8 @@ All notable changes to Hisabak are documented here. Format based on
   relative dates ("yesterday", "last friday") and shorthand like "15k", and pasted backlogs
   may be dated up to a year back. Runs fully on-device — your text never leaves the phone.
   Without AI support, unmatched text still lands in the inbox with a clear message and the
-  "Create template" path.
+  "Create template" path. Messages imported via AI keep a "Review transaction" shortcut that
+  opens the created entry for a quick human check.
 - **Savings & investment withdrawals** — savings and investment transactions now have a
   direction: deposit or withdrawal. A withdrawal takes money back out of the bucket, so the
   dashboard Savings/Invest pills and your cash reflect it, and a brand's total shows the net
