@@ -12,4 +12,6 @@ class FakeNotificationStrings : NotificationStrings {
     override fun budgetReachedTitle(category: String) = "$category budget reached"
     override fun budgetLevelTitle(category: String, level: Int) = "$category at $level% of budget"
     override fun budgetMessage(spent: String, limit: String) = "Spent $spent of $limit this month."
+    override fun reviewNeededTitle() = "Saved for review"
+    override fun reviewNeededMessage() = "A message couldn't be read automatically — tap to review it in the SMS inbox."
 }

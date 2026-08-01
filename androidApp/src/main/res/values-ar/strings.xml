@@ -12,4 +12,6 @@
     <string name="notification_channel_budget_desc">تنبيهات عندما تقترب فئة من حدها الشهري أو تتجاوزه</string>
     <string name="notification_channel_tx_name">تحديثات المعاملات</string>
     <string name="notification_channel_tx_desc">يؤكّد المعاملات المُلتقطة من رسائل بنكك</string>
+    <string name="notification_review_title">حُفظت للمراجعة</string>
+    <string name="notification_review_message">تعذّرت قراءة رسالة تلقائيًا — اضغط لمراجعتها في صندوق الرسائل.</string>
 </resources>

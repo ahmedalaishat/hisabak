@@ -262,8 +262,10 @@ class FakeSmsRepository(initial: List<SmsMessage> = emptyList()) : SmsRepository
 class RecordingNotifier : Notifier {
     val posted = mutableListOf<Notification>()
     val recorded = mutableListOf<TransactionRecordedAlert>()
+    val reviewNeeded = mutableListOf<Pair<String, String>>()
     override fun post(notification: Notification) { posted += notification }
     override fun postTransactionRecorded(alert: TransactionRecordedAlert) { recorded += alert }
+    override fun postReviewNeeded(title: String, message: String) { reviewNeeded += title to message }
 }
 
 /** In-memory stand-in for the store that tracks the highest alert level per category/month. */

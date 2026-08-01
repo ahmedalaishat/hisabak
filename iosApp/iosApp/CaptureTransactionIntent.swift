@@ -18,14 +18,16 @@ struct CaptureTransactionIntent: AppIntent {
         Summary("Capture transaction from \(\.$message)")
     }
 
-    func perform() async throws -> some IntentResult & ReturnsValue<Bool> & ProvidesDialog {
-        let (dialog, needsReview) = await withCheckedContinuation { continuation in
-            ShortcutCaptureKt.captureFromShortcut(text: message) { outcome, needsReview in
-                continuation.resume(returning: (outcome, needsReview.boolValue))
+    func perform() async throws -> some IntentResult & ReturnsValue<Bool> {
+        // No dialog: notifications are the feedback channel ("transaction recorded" on a
+        // parse, "saved for review" on the fallback). The returned flag still lets a
+        // shortcut branch: If [Needs review] -> Open SMS inbox.
+        let needsReview = await withCheckedContinuation { continuation in
+            ShortcutCaptureKt.captureFromShortcut(text: message) { needsReview in
+                continuation.resume(returning: needsReview.boolValue)
             }
         }
-        // The returned flag lets a shortcut branch: If [Needs review] -> Open SMS inbox.
-        return .result(value: needsReview, dialog: IntentDialog(stringLiteral: dialog))
+        return .result(value: needsReview)
     }
 }
 

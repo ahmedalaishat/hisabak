@@ -32,6 +32,9 @@ private class IosNotificationTapHandler : NSObject(), UNUserNotificationCenterDe
             ?.let { koin.get<CategoryFocusBus>().request(it) }
         (userInfo[IosNotifier.USER_INFO_BRAND_ID] as? String)
             ?.let { koin.get<BrandEditBus>().request(it) }
+        if (userInfo[IosNotifier.USER_INFO_OPEN_INBOX] != null) {
+            koin.get<com.hisabak.feature.sms.presentation.InboxOpenBus>().request()
+        }
         withCompletionHandler()
     }
 
