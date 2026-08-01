@@ -216,7 +216,11 @@ fun TransactionEditScreen(
                 NoticeCard(
                     text = stringResource(Res.string.transaction_brand_uncategorized),
                     tone = NoticeTone.Info,
-                    onClick = { onEditBrand(selectedBrand.id) },
+                    // Tap-through only when editing: the detour reopens the sheet fresh, which
+                    // would discard a new transaction's typed input.
+                    onClick = if (state.isNew) null else {
+                        { onEditBrand(selectedBrand.id) }
+                    },
                 )
             }
         }

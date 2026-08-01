@@ -22,6 +22,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -196,6 +197,10 @@ private fun HisabakNav(slots: PlatformSlots) {
         topLevelRoutes = RootTab.entries.map { it.key },
     )
     val navigator = remember { Navigator(navigationState) }
+    // Pushing a full screen ON TOP of the bottom-sheet entry breaks the overlay scene on the
+    // way back (duplicate saveable key, observed on device) — so the brand-note detour closes
+    // the sheet first and reopens the same transaction when the brand editor finishes.
+    val reopenTransactionAfterBrandEdit = remember { mutableStateOf<String?>(null) }
     val bottomSheetStrategy = remember { BottomSheetSceneStrategy<NavKey>() }
     val filterBus = koinInject<TransactionListFilterBus>()
     val inboxOpenBus = koinInject<com.hisabak.feature.sms.presentation.InboxOpenBus>()
@@ -408,14 +413,26 @@ private fun HisabakNav(slots: PlatformSlots) {
                     transactionId = key.id?.let(::TransactionId),
                     onDone = { navigator.goBack() },
                     onCancel = { navigator.goBack() },
-                    onEditBrand = { id -> navigator.navigate(BrandEditKey(id = id.value)) },
+                    onEditBrand = { id ->
+                        reopenTransactionAfterBrandEdit.value = key.id
+                        navigator.goBack()
+                        navigator.navigate(BrandEditKey(id = id.value))
+                    },
                 )
             }
             entry<BrandEditKey>(metadata = fullScreenTransition()) { key ->
+                val closeBrandEditor = {
+                    navigator.goBack()
+                    // Came from the transaction sheet's brand note — put the sheet back.
+                    reopenTransactionAfterBrandEdit.value?.let {
+                        navigator.navigate(TransactionEditKey(id = it))
+                        reopenTransactionAfterBrandEdit.value = null
+                    }
+                }
                 BrandEditRoute(
                     brandId = key.id?.let(::BrandId),
-                    onDone = { navigator.goBack() },
-                    onCancel = { navigator.goBack() },
+                    onDone = { closeBrandEditor() },
+                    onCancel = { closeBrandEditor() },
                 )
             }
             entry<CategoryEditKey>(metadata = fullScreenTransition()) { key ->
