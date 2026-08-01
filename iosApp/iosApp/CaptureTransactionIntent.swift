@@ -51,14 +51,16 @@ struct HisabakAppShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: CaptureTransactionIntent(),
             phrases: ["Capture a transaction in \(.applicationName)"],
-            shortTitle: "Capture transaction",
-            systemImageName: "text.viewfinder"
+            // Short: the home-screen grid truncates long tile labels. The banknote glyph reads
+            // as money capture — text.viewfinder looked like a QR scanner.
+            shortTitle: "Capture",
+            systemImageName: "banknote"
         )
         AppShortcut(
             intent: OpenSmsInboxIntent(),
             phrases: ["Review messages in \(.applicationName)"],
-            shortTitle: "Open SMS inbox",
-            systemImageName: "tray.full"
+            shortTitle: "Review inbox",
+            systemImageName: "tray.and.arrow.down"
         )
     }
 }
