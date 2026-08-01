@@ -9,6 +9,7 @@ import com.hisabak.feature.sms.domain.SmsTemplateId
 import com.hisabak.feature.sms.domain.SmsTransactionProcessor
 import com.hisabak.feature.sms.domain.template.PreviewSmsTemplateUseCase
 import com.hisabak.feature.sms.domain.template.SaveSmsTemplateUseCase
+import com.hisabak.feature.sms.domain.template.SetSmsTemplateEnabledUseCase
 import com.hisabak.feature.sms.domain.template.TagRole
 import com.hisabak.feature.sms.domain.template.TemplateValidationError
 import com.hisabak.feature.sms.domain.usecase.ReparseSmsMessageUseCase
@@ -51,6 +52,7 @@ class SmsTemplateEditViewModelTest : MainDispatcherTest() {
             smsRepository = smsRepo,
             saveTemplate = SaveSmsTemplateUseCase(templateRepo, clock, analytics),
             previewTemplate = PreviewSmsTemplateUseCase(smsRepo),
+            setTemplateEnabled = SetSmsTemplateEnabledUseCase(templateRepo, analytics),
             reparseSms = ReparseSmsMessageUseCase(
                 smsRepository = smsRepo,
                 // Reads the same template repo the save writes to — no snapshot to race.
@@ -139,6 +141,58 @@ class SmsTemplateEditViewModelTest : MainDispatcherTest() {
         assertTrue(message.isLinked)
         assertEquals("HARDEES-WTC MALL", message.parsed?.brandName)
         assertEquals(3_500L, txRepo.current.single().amount.amountMinor)
+    }
+
+    @Test
+    fun `an existing enabled duplicate is flagged and blocks saving`() = runTest {
+        templateRepo.upsert(
+            parserTemplate(
+                id = "existing",
+                pattern = "You spent AED {amount} at {brand}. Your available Tabby Card limit is now AED {ignore}.",
+                enabled = true,
+            ),
+        )
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onIntent(SmsTemplateEditIntent.SampleChanged(tabby))
+        advanceUntilIdle()
+
+        val duplicate = vm.state.value.duplicate
+        assertNotNull(duplicate)
+        assertTrue(duplicate.enabled)
+        assertEquals(false, vm.state.value.canSave)
+        vm.onIntent(SmsTemplateEditIntent.Save)
+        advanceUntilIdle()
+        assertEquals(1, templateRepo.current.size) // nothing created
+    }
+
+    @Test
+    fun `a disabled duplicate turns the action into enable-and-import`() = runTest {
+        templateRepo.upsert(
+            parserTemplate(
+                id = "existing",
+                pattern = "You spent AED {amount} at {brand}. Your available Tabby Card limit is now AED {ignore}.",
+                enabled = false,
+            ),
+        )
+        smsRepo.upsert(smsMessage(id = "s9", body = tabby))
+        val vm = viewModel(smsId = SmsMessageId("s9"))
+        advanceUntilIdle()
+
+        val duplicate = vm.state.value.duplicate
+        assertNotNull(duplicate)
+        assertEquals(false, duplicate.enabled)
+        assertTrue(vm.state.value.canSave)
+
+        vm.onIntent(SmsTemplateEditIntent.Save)
+        advanceUntilIdle()
+
+        assertEquals(SmsTemplateEditEffect.Saved, vm.effect.value)
+        val stored = templateRepo.current.single() // re-enabled, not duplicated
+        assertEquals("existing", stored.id.value)
+        assertTrue(stored.enabled)
+        assertTrue(smsRepo.current.single().isLinked) // and the message imported through it
     }
 
     @Test

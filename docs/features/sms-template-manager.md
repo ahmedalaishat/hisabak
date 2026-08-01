@@ -120,6 +120,13 @@ edited/deleted.
   time of the snapshot, not per message; the stored sample makes user templates re-editable
   without reverse-parsing patterns; defaults keep fixed ids (`default-0…9`) so seeding is
   idempotent and restore-then-seed can't duplicate them.
+- **Follow-ups from device testing:** saving a template made from an inbox message re-imports
+  that message on the spot (detection reads the template table directly — the observing
+  detector's snapshot refreshes asynchronously and racing it loses); creating an exact
+  duplicate is surfaced in the editor rather than silently deduped — a disabled twin flips the
+  action to "Enable template (& save transaction)", an enabled twin disables save; ranking
+  ties break deterministically (createdAt, then id) so enable-toggles don't reshuffle the
+  list.
 - **Hardened in review:**
   - The repository re-seeds on *live* empty emissions, not just first collection — restoring a
     pre-template backup wipes the table under the detector's long-lived collection, and
