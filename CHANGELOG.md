@@ -6,6 +6,11 @@ All notable changes to Hisabak are documented here. Format based on
 
 ## [Unreleased]
 
+### Changed
+- **The keyboard gets out of your way** — it now dismisses when you scroll any list, tap
+  outside a text field, or complete an action (importing a message, saving a template or
+  transaction, opening the date picker).
+
 ### Added
 - **Teach the app your bank's SMS format** — Settings → SMS parsing lists the parse templates
   (the built-ins plus your own) and lets you create new ones *by example*: paste a bank message
