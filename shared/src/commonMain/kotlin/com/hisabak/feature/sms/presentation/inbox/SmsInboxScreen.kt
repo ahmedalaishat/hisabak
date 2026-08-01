@@ -86,6 +86,7 @@ fun SmsInboxScreen(
     onDismissSuggestion: (SmsMessageId) -> Unit = {},
     onCreateTemplate: (SmsMessageId) -> Unit = {},
     onReviewTransaction: (String) -> Unit = {},
+    onImportParsed: (SmsMessageId) -> Unit = {},
 ) {
     Box(modifier.fillMaxSize()) {
         LazyColumn(
@@ -126,7 +127,7 @@ fun SmsInboxScreen(
                         row = row,
                         aiAvailable = state.aiAvailable,
                         isSuggesting = row.id in state.suggestingIds,
-                        onImport = { onIngest() },
+                        onImport = { onImportParsed(row.id) },
                         onDelete = { onDelete(row.id) },
                         onSuggestParse = { onSuggestParse(row.id) },
                         onConfirmSuggestion = { onConfirmSuggestion(row.id) },

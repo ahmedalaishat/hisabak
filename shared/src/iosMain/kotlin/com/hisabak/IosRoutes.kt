@@ -91,6 +91,7 @@ internal fun IosSmsInboxRoute(
         state = state,
         onCreateTemplate = { onCreateTemplate(it.value) },
         onReviewTransaction = onReviewTransaction,
+        onImportParsed = { viewModel.onIntent(SmsInboxIntent.ImportParsed(it)) },
         snackbarHostState = snackbarHostState,
         autoImportAvailable = false,
         onSearchChange = { viewModel.onIntent(SmsInboxIntent.SearchChanged(it)) },
