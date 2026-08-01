@@ -6,6 +6,10 @@ All notable changes to Hisabak are documented here. Format based on
 
 ## [Unreleased]
 
+### Fixed
+- Double-tapping a row that opens an editor (a brand, a category, a transaction) could crash
+  the app; rapid re-taps are now ignored.
+
 ### Changed
 - **The keyboard gets out of your way** — it now dismisses when you scroll any list, tap
   outside a text field, or complete an action (importing a message, saving a template or
