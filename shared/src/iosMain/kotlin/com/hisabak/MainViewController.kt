@@ -22,8 +22,12 @@ fun MainViewController(): UIViewController {
                 PlatformSlots(
                     onboarding = { IosOnboardingRoute() },
                     restore = { IosRestoreRoute() },
-                    smsInbox = { onCreateTemplate, modifier ->
-                        IosSmsInboxRoute(onCreateTemplate = onCreateTemplate, modifier = modifier)
+                    smsInbox = { onCreateTemplate, onReviewTransaction, modifier ->
+                        IosSmsInboxRoute(
+                            onCreateTemplate = onCreateTemplate,
+                            onReviewTransaction = onReviewTransaction,
+                            modifier = modifier,
+                        )
                     },
                     settings = { onOpenBackup, onOpenSmsTemplates, modifier ->
                         IosSettingsRoute(

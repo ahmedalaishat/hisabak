@@ -28,6 +28,7 @@ import com.hisabak.testutil.FakeCategoryRepository
 import com.hisabak.testutil.FakeNotificationRepository
 import com.hisabak.testutil.FakeNotificationStrings
 import com.hisabak.testutil.FakeSmsRepository
+import com.hisabak.testutil.smsMessage
 import com.hisabak.testutil.FakeTransactionRepository
 import com.hisabak.testutil.MainDispatcherTest
 import com.hisabak.testutil.RecordingNotifier
@@ -180,6 +181,23 @@ class SmsInboxViewModelTest : MainDispatcherTest() {
         assertEquals("", vm.state.value.draftBody) // it IS stored — keeping the text invites double-pastes
         assertEquals(1, smsRepo.current.size)
         assertTrue(aiParser.parsedFreeTexts.isEmpty())
+    }
+
+    @Test
+    fun `a linked ai-parsed row exposes its transaction id for review`() = runTest {
+        smsRepo.upsert(
+            smsMessage(id = "s1", body = "mystery charge")
+                .copy(suggested = ParsedSmsData("Noon", aed(12_50), clock.now())),
+        )
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onIntent(SmsInboxIntent.ConfirmSuggestion(SmsMessageId("s1")))
+        advanceUntilIdle()
+
+        val row = vm.state.value.rows.single()
+        assertTrue(row.isLinked)
+        assertEquals(transactionRepo.current.single().id, row.transactionId)
     }
 
     @Test

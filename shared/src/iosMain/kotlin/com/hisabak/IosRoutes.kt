@@ -64,6 +64,7 @@ internal fun IosRestoreRoute(viewModel: RestoreViewModel = koinViewModel()) {
 @Composable
 internal fun IosSmsInboxRoute(
     onCreateTemplate: (String) -> Unit,
+    onReviewTransaction: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SmsInboxViewModel = koinViewModel(),
 ) {
@@ -89,6 +90,7 @@ internal fun IosSmsInboxRoute(
     SmsInboxScreen(
         state = state,
         onCreateTemplate = { onCreateTemplate(it.value) },
+        onReviewTransaction = onReviewTransaction,
         snackbarHostState = snackbarHostState,
         autoImportAvailable = false,
         onSearchChange = { viewModel.onIntent(SmsInboxIntent.SearchChanged(it)) },

@@ -159,6 +159,7 @@ class SmsInboxViewModel(
         parsedBrand = msg.parsed?.brandName,
         parsedAmount = msg.parsed?.amount,
         isLinked = msg.isLinked,
+        transactionId = msg.transactionId,
         suggestedBrand = msg.suggested?.brandName,
         suggestedAmount = msg.suggested?.amount,
         suggestedOccurredAt = msg.suggested?.occurredAt,
