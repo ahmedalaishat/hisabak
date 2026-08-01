@@ -447,15 +447,17 @@ private fun SmsRowCard(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.s2, Alignment.End),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (row.isLinked && row.suggestedBrand != null) {
-                    // Provenance: this linked transaction came from a confirmed AI parse — an
-                    // AI read deserves a human glance, so jump straight to the transaction.
-                    Badge(
-                        label = stringResource(Res.string.sms_ai_parsed),
-                        tone = BadgeTone.Info,
-                        dot = true,
-                    )
+                if (row.isLinked) {
+                    if (row.suggestedBrand != null) {
+                        // Provenance: this linked transaction came from a confirmed AI parse.
+                        Badge(
+                            label = stringResource(Res.string.sms_ai_parsed),
+                            tone = BadgeTone.Info,
+                            dot = true,
+                        )
+                    }
                     Spacer(Modifier.weight(1f))
+                    // Every linked row jumps to its transaction, template- and AI-parsed alike.
                     HisabakButton(
                         text = stringResource(Res.string.sms_review_transaction),
                         onClick = onReviewTransaction,

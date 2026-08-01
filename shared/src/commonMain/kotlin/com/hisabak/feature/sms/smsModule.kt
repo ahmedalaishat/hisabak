@@ -33,6 +33,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val smsModule = module {
+    single { com.hisabak.feature.sms.presentation.InboxOpenBus() }
     single<SmsRepository> { RoomSmsRepository(dao = get()) }
 
     single<SmsTemplateRepository> { RoomSmsTemplateRepository(dao = get(), clock = get()) }

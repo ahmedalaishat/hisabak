@@ -7,6 +7,8 @@ import androidx.activity.ComponentActivity
 import com.hisabak.core.common.DomainResult
 import com.hisabak.di.APPLICATION_SCOPE
 import com.hisabak.feature.sms.domain.capture.CaptureSource
+import com.hisabak.feature.sms.domain.capture.ShortcutOutcome
+import com.hisabak.feature.sms.domain.capture.shortcutOutcomeFor
 import com.hisabak.feature.sms.domain.capture.CaptureTransactionUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,9 +39,11 @@ class CaptureActivity : ComponentActivity() {
             // application context for the same reason (this activity may already be gone).
             val appContext = applicationContext
             appScope.launch {
-                val message = when (capture(text.toString(), source)) {
-                    is DomainResult.Success -> "Transaction saved"
-                    is DomainResult.Failure -> "Couldn't read a transaction from that text"
+                val message = when (shortcutOutcomeFor(capture(text.toString(), source))) {
+                    ShortcutOutcome.Recorded -> "Transaction saved"
+                    ShortcutOutcome.NeedsReview -> "Saved to your SMS inbox for review"
+                    ShortcutOutcome.Duplicate -> "Already captured"
+                    ShortcutOutcome.Failed -> "Couldn't capture that text"
                 }
                 withContext(Dispatchers.Main) {
                     Toast.makeText(appContext, message, Toast.LENGTH_SHORT).show()

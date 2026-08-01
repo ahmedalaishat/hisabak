@@ -198,12 +198,22 @@ private fun HisabakNav(slots: PlatformSlots) {
     val navigator = remember { Navigator(navigationState) }
     val bottomSheetStrategy = remember { BottomSheetSceneStrategy<NavKey>() }
     val filterBus = koinInject<TransactionListFilterBus>()
+    val inboxOpenBus = koinInject<com.hisabak.feature.sms.presentation.InboxOpenBus>()
     val categoryFocusBus = koinInject<CategoryFocusBus>()
     val brandEditBus = koinInject<BrandEditBus>()
     val notificationRepository = koinInject<NotificationRepository>()
 
     val unreadCount by notificationRepository.observeUnreadCount().collectAsStateWithLifecycle(initialValue = 0)
     val pendingFocus by categoryFocusBus.pending.collectAsStateWithLifecycle()
+    // The iOS "Open SMS inbox" intent may fire before (or while) the UI exists — land on the
+    // SMS tab once the shell is composed.
+    val pendingInboxOpen by inboxOpenBus.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingInboxOpen) {
+        if (pendingInboxOpen) {
+            navigator.navigate(SmsKey)
+            inboxOpenBus.consume()
+        }
+    }
     val pendingBrandEdit by brandEditBus.pending.collectAsStateWithLifecycle()
 
     // A system-notification tap publishes a focus while we may be on another tab — switch to the

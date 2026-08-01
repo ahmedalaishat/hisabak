@@ -388,7 +388,9 @@
     <string name="notification_budget_message">أُنفق %1$s من %2$s هذا الشهر.</string>
     <string name="backup_connect_account">ربط حساب Google</string>
     <string name="shortcut_capture_success">تم حفظ المعاملة</string>
-    <string name="shortcut_capture_failure">تعذّر قراءة معاملة من هذا النص. حُفظ في صندوق الرسائل.</string>
+    <string name="shortcut_capture_failure">تعذّر التقاط هذا النص</string>
+    <string name="shortcut_capture_review">حُفظت في صندوق الرسائل للمراجعة</string>
+    <string name="shortcut_capture_duplicate">التُقطت من قبل</string>
     <string name="sms_ai_suggestion">اقتراح الذكاء الاصطناعي</string>
     <string name="sms_ai_parse">تحليل بالذكاء الاصطناعي</string>
     <string name="sms_ai_parsing">جارٍ التحليل…</string>
