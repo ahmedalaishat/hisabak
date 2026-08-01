@@ -1,6 +1,9 @@
 package com.hisabak.feature.sms.data.parser
 
+import com.hisabak.core.common.DomainResult
+import com.hisabak.feature.sms.domain.SmsParserTemplate
 import com.hisabak.feature.sms.domain.SmsTemplateId
+import com.hisabak.feature.sms.domain.SmsTemplateRepository
 import com.hisabak.testutil.FakeSmsTemplateRepository
 import com.hisabak.testutil.parserTemplate
 import kotlin.test.Test
@@ -9,6 +12,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 
 class ObservingSmsTemplateDetectorTest {
@@ -21,9 +27,15 @@ class ObservingSmsTemplateDetectorTest {
 
     @Test
     fun `defaults answer before the first emission`() = runTest {
-        // A repo whose flow never emits — only the eagerly-compiled defaults can answer.
-        val repo = FakeSmsTemplateRepository()
-        val detector = ObservingSmsTemplateDetector(repo, CoroutineScope(Dispatchers.Default))
+        // A repo whose flow genuinely never emits — only the eagerly-compiled defaults can
+        // answer. (A FakeSmsTemplateRepository emits an empty list immediately, which on a
+        // loaded CI runner raced this test's detect() and wiped the snapshot — flaky.)
+        val silent = object : SmsTemplateRepository {
+            override fun observeAll(): Flow<List<SmsParserTemplate>> = flow { awaitCancellation() }
+            override suspend fun upsert(template: SmsParserTemplate) = DomainResult.Success(Unit)
+            override suspend fun delete(id: SmsTemplateId) = DomainResult.Success(Unit)
+        }
+        val detector = ObservingSmsTemplateDetector(silent, CoroutineScope(Dispatchers.Default))
 
         // The 10 shipped defaults are compiled eagerly — no template gap on cold start.
         assertNotNull(detector.detect("Purchase of AED 12.00 with card ending 1234 at CAFE, DUBAI"))

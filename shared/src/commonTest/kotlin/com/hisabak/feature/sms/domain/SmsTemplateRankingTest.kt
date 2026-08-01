@@ -26,6 +26,19 @@ class SmsTemplateRankingTest {
     }
 
     @Test
+    fun `ties order deterministically regardless of input order`() {
+        // Same anchor length, both defaults, same timestamp — the id breaks the tie, so a
+        // REPLACE-style re-insert (enable toggle) can't reshuffle the list.
+        val a = parserTemplate(id = "default-1", pattern = "Paid AED {amount} now", isDefault = true)
+        val b = parserTemplate(id = "default-2", pattern = "Sent AED {amount} out", isDefault = true)
+
+        assertEquals(
+            rankTemplates(listOf(a, b)).map { it.id.value },
+            rankTemplates(listOf(b, a)).map { it.id.value },
+        )
+    }
+
+    @Test
     fun `anchor length ignores placeholders and whitespace`() {
         assertEquals(0, literalAnchorLength("{amount} {brand}"))
         assertEquals(2, literalAnchorLength("{amount} at {brand}"))

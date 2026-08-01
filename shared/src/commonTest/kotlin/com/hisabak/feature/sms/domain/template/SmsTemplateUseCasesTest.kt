@@ -96,6 +96,26 @@ class SmsTemplateUseCasesTest {
     }
 
     @Test
+    fun `re-teaching an identical format reuses the stored template instead of duplicating`() = runTest {
+        val repo = FakeSmsTemplateRepository()
+        val save = SaveSmsTemplateUseCase(repo, clock, analytics)
+        val spans = listOf(
+            spanOf(tabby, "35.00", TagRole.AMOUNT),
+            spanOf(tabby, "HARDEES-WTC MALL", TagRole.BRAND),
+            spanOf(tabby, "8,342.27", TagRole.SKIP),
+        )
+        val first = (save(null, tabby, spans) as DomainResult.Success).value
+
+        // Same format taught again — e.g. "Create template" tapped on a second Tabby message
+        // whose tags derive the identical pattern.
+        val second = save(null, tabby, spans)
+
+        assertTrue(second is DomainResult.Success)
+        assertEquals(first.id, second.value.id) // the existing row, not a new one
+        assertEquals(1, repo.current.size)
+    }
+
+    @Test
     fun `editing a user template keeps its enabled state and creation time`() = runTest {
         val original = parserTemplate(
             id = "mine",
