@@ -93,11 +93,17 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   always read LTR (glyph · number · K/M-or-أ/م suffix) via a forced `LayoutDirection.Ltr`,
   with the number and suffix as separate `Text`s so Arabic-Indic digits don't bidi-reorder.
   Amounts keep the dirham glyph in both languages.
-- **On-device AI (SMS parse fallback):** bank SMS that match no regex template get parsed by the
-  platform's on-device model into a **confirm-first suggestion** (never an auto-created
-  transaction). The port is `AiSmsParser` + `SuggestAiParse/ConfirmAiSuggestion/
+- **On-device AI (SMS parse fallback + smart entry):** bank SMS that match no regex template get
+  parsed by the platform's on-device model into a **confirm-first suggestion** (never an
+  auto-created transaction). The port is `AiSmsParser` + `SuggestAiParse/ConfirmAiSuggestion/
   DismissAiSuggestionUseCase` in `feature/sms/domain/ai/` (commonMain; the shared `sanitize`
-  step owns acceptance rules, prompts live platform-side). Parsing is **brand-aware**: the
+  step owns acceptance rules, prompts live platform-side). The same port's `parseFreeText`
+  powers **smart entry**: a "describe it" field in the add-transaction sheet
+  (`ParseSmartInputUseCase`, `feature/transaction/domain/usecase/`) turns typed notes
+  ("lunch 45 yesterday") into a pre-filled sheet — its prompt carries today's date so relative
+  wording resolves, its sanitize allows up to a year back but never the future, and saving is
+  the confirmation. Brand snapping is the shared `canonicalizeBrand`
+  (`feature/sms/domain/ai/BrandCanonicalizer.kt`). Parsing is **brand-aware**: the
   top-50 most-used brand names go into the prompt, and `canonicalize` (exact/substring/
   Levenshtein≤2) snaps the model's merchant string to an existing brand deterministically. Android:
   `GeminiNanoSmsParser` over the ML Kit GenAI **Prompt API** (`com.google.mlkit:genai-prompt`,

@@ -18,4 +18,20 @@ class FakeAiSmsParser : AiSmsParser {
         lastKnownBrands = knownBrands
         return result
     }
+
+    var freeTextResult: AiParsedSms? = null
+    val parsedFreeTexts = mutableListOf<String>()
+    var lastTodayIso: String? = null
+        private set
+
+    override suspend fun parseFreeText(
+        text: String,
+        knownBrands: List<String>,
+        todayIso: String,
+    ): AiParsedSms? {
+        parsedFreeTexts += text
+        lastKnownBrands = knownBrands
+        lastTodayIso = todayIso
+        return freeTextResult
+    }
 }

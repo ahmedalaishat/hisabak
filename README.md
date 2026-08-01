@@ -92,6 +92,9 @@ Everything below is built and shipping today:
   confirmed first, and hands any bank message that created it back to the SMS inbox).
 - [x] 🗂️ **Organize** — categories (income / expense / savings / investment) with colors and
   icons, and brands mapped to categories. Safe deletion with brand-merge and confirmation.
+- [x] ✨ **Smart entry** — on devices with on-device AI, describe a transaction in your own
+  words ("lunch 45 yesterday") and the add sheet fills itself in for you to review; recognizes
+  your existing brands and resolves relative dates. Fully on-device.
 - [x] 💸 **Savings & investment withdrawals** — savings/investment entries have a deposit or
   withdrawal direction, so taking money back out nets your buckets and returns it to cash.
   Doubles as a loan ledger: keep a person as a brand in a savings category and their brand

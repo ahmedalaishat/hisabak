@@ -15,17 +15,23 @@ class IosAiSmsParser(private val bridge: AiSmsBridge) : AiSmsParser {
 
     override suspend fun parse(body: String, knownBrands: List<String>): AiParsedSms? =
         suspendCancellableCoroutine { continuation ->
-            bridge.parse(body, knownBrands) { result ->
-                continuation.resume(
-                    result?.let {
-                        AiParsedSms(
-                            brandName = it.brandName,
-                            amountMinor = if (it.hasAmount) it.amountMinor else null,
-                            currencyCode = it.currencyCode,
-                            occurredAtEpochMillis = it.dateIso?.let(::parseAiIsoDate),
-                        )
-                    },
-                )
-            }
+            bridge.parse(body, knownBrands) { result -> continuation.resume(result?.toParsedSms()) }
         }
+
+    override suspend fun parseFreeText(
+        text: String,
+        knownBrands: List<String>,
+        todayIso: String,
+    ): AiParsedSms? = suspendCancellableCoroutine { continuation ->
+        bridge.parseFreeText(text, knownBrands, todayIso) { result ->
+            continuation.resume(result?.toParsedSms())
+        }
+    }
 }
+
+private fun AiSmsBridgeResult.toParsedSms() = AiParsedSms(
+    brandName = brandName,
+    amountMinor = if (hasAmount) amountMinor else null,
+    currencyCode = currencyCode,
+    occurredAtEpochMillis = dateIso?.let(::parseAiIsoDate),
+)

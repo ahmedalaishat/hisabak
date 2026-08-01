@@ -196,6 +196,10 @@
     <string name="transaction_note_label">Note (optional)</string>
     <string name="transaction_direction_deposit">Deposit</string>
     <string name="transaction_direction_withdrawal">Withdrawal</string>
+    <string name="transaction_smart_hint">Describe it — "lunch 45 yesterday"</string>
+    <string name="transaction_smart_parse">Smart fill</string>
+    <string name="transaction_smart_failed">Couldn't turn that into a transaction — include an amount and a name</string>
+    <string name="transaction_smart_create_brand">Create "%1$s"</string>
     <string name="transaction_empty_filtered_title">No matching transactions</string>
     <string name="transaction_empty_filtered_subtitle">Try a different period, brand or category</string>
     <string name="transaction_empty_title">No transactions yet</string>

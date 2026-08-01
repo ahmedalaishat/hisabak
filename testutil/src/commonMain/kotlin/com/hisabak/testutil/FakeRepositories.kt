@@ -105,8 +105,12 @@ class FakeBrandRepository(initial: List<Brand> = emptyList()) : BrandRepository 
             ?.let { DomainResult.Success(it) }
             ?: DomainResult.Failure(DomainError.NotFound("Brand", id.value))
 
+    // Mirrors BrandDao's two-way containment (LIKE both directions), not just exact equality —
+    // tests of exact-match guards over this method are meaningless against a stricter fake.
     override suspend fun findByNameLike(name: String): Brand? =
-        items.value.firstOrNull { it.name.equals(name, ignoreCase = true) }
+        items.value.firstOrNull {
+            it.name.contains(name, ignoreCase = true) || name.contains(it.name, ignoreCase = true)
+        }
 
     override suspend fun upsert(brand: Brand): DomainResult<Unit> {
         items.value = items.value.filterNot { it.id == brand.id } + brand

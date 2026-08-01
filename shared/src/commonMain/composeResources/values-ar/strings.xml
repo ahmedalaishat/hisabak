@@ -196,6 +196,10 @@
     <string name="transaction_note_label">ملاحظة (اختياري)</string>
     <string name="transaction_direction_deposit">إيداع</string>
     <string name="transaction_direction_withdrawal">سحب</string>
+    <string name="transaction_smart_hint">صِفها — "غداء 45 أمس"</string>
+    <string name="transaction_smart_parse">تعبئة ذكية</string>
+    <string name="transaction_smart_failed">تعذّر تحويل النص إلى معاملة — أضف مبلغًا واسمًا</string>
+    <string name="transaction_smart_create_brand">إنشاء "%1$s"</string>
     <string name="transaction_empty_filtered_title">لا توجد معاملات مطابقة</string>
     <string name="transaction_empty_filtered_subtitle">جرّب فترة أو علامة أو فئة مختلفة</string>
     <string name="transaction_empty_title">لا توجد معاملات بعد</string>
