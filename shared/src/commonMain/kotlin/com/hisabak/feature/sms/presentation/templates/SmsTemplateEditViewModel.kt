@@ -7,8 +7,10 @@ import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsRepository
 import com.hisabak.feature.sms.domain.SmsTemplateId
 import com.hisabak.feature.sms.domain.SmsTemplateRepository
+import com.hisabak.feature.sms.domain.SmsParserTemplate
 import com.hisabak.feature.sms.domain.template.PreviewSmsTemplateUseCase
 import com.hisabak.feature.sms.domain.template.SaveSmsTemplateUseCase
+import com.hisabak.feature.sms.domain.template.SetSmsTemplateEnabledUseCase
 import com.hisabak.feature.sms.domain.template.TagRole
 import com.hisabak.feature.sms.domain.template.TagSpan
 import com.hisabak.feature.sms.domain.usecase.ReparseSmsMessageUseCase
@@ -30,7 +32,11 @@ class SmsTemplateEditViewModel(
     private val saveTemplate: SaveSmsTemplateUseCase,
     private val previewTemplate: PreviewSmsTemplateUseCase,
     private val reparseSms: ReparseSmsMessageUseCase,
+    private val setTemplateEnabled: SetSmsTemplateEnabledUseCase,
 ) : BaseViewModel<SmsTemplateEditIntent, SmsTemplateEditUiState, SmsTemplateEditEffect>() {
+
+    /** Live template list for synchronous duplicate detection while tagging. */
+    private val allTemplates = MutableStateFlow<List<SmsParserTemplate>>(emptyList())
 
     override fun initialState() = SmsTemplateEditUiState(
         isLoading = templateId != null || sampleSmsId != null,
@@ -40,6 +46,14 @@ class SmsTemplateEditViewModel(
     private val patternForPreview = MutableStateFlow("")
 
     init {
+        viewModelScope.launch {
+            templateRepository.observeAll().collect { templates ->
+                allTemplates.value = templates
+                // Re-evaluate the current draft: a toggle on the templates screen (or the
+                // save itself) changes what "duplicate" means.
+                if (!state.value.isLoading) applyTokens(state.value.tokens)
+            }
+        }
         viewModelScope.launch { loadInitial() }
         viewModelScope.launch {
             patternForPreview.collectLatest { pattern ->
@@ -110,6 +124,13 @@ class SmsTemplateEditViewModel(
         val spans = tokens.mapNotNull { t -> t.role?.let { TagSpan(it, t.start, t.end) } }
         val pattern = if (sample.isBlank()) "" else deriveTemplatePattern(sample, spans)
         val fields = if (pattern.isBlank()) null else previewFields(pattern, sample)?.fields
+        val duplicate = if (pattern.isBlank()) {
+            null
+        } else {
+            allTemplates.value
+                .firstOrNull { it.pattern == pattern && it.id != templateId }
+                ?.let { SmsTemplateEditUiState.DuplicateInfo(id = it.id, enabled = it.enabled) }
+        }
         // An unchanged pattern won't re-emit through the StateFlow, so keep the current inbox
         // preview instead of blanking it forever.
         val patternChanged = pattern != state.value.pattern
@@ -124,6 +145,7 @@ class SmsTemplateEditViewModel(
                     .joinToString(" ")
                     .ifBlank { null },
                 validationError = if (sample.isBlank()) null else saveTemplate.validate(sample, spans),
+                duplicate = duplicate,
                 inboxPreview = if (patternChanged) null else inboxPreview,
                 isLoading = loading,
             )
@@ -134,6 +156,25 @@ class SmsTemplateEditViewModel(
     private fun save() {
         val s = state.value
         if (!s.canSave) return
+        val duplicate = s.duplicate
+        if (duplicate != null && !duplicate.enabled) {
+            // The format is already taught, just switched off — the action is to switch it
+            // back on (and import the source message, when there is one).
+            setState { copy(isSaving = true, generalError = null) }
+            viewModelScope.launch {
+                when (val result = setTemplateEnabled(duplicate.id, true)) {
+                    is DomainResult.Success -> {
+                        sampleSmsId?.let { reparseSms(it) }
+                        setState { copy(isSaving = false) }
+                        sendEffect(SmsTemplateEditEffect.Saved)
+                    }
+                    is DomainResult.Failure -> setState {
+                        copy(isSaving = false, generalError = result.error.message)
+                    }
+                }
+            }
+            return
+        }
         val spans = s.tokens.mapNotNull { t -> t.role?.let { TagSpan(it, t.start, t.end) } }
         setState { copy(isSaving = true, generalError = null) }
         viewModelScope.launch {

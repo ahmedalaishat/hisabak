@@ -33,7 +33,11 @@ import com.hisabak.shared.resources.Res
 import com.hisabak.shared.resources.action_save
 import com.hisabak.shared.resources.action_saving
 import com.hisabak.shared.resources.sms_template_default_readonly
+import com.hisabak.shared.resources.sms_template_enable
+import com.hisabak.shared.resources.sms_template_enable_import
 import com.hisabak.shared.resources.sms_template_error_anchor
+import com.hisabak.shared.resources.sms_template_exists
+import com.hisabak.shared.resources.sms_template_exists_disabled
 import com.hisabak.shared.resources.sms_template_error_amount_invalid
 import com.hisabak.shared.resources.sms_template_error_amount_missing
 import com.hisabak.shared.resources.sms_template_matches
@@ -190,6 +194,17 @@ fun SmsTemplateEditScreen(
             }
         }
 
+        state.duplicate?.let { duplicate ->
+            Text(
+                text = stringResource(
+                    if (duplicate.enabled) Res.string.sms_template_exists
+                    else Res.string.sms_template_exists_disabled,
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
         state.validationError?.let { error ->
             Text(
                 text = stringResource(
@@ -211,6 +226,9 @@ fun SmsTemplateEditScreen(
             text = stringResource(
                 when {
                     state.isSaving -> Res.string.action_saving
+                    state.duplicate?.enabled == false && state.importsSample ->
+                        Res.string.sms_template_enable_import
+                    state.duplicate?.enabled == false -> Res.string.sms_template_enable
                     state.importsSample -> Res.string.sms_template_save_import
                     else -> Res.string.sms_template_save
                 },

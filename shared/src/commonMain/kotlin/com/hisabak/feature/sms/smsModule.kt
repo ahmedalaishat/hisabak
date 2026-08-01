@@ -121,6 +121,7 @@ val smsModule = module {
             saveTemplate = get(),
             previewTemplate = get(),
             reparseSms = get(),
+            setTemplateEnabled = get(),
         )
     }
 
