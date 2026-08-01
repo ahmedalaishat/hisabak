@@ -85,6 +85,7 @@ fun SmsInboxScreen(
     onConfirmSuggestion: (SmsMessageId) -> Unit = {},
     onDismissSuggestion: (SmsMessageId) -> Unit = {},
     onCreateTemplate: (SmsMessageId) -> Unit = {},
+    onReviewTransaction: (String) -> Unit = {},
 ) {
     Box(modifier.fillMaxSize()) {
         LazyColumn(
@@ -131,6 +132,7 @@ fun SmsInboxScreen(
                         onConfirmSuggestion = { onConfirmSuggestion(row.id) },
                         onDismissSuggestion = { onDismissSuggestion(row.id) },
                         onCreateTemplate = { onCreateTemplate(row.id) },
+                        onReviewTransaction = { row.transactionId?.let { onReviewTransaction(it.value) } },
                         modifier = Modifier.animateItem(),
                     )
                 }
@@ -272,6 +274,7 @@ private fun SmsRowCard(
     onConfirmSuggestion: () -> Unit,
     onDismissSuggestion: () -> Unit,
     onCreateTemplate: () -> Unit,
+    onReviewTransaction: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val status = when {
@@ -436,13 +439,19 @@ private fun SmsRowCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (row.isLinked && row.suggestedBrand != null) {
-                    // Provenance: this linked transaction came from a confirmed AI parse.
+                    // Provenance: this linked transaction came from a confirmed AI parse — an
+                    // AI read deserves a human glance, so jump straight to the transaction.
                     Badge(
                         label = stringResource(Res.string.sms_ai_parsed),
                         tone = BadgeTone.Info,
                         dot = true,
                     )
                     Spacer(Modifier.weight(1f))
+                    HisabakButton(
+                        text = stringResource(Res.string.sms_review_transaction),
+                        onClick = onReviewTransaction,
+                        variant = ButtonVariant.Ghost,
+                    )
                 }
                 if (!row.isLinked && row.parsedAmount == null) {
                     // Teach the app this bank's format — opens the template editor seeded

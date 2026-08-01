@@ -4,6 +4,7 @@ import com.hisabak.core.common.Money
 import com.hisabak.core.presentation.ViewEffect
 import com.hisabak.core.presentation.ViewIntent
 import com.hisabak.core.presentation.ViewState
+import com.hisabak.feature.transaction.domain.TransactionId
 import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessageId
 import kotlin.time.Instant
@@ -15,6 +16,8 @@ data class SmsInboxRow(
     val parsedBrand: String?,
     val parsedAmount: Money?,
     val isLinked: Boolean,
+    /** The created transaction, when linked — lets AI-parsed rows offer "Review transaction". */
+    val transactionId: TransactionId? = null,
     val suggestedBrand: String? = null,
     val suggestedAmount: Money? = null,
     val suggestedOccurredAt: Instant? = null,

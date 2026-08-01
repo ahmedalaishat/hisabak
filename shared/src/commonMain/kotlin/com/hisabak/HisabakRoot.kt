@@ -107,7 +107,7 @@ import org.koin.compose.koinInject
 class PlatformSlots(
     val onboarding: @Composable () -> Unit,
     val restore: @Composable () -> Unit,
-    val smsInbox: @Composable (onCreateTemplate: (String) -> Unit, Modifier) -> Unit,
+    val smsInbox: @Composable (onCreateTemplate: (String) -> Unit, onReviewTransaction: (String) -> Unit, Modifier) -> Unit,
     val settings: @Composable (onOpenBackup: () -> Unit, onOpenSmsTemplates: () -> Unit, Modifier) -> Unit,
     val backup: @Composable (Modifier) -> Unit,
     val appLockGate: @Composable (content: @Composable () -> Unit) -> Unit = { it() },
@@ -344,6 +344,7 @@ private fun HisabakNav(slots: PlatformSlots) {
             entry<SmsKey> {
                 slots.smsInbox(
                     { smsId -> navigator.navigate(SmsTemplateEditKey(templateId = null, sampleSmsId = smsId)) },
+                    { txId -> navigator.navigate(TransactionEditKey(id = txId)) },
                     Modifier.fillMaxSize(),
                 )
             }
