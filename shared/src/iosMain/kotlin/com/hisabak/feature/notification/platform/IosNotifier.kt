@@ -50,7 +50,23 @@ class IosNotifier : Notifier {
         brandId = if (alert.categoryId == null) alert.brandId else null,
     )
 
-    private fun post(id: String, title: String, body: String, categoryId: String?, brandId: String?) {
+    override fun postReviewNeeded(title: String, message: String) = post(
+        id = "review-needed",
+        title = title,
+        body = message,
+        categoryId = null,
+        brandId = null,
+        openInbox = true,
+    )
+
+    private fun post(
+        id: String,
+        title: String,
+        body: String,
+        categoryId: String?,
+        brandId: String?,
+        openInbox: Boolean = false,
+    ) {
         val content = UNMutableNotificationContent().apply {
             setTitle(title)
             setBody(body)
@@ -58,6 +74,7 @@ class IosNotifier : Notifier {
                 buildMap<Any?, Any?> {
                     categoryId?.let { put(USER_INFO_CATEGORY_ID, it) }
                     brandId?.let { put(USER_INFO_BRAND_ID, it) }
+                    if (openInbox) put(USER_INFO_OPEN_INBOX, "1")
                 },
             )
         }
@@ -69,6 +86,7 @@ class IosNotifier : Notifier {
     companion object {
         const val USER_INFO_CATEGORY_ID = "categoryId"
         const val USER_INFO_BRAND_ID = "brandId"
+        const val USER_INFO_OPEN_INBOX = "openInbox"
     }
 }
 
@@ -99,4 +117,8 @@ class IosNotificationStrings : NotificationStrings {
 
     override fun budgetMessage(spent: String, limit: String): String =
         s(Res.string.notification_budget_message, spent, limit)
+
+    override fun reviewNeededTitle(): String = s(Res.string.notification_review_title)
+
+    override fun reviewNeededMessage(): String = s(Res.string.notification_review_message)
 }

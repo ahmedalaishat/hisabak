@@ -40,6 +40,7 @@ class MainActivity : FragmentActivity() {
 
     private val categoryFocusBus: CategoryFocusBus by inject()
     private val brandEditBus: BrandEditBus by inject()
+    private val inboxOpenBus: com.hisabak.feature.sms.presentation.InboxOpenBus by inject()
 
     // Apply the saved app language before any resources are resolved.
     override fun attachBaseContext(newBase: Context) {
@@ -71,6 +72,7 @@ class MainActivity : FragmentActivity() {
     private fun handleFocusIntent(intent: Intent?) {
         intent?.getStringExtra(SystemNotifier.EXTRA_CATEGORY_ID)?.let(categoryFocusBus::request)
         intent?.getStringExtra(SystemNotifier.EXTRA_BRAND_ID)?.let(brandEditBus::request)
+        if (intent?.getBooleanExtra(SystemNotifier.EXTRA_OPEN_INBOX, false) == true) inboxOpenBus.request()
     }
 
     private fun androidPlatformSlots() = PlatformSlots(

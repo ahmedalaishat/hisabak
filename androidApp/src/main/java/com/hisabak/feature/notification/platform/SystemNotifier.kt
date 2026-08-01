@@ -107,6 +107,28 @@ class SystemNotifier(private val context: Context) : Notifier {
         NotificationManagerCompat.from(context).notify(id, builder.build())
     }
 
+    override fun postReviewNeeded(title: String, message: String) {
+        if (!hasPermission()) return
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(EXTRA_OPEN_INBOX, true)
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            REVIEW_NOTIFICATION_ID,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val builder = NotificationCompat.Builder(context, CHANNEL_TRANSACTIONS)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        NotificationManagerCompat.from(context).notify(REVIEW_NOTIFICATION_ID, builder.build())
+    }
+
     private fun hasPermission(): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(
@@ -118,6 +140,8 @@ class SystemNotifier(private val context: Context) : Notifier {
         const val CHANNEL_ID = "budget_alerts"
         const val CHANNEL_TRANSACTIONS = "transaction_updates"
         const val EXTRA_CATEGORY_ID = "category_id"
+        const val EXTRA_OPEN_INBOX = "open_inbox"
+        private const val REVIEW_NOTIFICATION_ID = 9001
         const val EXTRA_BRAND_ID = "brand_id"
     }
 }

@@ -45,9 +45,15 @@ class CaptureTransactionUseCase(
                 is CaptureResult.StoredUnparsed ->
                     analytics.log(AnalyticsEvent.SmsParseFailed(reason = "validationfailed"))
             }
-            is DomainResult.Failure ->
+            is DomainResult.Failure -> {
                 // The error *type* only — never the raw message text, to keep analytics PII-free.
                 analytics.log(AnalyticsEvent.SmsParseFailed(reason = result.error::class.simpleName?.lowercase() ?: "unknown"))
+                // Background captures have no screen: the "saved for review" notification is
+                // the only honest feedback (the message IS stored, with the AI fallback on it).
+                if (source.notifiesOnRecord && result.error is com.hisabak.core.common.DomainError.ValidationFailed) {
+                    recordedNotifier.notifyReviewNeeded()
+                }
+            }
         }
         return result
     }

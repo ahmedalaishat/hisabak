@@ -12,4 +12,6 @@
     <string name="notification_channel_budget_desc">Alerts when a category nears or exceeds its monthly limit</string>
     <string name="notification_channel_tx_name">Transaction updates</string>
     <string name="notification_channel_tx_desc">Confirms transactions captured from your bank SMS</string>
+    <string name="notification_review_title">Saved for review</string>
+    <string name="notification_review_message">A message couldn\'t be read automatically — tap to review it in the SMS inbox.</string>
 </resources>

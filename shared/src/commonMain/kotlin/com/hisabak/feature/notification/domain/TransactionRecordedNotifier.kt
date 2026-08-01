@@ -20,6 +20,11 @@ class TransactionRecordedNotifier(
     private val currency: Currency,
     private val strings: NotificationStrings,
 ) {
+    /** The fallback counterpart of [notify]: the message landed in the inbox for review. */
+    fun notifyReviewNeeded() {
+        notifier.postReviewNeeded(strings.reviewNeededTitle(), strings.reviewNeededMessage())
+    }
+
     suspend fun notify(transaction: Transaction) {
         val brand = brands.getById(transaction.brandId).getOrNull() ?: return
         val category = brand.categoryId?.let { categories.getById(it).getOrNull() }

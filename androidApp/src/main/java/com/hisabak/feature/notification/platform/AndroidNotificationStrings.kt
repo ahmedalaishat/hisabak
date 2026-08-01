@@ -40,4 +40,10 @@ class AndroidNotificationStrings(private val context: Context) : NotificationStr
 
     override fun budgetMessage(spent: String, limit: String): String =
         res().getString(R.string.notification_budget_message, spent, limit)
+
+    override fun reviewNeededTitle(): String =
+        context.getString(R.string.notification_review_title)
+
+    override fun reviewNeededMessage(): String =
+        context.getString(R.string.notification_review_message)
 }

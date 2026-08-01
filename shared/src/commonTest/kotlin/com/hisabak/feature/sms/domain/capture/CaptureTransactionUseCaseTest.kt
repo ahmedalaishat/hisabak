@@ -84,6 +84,23 @@ class CaptureTransactionUseCaseTest {
     private val capture = CaptureTransactionUseCase(ingest, recordedNotifier, limitMonitor, analytics)
 
     @Test
+    fun `an unmatched background capture posts the saved-for-review notification`() = runTest {
+        val result = capture("mystery bank text", CaptureSource.SHORTCUT)
+
+        assertTrue(result is DomainResult.Failure)
+        val (title, message) = notifier.reviewNeeded.single()
+        assertEquals("Saved for review", title)
+        assertTrue(message.contains("tap to review"))
+    }
+
+    @Test
+    fun `an unmatched manual paste posts no review notification`() = runTest {
+        capture("mystery bank text", CaptureSource.MANUAL_PASTE)
+
+        assertTrue(notifier.reviewNeeded.isEmpty())
+    }
+
+    @Test
     fun `external source posts the recorded confirmation`() = runTest {
         val result = capture("Purchase of AED 42.00 at Lulu done", CaptureSource.SHARE)
 

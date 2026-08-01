@@ -12,4 +12,6 @@ interface NotificationStrings {
     fun budgetReachedTitle(category: String): String
     fun budgetLevelTitle(category: String, level: Int): String
     fun budgetMessage(spent: String, limit: String): String
+    fun reviewNeededTitle(): String
+    fun reviewNeededMessage(): String
 }
