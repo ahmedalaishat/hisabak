@@ -91,6 +91,7 @@ import com.hisabak.ui.components.BottomNavTab
 import com.hisabak.ui.components.DetailTopBar
 import com.hisabak.ui.components.HisabakBottomNav
 import com.hisabak.ui.components.HisabakTopBar
+import com.hisabak.ui.components.clearFocusOnScroll
 import com.hisabak.ui.components.clearFocusOnTap
 import com.hisabak.ui.icons.HugeIcons
 import com.hisabak.ui.theme.HisabakTheme
@@ -432,7 +433,8 @@ private fun HisabakNav(slots: PlatformSlots) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .clearFocusOnTap(),
+                .clearFocusOnTap()
+                .clearFocusOnScroll(),
         )
     }
 }

@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -86,6 +87,10 @@ fun SmsTemplateEditScreen(
         return
     }
 
+    // Tagging and saving are the post-typing phases; the keyboard would occlude the token
+    // board (chips consume their taps, so the global tap-outside can't do this).
+    val focusManager = LocalFocusManager.current
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -130,7 +135,10 @@ fun SmsTemplateEditScreen(
                             label = role.label(),
                             colorKey = role.colorKey(),
                             selected = state.activeRole == role,
-                            onClick = { onRoleSelect(role) },
+                            onClick = {
+                                focusManager.clearFocus()
+                                onRoleSelect(role)
+                            },
                         )
                     }
                 }
@@ -141,7 +149,13 @@ fun SmsTemplateEditScreen(
                         verticalArrangement = Arrangement.spacedBy(Spacing.s1),
                     ) {
                         state.tokens.forEachIndexed { index, token ->
-                            TokenChip(token = token, onTap = { onTokenTap(index) })
+                            TokenChip(
+                                token = token,
+                                onTap = {
+                                    focusManager.clearFocus()
+                                    onTokenTap(index)
+                                },
+                            )
                         }
                     }
                 }
@@ -229,7 +243,10 @@ fun SmsTemplateEditScreen(
                     else -> Res.string.sms_template_save
                 },
             ),
-            onClick = onSave,
+            onClick = {
+                focusManager.clearFocus()
+                onSave()
+            },
             variant = ButtonVariant.Primary,
             enabled = state.canSave,
             fullWidth = true,

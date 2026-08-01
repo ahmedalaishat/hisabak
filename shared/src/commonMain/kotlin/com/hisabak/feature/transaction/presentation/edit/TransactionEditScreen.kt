@@ -97,6 +97,10 @@ fun TransactionEditScreen(
         return
     }
 
+    // Semantic dismissal points: Save ends the interaction, and the date dialog fights an
+    // open keyboard for space.
+    val keyboard = LocalSoftwareKeyboardController.current
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -185,7 +189,10 @@ fun TransactionEditScreen(
             )
             HisabakButton(
                 text = formatDate(state.occurredAt),
-                onClick = onDateClick,
+                onClick = {
+                    keyboard?.hide()
+                    onDateClick()
+                },
                 variant = ButtonVariant.Secondary,
                 leadingIcon = HugeIcons.CalendarToday,
                 fullWidth = true,
@@ -205,7 +212,10 @@ fun TransactionEditScreen(
 
         HisabakButton(
             text = stringResource(if (state.isSaving) Res.string.action_saving else Res.string.action_save),
-            onClick = onSave,
+            onClick = {
+                keyboard?.hide()
+                onSave()
+            },
             variant = ButtonVariant.Primary,
             enabled = state.canSave,
             fullWidth = true,
