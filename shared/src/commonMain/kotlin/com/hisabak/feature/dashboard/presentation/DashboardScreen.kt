@@ -716,7 +716,9 @@ private fun CategoriesTab(
                 prevTotal = snap.trendPrevTotalByCategory[option.id] ?: 0L,
             )
         }
-        .filter { it.spent != 0L || periodLimit(it.limitSeries, period) != null }
+        // Activity, not the net: a savings category whose withdrawals fully repay its deposits
+        // nets to 0 but must still show — only truly inactive categories drop out.
+        .filter { row -> row.series.any { it.amountMinor != 0L } || periodLimit(row.limitSeries, period) != null }
         .sortedByDescending { abs(it.spent) }
 
     LazyColumn(
@@ -778,7 +780,8 @@ private fun CategoryLimitCard(
 ) {
     val color = CategoryStyle.color(row.option.color)
     val limit = periodLimit(row.limitSeries, period)
-    val trendPct = row.prevTotal.takeIf { it != 0L }
+    // Percent change is meaningless off a non-positive base (a savings period can net negative).
+    val trendPct = row.prevTotal.takeIf { it > 0L }
         ?.let { (row.spent - it).toDouble() / it.toDouble() * 100.0 }
     val risingIsGood = row.option.type != CategoryType.EXPENSES
 
@@ -821,7 +824,7 @@ private fun CategoryLimitCard(
                 if (trendPct != null) {
                     TrendBadge(pct = trendPct, positiveIsGood = risingIsGood)
                 }
-                if (row.series.isNotEmpty() && row.spent != 0L) {
+                if (row.series.any { it.amountMinor != 0L }) {
                     val chart = buildCategoryChart(row.series, row.limitSeries, period)
                     AreaLineChart(
                         values = chart.values,

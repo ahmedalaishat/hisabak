@@ -35,6 +35,7 @@ fun TransactionEditRoute(
         onBrandSelected = { viewModel.onIntent(TransactionEditIntent.BrandSelected(it)) },
         onNoteChange = { viewModel.onIntent(TransactionEditIntent.NoteChanged(it)) },
         onTypeSelected = { viewModel.onIntent(TransactionEditIntent.TypeSelected(it)) },
+        onDirectionChange = { viewModel.onIntent(TransactionEditIntent.DirectionChanged(it)) },
         onDateClick = { viewModel.onIntent(TransactionEditIntent.DatePickerOpened) },
         onDateSelected = { viewModel.onIntent(TransactionEditIntent.DateChanged(it)) },
         onDateDismiss = { viewModel.onIntent(TransactionEditIntent.DatePickerDismissed) },

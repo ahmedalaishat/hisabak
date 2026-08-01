@@ -435,10 +435,11 @@ private fun TransactionRowContent(
     val tone = when (row.categoryType) {
         CategoryType.INCOME -> AmountTone.Income
         CategoryType.EXPENSES -> AmountTone.Expense
+        CategoryType.SAVINGS -> AmountTone.Savings
+        CategoryType.INVESTMENT -> AmountTone.Investment
         // Uncategorized (e.g. just captured from SMS) has no income/expense meaning yet —
         // show it neutral and unsigned rather than masquerading as green income.
         null -> AmountTone.Neutral
-        else -> if (row.amount.amountMinor >= 0) AmountTone.Income else AmountTone.Expense
     }
     val (bg, fg) = tintPairForColor(row.categoryColor)
     val amountValue = row.amount.amountMinor.toMajorDouble()
@@ -463,8 +464,9 @@ private fun TransactionRowContent(
         },
         trailing = {
             Column(horizontalAlignment = Alignment.End) {
+                // Signed value: a savings/investment withdrawal is stored negative and must read −.
                 AmountText(
-                    value = abs(amountValue),
+                    value = amountValue,
                     currency = row.amount.currency.code,
                     showSign = true,
                     tone = tone,

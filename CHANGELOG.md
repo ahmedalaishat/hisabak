@@ -7,6 +7,14 @@ All notable changes to Hisabak are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **Savings & investment withdrawals** — savings and investment transactions now have a
+  direction: deposit or withdrawal. A withdrawal takes money back out of the bucket, so the
+  dashboard Savings/Invest pills and your cash reflect it, and a brand's total shows the net
+  balance. This also makes loan tracking work: put a person's brand in a savings category,
+  record what you lent as deposits and repayments as withdrawals, and the brand shows what's
+  still outstanding — a fully repaid loan reads 0 instead of disappearing. Savings and
+  investment amounts in the transaction list now use their own colors (blue/purple) with a
+  true +/− sign instead of rendering like income.
 - **Delete a transaction** — added one by mistake? Open it from the Transactions tab and use
   "Delete transaction" at the bottom of the sheet; a confirmation step guards the tap. The
   amount comes straight back out of your totals and budgets. If the transaction was captured

@@ -97,10 +97,15 @@ fun AmountText(
         AmountTone.Investment -> c.investment
         else -> MaterialTheme.colorScheme.onSurface
     }
-    // Sign follows the resolved tone (income/savings/investment → +, expense → −) rather than the
-    // raw value sign, so callers that pass an absolute value with an explicit tone (e.g. the
-    // transaction list and SMS inbox) still render the correct − for expenses.
-    val sign = if (showSign && tone != AmountTone.Neutral) (if (resolved == AmountTone.Expense) "−" else "+") else ""
+    // Sign: expenses always −; other tones follow the value's sign so a signed value (e.g. a
+    // savings withdrawal) reads − while callers that pass absolute values keep their +. Neutral
+    // shows − for negatives only, never a +.
+    val sign = when {
+        !showSign -> ""
+        resolved == AmountTone.Expense || value < 0 -> "−"
+        resolved == AmountTone.Neutral -> ""
+        else -> "+"
+    }
     // Number and suffix are separate Texts so Arabic-Indic digits don't bidi-reorder; the Row
     // follows the ambient layout direction, so the dirham glyph falls on the natural side (left in
     // English, right in Arabic).
@@ -138,11 +143,14 @@ fun MoneyText(
     symbolScale: Float = 0.8f,
 ) {
     val arabic = rememberIsArabic()
-    val parts = compactAmountParts(amountMinor / 100.0, arabic)
+    val parts = compactAmountParts(abs(amountMinor / 100.0), arabic)
     // Geist Mono has no Arabic-Indic glyphs, so Arabic figures fall back to the system font. Render
     // them in Tajawal (the Arabic UI face) instead, keeping tabular alignment and a consistent look.
     val figureStyle = if (arabic) style.copy(fontFamily = LocalHisabakFonts.current.arabic) else style
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        // True minus before the glyph, matching AmountText — a bucket that nets negative (more
+        // withdrawn than deposited) must not render the sign inside the figures after the glyph.
+        if (amountMinor < 0) Text("−", style = figureStyle, color = color)
         DirhamGlyph(size = style.fontSize * symbolScale, tint = color)
         Spacer(Modifier.width(3.dp))
         Text(parts.number, style = figureStyle, color = color, maxLines = 1)

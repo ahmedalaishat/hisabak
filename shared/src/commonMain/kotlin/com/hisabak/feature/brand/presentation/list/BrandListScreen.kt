@@ -308,11 +308,13 @@ private fun BrandRowItem(
         },
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (row.totalMinor > 0L) {
+                // Any activity shows a total — a fully-repaid savings brand reads 0, an
+                // over-withdrawn one reads − (Neutral tone never shows a +).
+                if (row.transactionCount > 0) {
                     AmountText(
                         value = row.totalMinor / 100.0,
                         tone = AmountTone.Neutral,
-                        showSign = false,
+                        showSign = true,
                         size = 14.sp,
                     )
                 }
