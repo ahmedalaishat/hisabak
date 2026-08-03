@@ -2,6 +2,7 @@ package com.hisabak.core.domain.backup
 
 import com.hisabak.core.data.backup.AesGcmBackupCrypto
 import com.hisabak.core.data.backup.JsonBackupCodec
+import com.hisabak.testutil.FakeAppPreferences
 import com.hisabak.testutil.FakeBackupRemote
 import com.hisabak.testutil.FakeBackupRepository
 import com.hisabak.testutil.TestClock
@@ -18,7 +19,7 @@ class BackupUseCasesTest {
     private val crypto = AesGcmBackupCrypto()
 
     private fun runBackup(repo: FakeBackupRepository, remote: FakeBackupRemote, schema: Int = 2) =
-        RunBackupUseCase(repo, codec, crypto, remote, TestClock(), appVersionCode = 8, schemaVersion = schema)
+        RunBackupUseCase(repo, codec, crypto, remote, TestClock(), FakeAppPreferences(), appVersionCode = 8, schemaVersion = schema)
 
     private fun restore(repo: FakeBackupRepository, remote: FakeBackupRemote, schema: Int = 2) =
         RestoreFromRemoteUseCase(repo, codec, crypto, remote, schemaVersion = schema)

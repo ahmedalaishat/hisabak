@@ -3,13 +3,9 @@
 package com.hisabak.core.data.backup
 
 import com.hisabak.core.domain.AppPreferences
-import com.hisabak.core.domain.analytics.Analytics
-import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.core.domain.backup.AutoBackupPeriod
 import com.hisabak.core.domain.backup.AutoBackupScheduler
-import com.hisabak.core.domain.backup.BackupPassphraseStore
-import com.hisabak.core.domain.backup.BackupRunResult
-import com.hisabak.core.domain.backup.RunBackupUseCase
+import com.hisabak.core.domain.backup.CatchUpAutoBackupUseCase
 import com.hisabak.core.domain.backup.autoBackupInterval
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
@@ -50,9 +46,9 @@ class IosAutoBackupScheduler : AutoBackupScheduler {
 
 /**
  * Registers the auto-backup task handler. Must run before the app finishes launching —
- * called from `iOSApp.swift`'s init via `startIosApp`. The handler mirrors androidApp's
- * `BackupWorker`: skip when disabled, never encrypt without the stored passphrase, and
- * resubmit the next occurrence.
+ * called from `iOSApp.swift`'s init via `startIosApp`. The backup itself is the shared
+ * [CatchUpAutoBackupUseCase] (same rules as the foreground catch-up, and skips when a
+ * recent foreground backup already covered this window).
  */
 internal fun registerAutoBackupTask(appScope: CoroutineScope) {
     BGTaskScheduler.sharedScheduler.registerForTaskWithIdentifier(
@@ -63,18 +59,12 @@ internal fun registerAutoBackupTask(appScope: CoroutineScope) {
         val job = appScope.launch {
             val koin = KoinPlatform.getKoin()
             val preferences = koin.get<AppPreferences>()
-            val period = preferences.autoBackupPeriod.first()
-            val enabled = preferences.backupEnabled.first()
             // Chain the next run first so a crash mid-backup doesn't silently stop the schedule.
-            koin.get<AutoBackupScheduler>().schedule(period, enabled)
-            if (!enabled || period == AutoBackupPeriod.NEVER) return@launch
-            val passphrase = if (preferences.backupEncryptionEnabled.first()) {
-                koin.get<BackupPassphraseStore>().get() ?: return@launch // can't encrypt unattended
-            } else {
-                null
-            }
-            val result = koin.get<RunBackupUseCase>().invoke(passphrase)
-            koin.get<Analytics>().log(AnalyticsEvent.BackupRunCompleted(result is BackupRunResult.Success))
+            koin.get<AutoBackupScheduler>().schedule(
+                preferences.autoBackupPeriod.first(),
+                preferences.backupEnabled.first(),
+            )
+            koin.get<CatchUpAutoBackupUseCase>().invoke()
         }
         job.invokeOnCompletion { refreshTask.setTaskCompletedWithSuccess(it == null) }
         refreshTask.expirationHandler = { job.cancel() }
