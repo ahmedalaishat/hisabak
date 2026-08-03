@@ -23,6 +23,7 @@ import com.hisabak.core.domain.backup.BackupAccountStore
 import com.hisabak.core.domain.backup.BackupCrypto
 import com.hisabak.core.domain.backup.BackupPassphraseStore
 import com.hisabak.core.domain.backup.BackupRemote
+import com.hisabak.core.domain.backup.backupFileName
 import com.hisabak.core.domain.security.BiometricAvailability
 import com.hisabak.core.platform.NoopAnalytics
 import com.hisabak.core.platform.security.IosBiometricAuthenticator
@@ -59,6 +60,7 @@ fun iosPlatformModule(gcmCipher: GcmCipher, aiSmsBridge: AiSmsBridge): Module = 
 
     single {
         AppConfig(
+            flavor = bundleFlavor(),
             seedData = bundleFlavor() == "staging",
             // False in every flavor: iOS has no SMS-read API. Unlike Android's staging (which
             // carries RECEIVE_SMS), near-automatic capture on iOS is the Shortcuts action.
@@ -86,5 +88,7 @@ fun iosPlatformModule(gcmCipher: GcmCipher, aiSmsBridge: AiSmsBridge): Module = 
         DataStoreBackupAccountStore(preferencesDataStore(BACKUP_ACCOUNT_STORE))
     }
     single<DriveAuthorizer> { IosDriveAuthorizer() }
-    single<BackupRemote> { IosDriveBackupRemote(get()) }
+    single<BackupRemote> {
+        IosDriveBackupRemote(get(), fileName = backupFileName(get<AppConfig>().flavor))
+    }
 }

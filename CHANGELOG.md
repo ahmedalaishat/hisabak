@@ -10,6 +10,10 @@ All notable changes to Hisabak are documented here. Format based on
 - **Auto-backup now actually keeps up on iPhone** — opening the app runs any overdue backup
   on the spot (both platforms), instead of waiting for a background slot the system may never
   grant. iOS background refresh stays as a bonus path for days the app isn't opened.
+- If Google Drive access expires or is revoked, the backup screen now offers **Connect Google
+  account** again instead of failing forever with no way to reconnect.
+- Staging builds back up to their own Drive file, so testing can no longer overwrite your real
+  backup (they previously shared one file).
 - Double-tapping a row that opens an editor (a brand, a category, a transaction) could crash
   the app; rapid re-taps are now ignored.
 

@@ -6,4 +6,6 @@ data class AppConfig(
     val smsAutoCapture: Boolean,
     val isDebug: Boolean,
     val versionCode: Int,
+    /** Product flavor ("prod" | "staging") — scopes the Drive backup file per flavor. */
+    val flavor: String,
 )

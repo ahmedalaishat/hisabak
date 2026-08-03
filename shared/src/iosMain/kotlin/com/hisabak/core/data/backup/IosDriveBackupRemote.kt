@@ -32,13 +32,16 @@ import platform.Foundation.setValue
  */
 class IosDriveBackupRemote(
     private val authorizer: DriveAuthorizer,
+    private val fileName: String,
 ) : BackupRemote {
 
     private val json = Json { ignoreUnknownKeys = true }
 
     override suspend fun findLatest(): RemoteBackup? {
+        // The name filter keeps flavors apart — the App Data Folder is shared across every
+        // client of the GCP project, so "latest file in the folder" could be another flavor's.
         val url = "$FILES_URL?spaces=appDataFolder&pageSize=1&orderBy=modifiedTime%20desc" +
-            "&fields=files(id,modifiedTime,size)"
+            "&q=name%3D%27$fileName%27&fields=files(id,modifiedTime,size)"
         val body = request("GET", url).decodeUtf8()
         return json.decodeFromString(FileListDto.serializer(), body).files.firstOrNull()?.let {
             RemoteBackup(
@@ -58,7 +61,7 @@ class IosDriveBackupRemote(
         request("GET", "$FILES_URL/$id?alt=media")
 
     private suspend fun createFile(): String {
-        val metadata = """{"name":"$FILE_NAME","parents":["appDataFolder"]}"""
+        val metadata = """{"name":"$fileName","parents":["appDataFolder"]}"""
         val body = request(
             "POST", FILES_URL, metadata.encodeToByteArray(), "application/json; charset=UTF-8",
         ).decodeUtf8()
@@ -87,13 +90,21 @@ class IosDriveBackupRemote(
             ) { data: NSData?, response: NSURLResponse?, error: NSError? ->
                 val code = (response as? NSHTTPURLResponse)?.statusCode?.toInt() ?: -1
                 when {
-                    error != null || code < 200 || code >= 300 -> cont.resume(
-                        Result.failure(
-                            BackupException(
-                                if (code == 401 || code == 403) BackupError.AuthRequired else BackupError.Network,
+                    error != null || code < 200 || code >= 300 -> {
+                        platform.Foundation.NSLog(
+                            "HisabakDrive: %@",
+                            "$method $url failed status=$code" +
+                                " error=${error?.localizedDescription ?: "-"}" +
+                                " body=${data?.toByteArray()?.decodeToString()?.take(500) ?: "-"}",
+                        )
+                        cont.resume(
+                            Result.failure(
+                                BackupException(
+                                    if (code == 401 || code == 403) BackupError.AuthRequired else BackupError.Network,
+                                ),
                             ),
-                        ),
-                    )
+                        )
+                    }
                     else -> cont.resume(Result.success(data?.toByteArray() ?: ByteArray(0)))
                 }
             }
@@ -116,6 +127,5 @@ class IosDriveBackupRemote(
     private companion object {
         const val FILES_URL = "https://www.googleapis.com/drive/v3/files"
         const val UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"
-        const val FILE_NAME = "hisabak-backup.bak"
     }
 }
