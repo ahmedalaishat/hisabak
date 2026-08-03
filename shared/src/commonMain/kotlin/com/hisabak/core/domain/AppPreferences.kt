@@ -45,4 +45,10 @@ interface AppPreferences {
     val passphraseConfirmedAt: Flow<Long>
 
     suspend fun setPassphraseConfirmedAt(value: Long)
+
+    /** When a backup last uploaded successfully (epoch millis); `0` if never — drives the
+     *  foreground catch-up that covers missed background auto-backup runs. */
+    val lastBackupAt: Flow<Long>
+
+    suspend fun setLastBackupAt(value: Long)
 }

@@ -22,6 +22,7 @@ class AppPreferencesDataStore(private val dataStore: DataStore<Preferences>) : A
     private val autoBackupPeriodKey = stringPreferencesKey("auto_backup_period")
     private val restoreOfferedKey = booleanPreferencesKey("restore_offered")
     private val passphraseConfirmedAtKey = longPreferencesKey("passphrase_confirmed_at")
+    private val lastBackupAtKey = longPreferencesKey("last_backup_at")
 
     override val onboardingCompleted: Flow<Boolean> =
         dataStore.data.map { it[onboardingKey] ?: false }
@@ -82,5 +83,12 @@ class AppPreferencesDataStore(private val dataStore: DataStore<Preferences>) : A
 
     override suspend fun setPassphraseConfirmedAt(value: Long) {
         dataStore.edit { it[passphraseConfirmedAtKey] = value }
+    }
+
+    override val lastBackupAt: Flow<Long> =
+        dataStore.data.map { it[lastBackupAtKey] ?: 0L }
+
+    override suspend fun setLastBackupAt(value: Long) {
+        dataStore.edit { it[lastBackupAtKey] = value }
     }
 }

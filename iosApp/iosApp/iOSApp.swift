@@ -5,6 +5,8 @@ import FirebaseCrashlytics
 
 @main
 struct iOSApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+
     // Koin + BGTaskScheduler registration must complete before launch finishes.
     init() {
         // Crash reporting only (no event analytics on iOS yet — see docs/kmp-migration.md B6).
@@ -24,6 +26,12 @@ struct iOSApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // BGAppRefreshTask is opportunistic, so an overdue auto-backup runs on foreground.
+            if phase == .active {
+                IosAppStartKt.onIosAppForeground()
+            }
         }
     }
 }

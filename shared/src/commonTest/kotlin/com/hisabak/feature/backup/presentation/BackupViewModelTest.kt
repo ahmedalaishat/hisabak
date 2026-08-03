@@ -43,7 +43,7 @@ class BackupViewModelTest : MainDispatcherTest() {
         scheduler: FakeAutoBackupScheduler = FakeAutoBackupScheduler(),
         analytics: FakeAnalytics = FakeAnalytics(),
     ): BackupViewModel {
-        val runBackup = RunBackupUseCase(repo, codec, crypto, remote, TestClock(), 8, 2)
+        val runBackup = RunBackupUseCase(repo, codec, crypto, remote, TestClock(), prefs, 8, 2)
         return BackupViewModel(prefs, passphrase, account, authorizer, runBackup, remote, scheduler, TestClock(), analytics)
     }
 

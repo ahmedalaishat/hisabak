@@ -42,7 +42,7 @@ class RestoreViewModelTest : MainDispatcherTest() {
     }
 
     private suspend fun seedEncryptedBackup(remote: FakeBackupRemote, passphrase: String) {
-        RunBackupUseCase(FakeBackupRepository(sampleBackupData()), codec, crypto, remote, TestClock(), 8, 2)
+        RunBackupUseCase(FakeBackupRepository(sampleBackupData()), codec, crypto, remote, TestClock(), FakeAppPreferences(), 8, 2)
             .invoke(passphrase)
     }
 

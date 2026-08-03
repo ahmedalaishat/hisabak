@@ -1,6 +1,7 @@
 package com.hisabak.core.domain.backup
 
 import com.hisabak.core.common.Clock
+import com.hisabak.core.domain.AppPreferences
 
 sealed interface BackupRunResult {
     data object Success : BackupRunResult
@@ -10,6 +11,7 @@ sealed interface BackupRunResult {
 /**
  * Snapshots the data, encodes it, optionally encrypts it with [passphrase] (null = no encryption),
  * and uploads it to the remote. The caller resolves the encryption policy + passphrase.
+ * A successful upload stamps [AppPreferences.lastBackupAt], which the foreground catch-up reads.
  */
 class RunBackupUseCase(
     private val repository: BackupRepository,
@@ -17,6 +19,7 @@ class RunBackupUseCase(
     private val crypto: BackupCrypto,
     private val remote: BackupRemote,
     private val clock: Clock,
+    private val preferences: AppPreferences,
     private val appVersionCode: Int,
     private val schemaVersion: Int,
 ) {
@@ -35,6 +38,7 @@ class RunBackupUseCase(
             val encoded = codec.encode(envelope)
             val bytes = if (passphrase != null) crypto.encrypt(encoded, passphrase) else encoded
             remote.upload(bytes)
+            preferences.setLastBackupAt(clock.now().toEpochMilliseconds())
             BackupRunResult.Success
         }
     } catch (e: BackupException) {

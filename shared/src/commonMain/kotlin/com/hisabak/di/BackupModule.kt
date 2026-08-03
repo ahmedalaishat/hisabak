@@ -6,6 +6,7 @@ import com.hisabak.core.data.backup.RoomBackupRepository
 import com.hisabak.core.data.local.HisabakDatabase
 import com.hisabak.core.domain.backup.BackupCodec
 import com.hisabak.core.domain.backup.BackupRepository
+import com.hisabak.core.domain.backup.CatchUpAutoBackupUseCase
 import com.hisabak.core.domain.backup.RestoreFromRemoteUseCase
 import com.hisabak.core.domain.backup.RunBackupUseCase
 import com.hisabak.feature.backup.presentation.BackupViewModel
@@ -36,8 +37,19 @@ val backupModule = module {
             crypto = get(),
             remote = get(),
             clock = get(),
+            preferences = get(),
             appVersionCode = get<AppConfig>().versionCode,
             schemaVersion = HisabakDatabase.SCHEMA_VERSION,
+        )
+    }
+    // single: the in-flight guard must be shared across every trigger (launch, foreground, BG task).
+    single {
+        CatchUpAutoBackupUseCase(
+            preferences = get(),
+            passphraseStore = get(),
+            runBackup = get(),
+            clock = get(),
+            analytics = get(),
         )
     }
     factory {

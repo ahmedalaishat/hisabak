@@ -6,6 +6,7 @@ import com.hisabak.core.data.backup.registerAutoBackupTask
 import com.hisabak.core.data.local.DatabaseSeeder
 import com.hisabak.core.domain.AppPreferences
 import com.hisabak.core.domain.backup.AutoBackupScheduler
+import com.hisabak.core.domain.backup.CatchUpAutoBackupUseCase
 import com.hisabak.di.APPLICATION_SCOPE
 import com.hisabak.di.iosPlatformModule
 import com.hisabak.di.sharedModules
@@ -41,13 +42,30 @@ fun startIosApp(gcmCipher: GcmCipher, aiSmsBridge: AiSmsBridge) {
         if (config.seedData) seeder.seedIfEmpty() else seeder.seedStartersIfEmpty()
     }
     koin.get<CategoryLimitMonitor>().start(appScope)
-    // Reconcile the auto-backup schedule with the current settings on each launch.
+    // Reconcile the auto-backup schedule with the current settings on each launch, then catch up
+    // on any overdue backup — BGAppRefreshTask is opportunistic, so foreground runs are the
+    // reliable path (also covers headless launches, e.g. a Shortcuts capture).
     appScope.launch {
         val preferences = koin.get<AppPreferences>()
         koin.get<AutoBackupScheduler>().schedule(
             preferences.autoBackupPeriod.first(),
             preferences.backupEnabled.first(),
         )
+        koin.get<CatchUpAutoBackupUseCase>().invoke()
+    }
+}
+
+/**
+ * Called from `iOSApp.swift` whenever the scene becomes active. A long-suspended app can cross
+ * its auto-backup period without ever relaunching, so foreground activation also catches up.
+ * The use case's in-flight guard + elapsed check make overlapping calls (launch + first
+ * activation) a no-op.
+ */
+fun onIosAppForeground() {
+    if (!started) return
+    val koin = KoinPlatform.getKoin()
+    koin.get<CoroutineScope>(APPLICATION_SCOPE).launch {
+        koin.get<CatchUpAutoBackupUseCase>().invoke()
     }
 }
 

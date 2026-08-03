@@ -7,6 +7,9 @@ All notable changes to Hisabak are documented here. Format based on
 ## [Unreleased]
 
 ### Fixed
+- **Auto-backup now actually keeps up on iPhone** — opening the app runs any overdue backup
+  on the spot (both platforms), instead of waiting for a background slot the system may never
+  grant. iOS background refresh stays as a bonus path for days the app isn't opened.
 - Double-tapping a row that opens an editor (a brand, a category, a transaction) could crash
   the app; rapid re-taps are now ignored.
 

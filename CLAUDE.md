@@ -174,7 +174,12 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
     (CoroutineWorker resolving deps via Koin, default factory). Any network, silent; rescheduled from
     `BackupViewModel` (period/enable changes) and `HisabakApp` on launch. The passphrase is
     Keystore-stored (non-auth-gated) so encrypted auto-backups run unattended. Passkeys were rejected
-    (need WebAuthn PRF + a server).
+    (need WebAuthn PRF + a server). Background schedulers are best-effort (iOS's BGAppRefreshTask
+    especially), so the reliability net is the **foreground catch-up**: `CatchUpAutoBackupUseCase`
+    (single, shared in-flight guard) runs an overdue backup when `now − lastBackupAt ≥ period` —
+    called from `HisabakApp.onCreate`, `startIosApp`, iOS scene-active (`onIosAppForeground`),
+    and the iOS BG task. `RunBackupUseCase` stamps the `lastBackupAt` pref on every successful
+    upload (manual or scheduled).
 - **CMP migration:** the app is **Kotlin Multiplatform + Compose Multiplatform** — plan and PR
   sequence in `docs/kmp-migration.md`. **Phase A is complete**: all common code (domain, data,
   ViewModels, Compose UI) lives in `shared/commonMain`, the iOS targets compile against stub
