@@ -20,13 +20,16 @@ import kotlin.time.Instant
  */
 class GoogleDriveBackupRemote(
     private val authorizer: DriveAuthorizer,
+    private val fileName: String,
 ) : BackupRemote {
 
     private val json = Json { ignoreUnknownKeys = true }
 
     override suspend fun findLatest(): RemoteBackup? = withContext(Dispatchers.IO) {
+        // The name filter keeps flavors apart — the App Data Folder is shared across every
+        // client of the GCP project, so "latest file in the folder" could be another flavor's.
         val url = "$FILES_URL?spaces=appDataFolder&pageSize=1&orderBy=modifiedTime%20desc" +
-            "&fields=files(id,modifiedTime,size)"
+            "&q=name%3D%27$fileName%27&fields=files(id,modifiedTime,size)"
         val body = request("GET", URL(url))
         json.decodeFromString(FileListDto.serializer(), body).files.firstOrNull()?.let {
             RemoteBackup(
@@ -49,7 +52,7 @@ class GoogleDriveBackupRemote(
     }
 
     private fun createFile(): String {
-        val metadata = """{"name":"$FILE_NAME","parents":["appDataFolder"]}"""
+        val metadata = """{"name":"$fileName","parents":["appDataFolder"]}"""
         val body = request("POST", URL(FILES_URL), metadata.toByteArray(), "application/json; charset=UTF-8")
         return json.decodeFromString(CreatedFileDto.serializer(), body).id
     }
@@ -114,6 +117,5 @@ class GoogleDriveBackupRemote(
     private companion object {
         const val FILES_URL = "https://www.googleapis.com/drive/v3/files"
         const val UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"
-        const val FILE_NAME = "hisabak-backup.bak"
     }
 }

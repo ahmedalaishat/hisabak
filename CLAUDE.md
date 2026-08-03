@@ -168,7 +168,11 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
     restore without a passphrase), `GoogleDriveBackupRemote` (`BackupRemote` over Drive v3 REST via
     `HttpURLConnection`). `RunBackupUseCase` / `RestoreFromRemoteUseCase` orchestrate; encryption is
     optional (caller passes the passphrase or null). `HisabakDatabase.SCHEMA_VERSION` is stamped into
-    the envelope and gated on import.
+    the envelope and gated on import. The Drive file name is **flavor-scoped**
+    (`backupFileName(flavor)` off `AppConfig.flavor`: prod keeps `hisabak-backup.bak`, staging
+    writes `hisabak-backup-staging.bak`, and `findLatest` filters by name) — the App Data Folder
+    is scoped to the GCP *project*, so every flavor/platform client shares one folder; the name is
+    what keeps staging from clobbering prod while cross-platform restore within a flavor works.
   - **Auto-backup:** `AutoBackupScheduler` (domain interface + pure `autoBackupInterval(period)`) →
     `WorkManagerAutoBackupScheduler` enqueues unique periodic work that runs `BackupWorker`
     (CoroutineWorker resolving deps via Koin, default factory). Any network, silent; rescheduled from

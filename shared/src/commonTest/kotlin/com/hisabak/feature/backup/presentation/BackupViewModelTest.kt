@@ -88,6 +88,33 @@ class BackupViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `backupNow with dead authorization disconnects the account`() = runTest {
+        val remote = FakeBackupRemote().apply { failWith = BackupError.AuthRequired }
+        val account = FakeBackupAccountStore().apply { set(BackupAccount("user@example.com")) }
+        val vm = viewModel(account = account, remote = remote)
+
+        vm.state.test {
+            vm.backupNow()
+            advanceUntilIdle()
+            assertEquals(SyncPhase.Failed(BackupError.AuthRequired), expectMostRecentItem().sync)
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(null, account.account.first())
+    }
+
+    @Test
+    fun `backupNow keeps the account on a network failure`() = runTest {
+        val remote = FakeBackupRemote().apply { failWith = BackupError.Network }
+        val account = FakeBackupAccountStore().apply { set(BackupAccount("user@example.com")) }
+        val vm = viewModel(account = account, remote = remote)
+
+        vm.backupNow()
+        advanceUntilIdle()
+
+        assertEquals(BackupAccount("user@example.com"), account.account.first())
+    }
+
+    @Test
     fun `backupNow without an account asks to connect`() = runTest {
         val vm = viewModel() // no account set
         vm.state.test {

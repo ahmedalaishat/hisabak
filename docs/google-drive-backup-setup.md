@@ -1,9 +1,12 @@
 # Google Drive backup — Cloud setup
 
-The encrypted backup/restore feature stores a single file in the user's **Drive App Data Folder**
-(hidden, app-private) using the `drive.appdata` OAuth scope. No secret ships in the app — Android
-authorizes by the app's **package name + signing SHA-1**. Until the steps below are done, connecting
-an account in the app will fail with an auth error; the code is otherwise complete.
+The encrypted backup/restore feature stores a single file per flavor in the user's **Drive App
+Data Folder** (hidden, app-private) using the `drive.appdata` OAuth scope. The folder is scoped to
+the GCP *project*, so every client below shares it — the flavor-scoped file name
+(`backupFileName(flavor)`: prod `hisabak-backup.bak`, staging `hisabak-backup-staging.bak`) is what
+keeps prod and staging backups apart. No secret ships in the app — Android authorizes by the app's
+**package name + signing SHA-1**. Until the steps below are done, connecting an account in the app
+will fail with an auth error; the code is otherwise complete.
 
 ## 1. Enable the Drive API
 In the [Google Cloud Console](https://console.cloud.google.com/) for the project backing Firebase

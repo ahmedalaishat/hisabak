@@ -22,6 +22,7 @@ import com.hisabak.core.domain.backup.BackupAccountStore
 import com.hisabak.core.domain.backup.BackupCrypto
 import com.hisabak.core.domain.backup.BackupPassphraseStore
 import com.hisabak.core.domain.backup.BackupRemote
+import com.hisabak.core.domain.backup.backupFileName
 import com.hisabak.core.domain.security.BiometricAvailability
 import com.hisabak.core.platform.security.BiometricAuthenticator
 import com.hisabak.di.APPLICATION_SCOPE
@@ -43,6 +44,7 @@ val platformModule = module {
             smsAutoCapture = BuildConfig.SMS_AUTO_CAPTURE,
             isDebug = BuildConfig.DEBUG,
             versionCode = BuildConfig.VERSION_CODE,
+            flavor = BuildConfig.FLAVOR,
         )
     }
 
@@ -72,7 +74,9 @@ val platformModule = module {
         DataStoreBackupAccountStore(preferencesDataStore(androidContext(), BACKUP_ACCOUNT_STORE))
     }
     single<DriveAuthorizer> { GoogleDriveAuthorizer(androidContext()) }
-    single<BackupRemote> { GoogleDriveBackupRemote(authorizer = get()) }
+    single<BackupRemote> {
+        GoogleDriveBackupRemote(authorizer = get(), fileName = backupFileName(get<AppConfig>().flavor))
+    }
     single<AutoBackupScheduler> { WorkManagerAutoBackupScheduler(androidContext()) }
     single<BackupCrypto> { AesGcmBackupCrypto() }
 }

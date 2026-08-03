@@ -192,6 +192,12 @@ class BackupViewModel(
             transient.update { it.copy(error = null, sync = SyncPhase.Running) }
             val result = runBackup(passphrase)
             analytics.log(AnalyticsEvent.BackupRunCompleted(result is BackupRunResult.Success))
+            // A dead authorization means the account is no longer connected — clear it so the
+            // Connect button comes back. Otherwise the screen keeps saying "connect an account"
+            // while hiding the only way to do so.
+            if (result is BackupRunResult.Failure && result.error == BackupError.AuthRequired) {
+                accountStore.clear()
+            }
             val last = transient.value.lastBackup
             transient.value = Transient(
                 lastBackup = last,

@@ -175,6 +175,12 @@ class IosDriveAuthorizer : DriveAuthorizer {
             ) { data: NSData?, response: NSURLResponse?, error: NSError? ->
                 val status = (response as? NSHTTPURLResponse)?.statusCode?.toInt() ?: -1
                 if (error != null || status !in 200..299 || data == null) {
+                    platform.Foundation.NSLog(
+                        "HisabakDrive: %@",
+                        "token request failed status=$status" +
+                            " error=${error?.localizedDescription ?: "-"}" +
+                            " body=${data?.toByteArray()?.decodeToString()?.take(500) ?: "-"}",
+                    )
                     cont.resume(Result.failure(BackupException(BackupError.AuthRequired)))
                 } else {
                     cont.resume(Result.success(data.toByteArray()))
