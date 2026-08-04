@@ -96,7 +96,9 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
 - **SMS parse templates (user-manageable):** the regex templates live in Room (`sms_templates`,
   seeded from the 10 Hisabi defaults in `DefaultSmsTemplates`; defaults are disable-only). The
   detector is `ObservingSmsTemplateDetector` (data/parser) — a synchronous `detect` over a
-  compiled snapshot refreshed from `SmsTemplateRepository` on `APPLICATION_SCOPE`; matching is
+  compiled snapshot refreshed from `SmsTemplateRepository` on `APPLICATION_SCOPE`
+  (`SmsTransactionProcessor` first `awaitReady()`s the initial DB load, so cold-start captures
+  like the iOS Shortcut intent see user templates, not just the shipped defaults); matching is
   **specificity-ranked** (`rankTemplates`: most literal anchor first, user templates over
   defaults on ties) and a match whose `{amount}` capture isn't a positive number falls through.
   Users create templates **by example** (Settings → SMS parsing, or "Create template" on an

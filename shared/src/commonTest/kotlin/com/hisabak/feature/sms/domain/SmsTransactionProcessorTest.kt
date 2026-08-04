@@ -27,8 +27,10 @@ class SmsTransactionProcessorTest {
     private val transactionRepo = FakeTransactionRepository()
     private val smsRepo = FakeSmsRepository()
 
-    private fun processor(patterns: List<String>) = SmsTransactionProcessor(
-        detector = RegexSmsTemplateDetector(patterns),
+    private fun processor(patterns: List<String>) = processor(RegexSmsTemplateDetector(patterns))
+
+    private fun processor(detector: SmsTemplateDetector) = SmsTransactionProcessor(
+        detector = detector,
         parser = TemplateSmsParser(defaultCurrency = Currency.AED, zone = TimeZone.UTC),
         findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo),
         transactionRepository = transactionRepo,
@@ -102,6 +104,23 @@ class SmsTransactionProcessorTest {
 
         val tx = (result as DomainResult.Success).value
         assertEquals(fallback, tx.occurredAt)
+    }
+
+    @Test
+    fun `waits for the detector to load before detecting`() = runTest {
+        // Simulates the Shortcut cold-start race: until awaitReady returns, the stored template
+        // isn't compiled and detect misses. process must await readiness first.
+        val delegate = RegexSmsTemplateDetector(listOf("Purchase of AED {amount} at {brand} end"))
+        var loaded = false
+        val detector = object : SmsTemplateDetector {
+            override fun detect(body: String) = if (loaded) delegate.detect(body) else null
+            override suspend fun awaitReady() { loaded = true }
+        }
+        val processor = processor(detector)
+
+        val result = processor.process(smsMessage(body = "Purchase of AED 10.00 at Lulu end"))
+
+        assertTrue(result is DomainResult.Success)
     }
 
     @Test

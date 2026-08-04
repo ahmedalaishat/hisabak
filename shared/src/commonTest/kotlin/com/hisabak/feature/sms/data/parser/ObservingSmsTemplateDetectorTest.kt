@@ -8,13 +8,18 @@ import com.hisabak.testutil.FakeSmsTemplateRepository
 import com.hisabak.testutil.parserTemplate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 
 class ObservingSmsTemplateDetectorTest {
@@ -39,6 +44,35 @@ class ObservingSmsTemplateDetectorTest {
 
         // The 10 shipped defaults are compiled eagerly — no template gap on cold start.
         assertNotNull(detector.detect("Purchase of AED 12.00 with card ending 1234 at CAFE, DUBAI"))
+    }
+
+    @Test
+    fun `awaitReady suspends until the stored templates are compiled`() = runTest {
+        // The cold-start race the iOS Shortcut intent hits: capture runs before the DB snapshot
+        // has replaced the defaults. awaitReady must hold the caller until the first emission.
+        val emissions = MutableSharedFlow<List<SmsParserTemplate>>()
+        val repo = object : SmsTemplateRepository {
+            override fun observeAll(): Flow<List<SmsParserTemplate>> = emissions
+            override suspend fun upsert(template: SmsParserTemplate) = DomainResult.Success(Unit)
+            override suspend fun delete(id: SmsTemplateId) = DomainResult.Success(Unit)
+        }
+        val detector = ObservingSmsTemplateDetector(repo, appScope)
+
+        var ready = false
+        val waiter = launch(start = CoroutineStart.UNDISPATCHED) {
+            detector.awaitReady()
+            ready = true
+        }
+        assertFalse(ready)
+        assertNull(detector.detect(tabbyBody))
+
+        emissions.emit(
+            listOf(parserTemplate(pattern = "You spent AED {amount} at {brand}. Your available Tabby")),
+        )
+        waiter.join()
+
+        assertTrue(ready)
+        assertNotNull(detector.detect(tabbyBody))
     }
 
     @Test
