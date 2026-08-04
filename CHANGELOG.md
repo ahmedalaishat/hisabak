@@ -7,6 +7,9 @@ All notable changes to Hisabak are documented here. Format based on
 ## [Unreleased]
 
 ### Fixed
+- Capturing a message via the iOS Shortcut right after the app started could miss your custom
+  parse templates (only the built-ins were loaded yet) and wrongly send the message to review;
+  capture now waits for your templates to load before matching.
 - **Auto-backup now actually keeps up on iPhone** — opening the app runs any overdue backup
   on the spot (both platforms), instead of waiting for a background slot the system may never
   grant. iOS background refresh stays as a bonus path for days the app isn't opened.

@@ -22,6 +22,7 @@ class SmsTransactionProcessor(
     private val clock: Clock,
 ) {
     suspend fun process(message: SmsMessage, defaultDate: Instant? = null): DomainResult<Transaction> {
+        detector.awaitReady()
         val template = detector.detect(message.body)
             ?: return DomainResult.Failure(DomainError.ValidationFailed("No SMS template matched"))
 
