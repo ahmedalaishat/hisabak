@@ -11,7 +11,7 @@ Target: **internal testing first** → promote to production later.
 ## App content (left nav → "App content")
 
 **Privacy policy**
-- URL: `https://ahmedalaishat.github.io/hisabak-android/privacy.html`
+- URL: `https://ahmedalaishat.github.io/hisabak/privacy.html`
 
 **Data safety** → the released app collects **crash diagnostics and anonymous usage analytics only**
 (Firebase Crashlytics + Analytics):
