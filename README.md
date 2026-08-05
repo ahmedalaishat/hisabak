@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="../../actions/workflows/test.yml"><img src="../../actions/workflows/test.yml/badge.svg" alt="CI"></a>
-  <a href="../../releases"><img src="https://img.shields.io/github/v/release/ahmedalaishat/hisabak-android?color=0B7A5B&label=release" alt="Release"></a>
+  <a href="../../releases"><img src="https://img.shields.io/github/v/release/ahmedalaishat/hisabak?color=0B7A5B&label=release" alt="Release"></a>
   <img src="https://img.shields.io/badge/platform-Android-3DDC84" alt="Platform">
   <img src="https://img.shields.io/badge/minSdk-29-blue" alt="Min SDK">
   <img src="https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF" alt="Kotlin">
@@ -209,8 +209,8 @@ mocking framework. See [`docs/testing.md`](docs/testing.md) for the full strateg
 **Requirements:** Android Studio (latest stable), JDK 17, Android SDK. `minSdk 29`, `targetSdk 36`.
 
 ```bash
-git clone https://github.com/ahmedalaishat/hisabak-android.git
-cd hisabak-android
+git clone https://github.com/ahmedalaishat/hisabak.git
+cd hisabak
 ./gradlew installStagingDebug   # build & install the staging variant on a device/emulator
 # or open the project in Android Studio and Run (pick the "stagingDebug" variant)
 ```
