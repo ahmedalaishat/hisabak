@@ -4,26 +4,14 @@ All notable changes to Hisabak are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] — 2026-08-05
 
-### Fixed
-- Capturing a message via the iOS Shortcut right after the app started could miss your custom
-  parse templates (only the built-ins were loaded yet) and wrongly send the message to review;
-  capture now waits for your templates to load before matching.
-- **Auto-backup now actually keeps up on iPhone** — opening the app runs any overdue backup
-  on the spot (both platforms), instead of waiting for a background slot the system may never
-  grant. iOS background refresh stays as a bonus path for days the app isn't opened.
-- If Google Drive access expires or is revoked, the backup screen now offers **Connect Google
-  account** again instead of failing forever with no way to reconnect.
-- Staging builds back up to their own Drive file, so testing can no longer overwrite your real
-  backup (they previously shared one file).
-- Double-tapping a row that opens an editor (a brand, a category, a transaction) could crash
-  the app; rapid re-taps are now ignored.
-
-### Changed
-- **The keyboard gets out of your way** — it now dismisses when you scroll any list, tap
-  outside a text field, or complete an action (importing a message, saving a template or
-  transaction, opening the date picker).
+### Highlights
+- Hisabak 2.0 — teach the app your bank's SMS format with parse templates you create by
+  example, let on-device AI read unrecognized messages and plain-text notes (nothing is
+  recorded without your confirmation), capture hands-free on iPhone through Shortcuts, track
+  savings and investment withdrawals (including loans), delete transactions, and count on a
+  Google Drive auto-backup that keeps itself up to date.
 
 ### Added
 - **Teach the app your bank's SMS format** — Settings → SMS parsing lists the parse templates
@@ -83,9 +71,26 @@ All notable changes to Hisabak are documented here. Format based on
   previously the only way back was turning backup off and on again.
 
 ### Changed
+- **The keyboard gets out of your way** — it now dismisses when you scroll any list, tap
+  outside a text field, or complete an action (importing a message, saving a template or
+  transaction, opening the date picker).
 - **Bundled fonts** — DM Sans, Geist Mono and Tajawal now ship inside the app instead of being
   downloaded through Google Play services, so the app's typography renders correctly offline, on
   first launch, and on devices without Play services.
+
+### Fixed
+- Capturing a message via the iOS Shortcut right after the app started could miss your custom
+  parse templates (only the built-ins were loaded yet) and wrongly send the message to review;
+  capture now waits for your templates to load before matching.
+- **Auto-backup now actually keeps up on iPhone** — opening the app runs any overdue backup
+  on the spot (both platforms), instead of waiting for a background slot the system may never
+  grant. iOS background refresh stays as a bonus path for days the app isn't opened.
+- If Google Drive access expires or is revoked, the backup screen now offers **Connect Google
+  account** again instead of failing forever with no way to reconnect.
+- Staging builds back up to their own Drive file, so testing can no longer overwrite your real
+  backup (they previously shared one file).
+- Double-tapping a row that opens an editor (a brand, a category, a transaction) could crash
+  the app; rapid re-taps are now ignored.
 
 ## [1.9.0] — 2026-07-21
 
