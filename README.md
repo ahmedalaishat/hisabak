@@ -5,17 +5,17 @@
 <h1 align="center">Hisabak</h1>
 
 <p align="center">
-  A personal finance tracker for Android that turns your bank SMS alerts into a clean,
+  A personal finance tracker for Android and iOS that turns your bank messages into a clean,
   organized view of your money — categorize spending, set monthly budgets, and get notified
-  before you overshoot.
+  before you overshoot. One Kotlin Multiplatform codebase, two native apps.
 </p>
 
 <p align="center">
   <a href="../../actions/workflows/test.yml"><img src="../../actions/workflows/test.yml/badge.svg" alt="CI"></a>
   <a href="../../releases"><img src="https://img.shields.io/github/v/release/ahmedalaishat/hisabak?color=0B7A5B&label=release" alt="Release"></a>
-  <img src="https://img.shields.io/badge/platform-Android-3DDC84" alt="Platform">
+  <img src="https://img.shields.io/badge/platform-Android%20%C2%B7%20iOS-3DDC84" alt="Platform">
   <img src="https://img.shields.io/badge/minSdk-29-blue" alt="Min SDK">
-  <img src="https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF" alt="Kotlin">
+  <img src="https://img.shields.io/badge/Kotlin%20Multiplatform-Compose%20Multiplatform-7F52FF" alt="Kotlin Multiplatform">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
   <img src="https://img.shields.io/badge/code-100%25%20AI--written-7F52FF" alt="100% AI-written code">
 </p>
@@ -68,6 +68,9 @@ Three ways to get it (Android 10+ / API 29):
   "install unknown apps") or `adb install` it. A ~3 MB R8-minified, release-signed build.
 - **Google Play** — coming soon (currently in internal testing).
 
+**iOS:** the app builds and runs from source (see [Build & run](#-build--run)); an App Store /
+TestFlight release is pending an Apple developer account.
+
 ---
 
 ## ✨ Features
@@ -82,7 +85,7 @@ Everything below is built and shipping today:
   Intelligence, where supported): the parse is suggested on the message and you confirm it with
   one tap — nothing ever leaves your device.
 - [x] 🔔 **Budgets with alerts** — set a monthly limit per category and get notified at **50% /
-  80% / 100%**. Alerts arrive as an Android notification *and* an in-app entry; tapping one opens
+  80% / 100%**. Alerts arrive as a system notification *and* an in-app entry; tapping one opens
   the dashboard with that category expanded.
 - [x] 📊 **Dashboard** — net worth with cash / savings / investment breakdown, income & expense
   trends, category and brand breakdowns, and period filters (this/last month, this/last year, all
@@ -99,6 +102,11 @@ Everything below is built and shipping today:
 - [x] ✨ **Smart capture** — the SMS inbox takes anything: auto-captured bank SMS, pasted
   messages, or plain notes ("lunch 45 yesterday"). Known formats import instantly; everything
   else gets an on-device AI suggestion you confirm with one tap. Fully on-device.
+- [x] 📱 **iOS app** — the same app, natively on iPhone from the shared Kotlin Multiplatform
+  codebase: every screen, Arabic/RTL, App Lock (Face ID), Drive backup, templates, and on-device
+  AI parsing (Apple Intelligence). iOS has no SMS access by design, so capture goes through a
+  **"Capture transaction" Shortcuts action** — point a "When I get a message" automation at it
+  for hands-free capture, without the app ever reading your messages.
 - [x] 💸 **Savings & investment withdrawals** — savings/investment entries have a deposit or
   withdrawal direction, so taking money back out nets your buckets and returns it to cash.
   Doubles as a loan ledger: keep a person as a brand in a savings category and their brand
@@ -106,7 +114,7 @@ Everything below is built and shipping today:
 - [x] 🛎️ **Notifications center** — unread badge on the bell, swipe-to-dismiss, and mark-all-read.
 - [x] 🔒 **App lock** — optional biometric / device-PIN lock that gates access on launch and when
   you return to the app, so your finances stay private on a shared device. (Your data lives in
-  app-private storage, protected at rest by Android's built-in file-based encryption.)
+  app-private storage, protected at rest by the OS's built-in file-based encryption.)
 - [x] ⚙️ **Settings** — pick your **theme** (light / dark / system) and **language**
   (**English / العربية**, fully localized and right-to-left). Both are saved across launches.
 - [x] ☁️ **Google Drive backup & restore** — connect a Google account and back up your data to a
@@ -122,14 +130,12 @@ Everything below is built and shipping today:
 
 What's next, roughly in order:
 
-- [ ] 📱 **iOS app (Kotlin Multiplatform)** — the codebase is being restructured into KMP +
-  Compose Multiplatform ([migration plan](docs/kmp-migration.md)); the pure-Android line is
-  preserved on the [`android` branch](../../tree/android).
+- [ ] 🍎 **iOS on the App Store** — the iOS app is built and running (see Features); public
+  distribution via TestFlight / the App Store awaits an Apple developer account.
 - [ ] 🛎️ **Notification capture** — read bank transaction notifications to capture spending without
   the SMS permission (works in the Play build).
 - [ ] 💱 **Multi-currency** — track transactions and balances across more than one currency.
-- [ ] 🤖 **AI capture & auto-categorization** — smarter SMS parsing and automatic brand → category
-  detection.
+- [ ] 🤖 **Auto-categorization** — automatic brand → category suggestions.
 - [ ] 💡 **AI insights assistant** — ask questions about your spending and get clear, on-point
   answers.
 - [ ] ↩️ **Refunds** — record a refund against a transaction so returned money is reflected in
@@ -141,14 +147,16 @@ What's next, roughly in order:
 
 ## 🧰 Tech stack
 
-- **Language:** Kotlin
-- **UI:** Jetpack Compose + Material 3
+- **Language:** Kotlin (Multiplatform — Android + iOS from one codebase)
+- **UI:** Compose Multiplatform + Material 3
 - **Navigation:** Navigation 3 (multiplatform: androidx runtime + JetBrains UI artifacts)
-- **Persistence:** Room (local, offline-first)
+- **Persistence:** Room KMP (local, offline-first)
 - **DI:** Koin
 - **Async:** Coroutines + Flow
 - **State:** ViewModel + `collectAsStateWithLifecycle`
 - **Charts:** Vico (multiplatform)
+- **On-device AI:** Gemini Nano via the ML Kit GenAI Prompt API (Android) / Apple Foundation
+  Models (iOS) — inference never leaves the device
 - **Crash reporting & analytics:** Firebase Crashlytics + Analytics (release builds only;
   disabled in debug; analytics events carry no personal or financial data)
 
@@ -159,9 +167,11 @@ What's next, roughly in order:
 Three Gradle modules — **`shared`** (Kotlin Multiplatform: domain, data (Room/DataStore),
 ViewModels, navigation, and the Compose Multiplatform UI; compiles for Android and iOS),
 **`androidApp`** (a thin Android shell: platform integrations, permission/consent glue), and
-**`testutil`** (shared test fakes) — plus **`iosApp`**, the Xcode project that runs the shared
-UI on the iOS simulator. Phase A of the KMP migration is complete and Phase B (real iOS app)
-is in progress ([migration plan](docs/kmp-migration.md)).
+**`testutil`** (shared test fakes) — plus **`iosApp`**, the Xcode project: a SwiftUI shell around
+the shared UI with native Swift bridges for CryptoKit (backup encryption) and Apple Foundation
+Models (AI parsing). The KMP migration is functionally complete — both apps ship from the shared
+code ([migration plan](docs/kmp-migration.md)); the pure-Android line is preserved on the
+[`android` branch](../../tree/android).
 
 Feature-by-layer, with clean architecture inside each feature:
 
@@ -183,9 +193,9 @@ and SMS-imported transactions are both covered through a single path.
 
 ## 🧪 Testing & quality
 
-The domain logic and ViewModels are covered by **197 JVM unit tests** (money math, the SMS
-template parser, budget/limit logic, and ViewModel state) that run on the plain JVM — no
-emulator needed:
+The domain logic and ViewModels are covered by **330 JVM unit tests** (money math, the SMS
+template parser, backup/restore, budget/limit logic, and ViewModel state) that run on the plain
+JVM — no emulator needed:
 
 ```bash
 ./gradlew unitTests
@@ -193,7 +203,8 @@ emulator needed:
 
 Quality is enforced, not just hoped for:
 
-- **CI** — every pull request targeting `develop`/`main` runs the suite via GitHub Actions.
+- **CI** — every pull request targeting `develop`/`main` runs the suite, the Kotlin/Native iOS
+  compile, and an iosApp simulator build via GitHub Actions.
 - **Branch protection** — a red suite can't be merged into the shared branches.
 - **Auto-merge** — routine PRs into `develop` merge automatically once the suite passes;
   release PRs (`develop`→`main`) are merged deliberately by hand.
@@ -220,6 +231,18 @@ The app has two flavors with separate package names so they coexist on one devic
 The **staging** build seeds demo data on first launch so the dashboard, charts, and budgets are
 populated immediately; the **production** build seeds only a small set of starter categories
 (no brands or transactions) so it's usable right away with your data only.
+
+**iOS** (requires a Mac with Xcode): open `iosApp/iosApp.xcodeproj` and run the `iosApp` scheme,
+or build headlessly:
+
+```bash
+xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+  -destination 'platform=iOS Simulator,name=iPhone 17' build
+```
+
+The same two flavors exist as schemes — `iosApp` (production) and `iosAppStaging` ("Hisabak STG"
+with seeded demo data). Running on a physical iPhone needs a development team set via
+`DEVELOPMENT_TEAM=<your team id>` (or in Xcode's Signing settings).
 
 ---
 
