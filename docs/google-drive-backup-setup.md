@@ -1,9 +1,12 @@
 # Google Drive backup — Cloud setup
 
-The encrypted backup/restore feature stores a single file in the user's **Drive App Data Folder**
-(hidden, app-private) using the `drive.appdata` OAuth scope. No secret ships in the app — Android
-authorizes by the app's **package name + signing SHA-1**. Until the steps below are done, connecting
-an account in the app will fail with an auth error; the code is otherwise complete.
+The encrypted backup/restore feature stores a single file per flavor in the user's **Drive App
+Data Folder** (hidden, app-private) using the `drive.appdata` OAuth scope. The folder is scoped to
+the GCP *project*, so every client below shares it — the flavor-scoped file name
+(`backupFileName(flavor)`: prod `hisabak-backup.bak`, staging `hisabak-backup-staging.bak`) is what
+keeps prod and staging backups apart. No secret ships in the app — Android authorizes by the app's
+**package name + signing SHA-1**. Until the steps below are done, connecting an account in the app
+will fail with an auth error; the code is otherwise complete.
 
 ## 1. Enable the Drive API
 In the [Google Cloud Console](https://console.cloud.google.com/) for the project backing Firebase
@@ -25,7 +28,7 @@ In the [Google Cloud Console](https://console.cloud.google.com/) for the project
 
 Get the SHA-1 with:
 ```bash
-./gradlew :app:signingReport     # SHA1 per variant
+./gradlew :androidApp:signingReport     # SHA1 per variant
 ```
 **Debug builds are signed with the release keystore** when one is configured (`keystore.properties`),
 so `prodDebug` and `prodRelease` share the **same SHA-1** — register that one fingerprint and both
@@ -34,7 +37,7 @@ debug keystore; register that SHA-1 instead.)
 
 ## 4. (If using google-services.json) refresh it
 Adding OAuth clients  doesn't require app code changes, but if you regenerate
-`app/google-services.json` from Firebase, keep the existing Firebase config intact.
+`androidApp/google-services.json` from Firebase, keep the existing Firebase config intact.
 
 ## Verify
 Build a debug variant on a device/emulator signed with a registered SHA-1, sign in with a **test
@@ -46,3 +49,27 @@ appears in that account's Drive App Data (not visible in the normal Drive UI).
   (the encryption passphrase is stored separately, Keystore-encrypted).
 - Revoking access in the Google account settings invalidates backups' authorization; the app will
   prompt to reconnect.
+
+## 5. iOS client (Phase B)
+
+The iOS app authorizes with **ASWebAuthenticationSession + PKCE** (no Play Services, no client
+secret). One-time setup in the same GCP project:
+
+1. **APIs & Services → Credentials → Create credentials → OAuth client ID → iOS**, one per
+   bundle id (no SHA-1 — iOS clients key off the bundle id):
+   - **prod:** `com.hisabak`
+   - **staging:** `com.hisabak.staging` (only if testing Drive there)
+2. Copy each client id (`NNNN-xxxx.apps.googleusercontent.com`) into its xcconfig as
+   **`GOOGLE_OAUTH_CLIENT_ID=NNNN-xxxx.apps.googleusercontent.com`** — prod into
+   `iosApp/Configuration/Config.xcconfig`, staging into `Staging.xcconfig` (which `#include`s
+   Config and must override it, or staging inherits the prod client and ships a client id that
+   doesn't match its own bundle id). Info.plist's `GoogleOAuthClientID` expands from it at
+   build time. While it's blank, the app reports Drive as unavailable ("Connect a Google
+   account" stays inert) — everything else about backup still works.
+3. The OAuth redirect uses the **reversed client id** as a custom URL scheme
+   (`com.googleusercontent.apps.NNNN-xxxx:/oauth2redirect`); ASWebAuthenticationSession
+   handles the callback directly, so no CFBundleURLTypes entry is needed.
+
+The refresh token is stored in the iOS Keychain; access tokens are refreshed silently per
+Drive call. Backups written by either platform restore on the other — the encrypted format
+is identical (verified by `tools/crypto-interop/run.sh`).

@@ -78,6 +78,9 @@ Everything below is built and shipping today:
   features, ending with an SMS-permission primer.
 - [x] 💬 **SMS capture** — parse bank SMS into transactions automatically (with permission), or
   capture one on demand by sharing it into Hisabak, selecting its text → Hisabak, or pasting it.
+  Messages no template recognizes fall back to **on-device AI** (Gemini Nano / Apple
+  Intelligence, where supported): the parse is suggested on the message and you confirm it with
+  one tap — nothing ever leaves your device.
 - [x] 🔔 **Budgets with alerts** — set a monthly limit per category and get notified at **50% /
   80% / 100%**. Alerts arrive as an Android notification *and* an in-app entry; tapping one opens
   the dashboard with that category expanded.
@@ -85,9 +88,21 @@ Everything below is built and shipping today:
   trends, category and brand breakdowns, and period filters (this/last month, this/last year, all
   time) across Summary, Trends, and Categories tabs.
 - [x] 🧾 **Transactions** — searchable, filterable list (by brand, category, date range), with
-  uncategorized spending surfaced for quick cleanup.
+  uncategorized spending surfaced for quick cleanup. Add, edit, or delete an entry (deletion is
+  confirmed first, and hands any bank message that created it back to the SMS inbox).
 - [x] 🗂️ **Organize** — categories (income / expense / savings / investment) with colors and
   icons, and brands mapped to categories. Safe deletion with brand-merge and confirmation.
+- [x] 🧩 **Custom SMS templates** — teach the app your bank's message format by example:
+  paste a sample (or start from an unparsed inbox message), confirm the highlighted
+  amount/brand/date, and future messages parse instantly. Specificity-ranked matching and a
+  save-time preview keep a bad template from breaking the built-ins. Backed up with your data.
+- [x] ✨ **Smart capture** — the SMS inbox takes anything: auto-captured bank SMS, pasted
+  messages, or plain notes ("lunch 45 yesterday"). Known formats import instantly; everything
+  else gets an on-device AI suggestion you confirm with one tap. Fully on-device.
+- [x] 💸 **Savings & investment withdrawals** — savings/investment entries have a deposit or
+  withdrawal direction, so taking money back out nets your buckets and returns it to cash.
+  Doubles as a loan ledger: keep a person as a brand in a savings category and their brand
+  total shows what's still outstanding (a fully repaid loan reads 0).
 - [x] 🛎️ **Notifications center** — unread badge on the bell, swipe-to-dismiss, and mark-all-read.
 - [x] 🔒 **App lock** — optional biometric / device-PIN lock that gates access on launch and when
   you return to the app, so your finances stay private on a shared device. (Your data lives in
@@ -107,6 +122,9 @@ Everything below is built and shipping today:
 
 What's next, roughly in order:
 
+- [ ] 📱 **iOS app (Kotlin Multiplatform)** — the codebase is being restructured into KMP +
+  Compose Multiplatform ([migration plan](docs/kmp-migration.md)); the pure-Android line is
+  preserved on the [`android` branch](../../tree/android).
 - [ ] 🛎️ **Notification capture** — read bank transaction notifications to capture spending without
   the SMS permission (works in the Play build).
 - [ ] 💱 **Multi-currency** — track transactions and balances across more than one currency.
@@ -125,18 +143,25 @@ What's next, roughly in order:
 
 - **Language:** Kotlin
 - **UI:** Jetpack Compose + Material 3
-- **Navigation:** Jetpack Navigation 3
+- **Navigation:** Navigation 3 (multiplatform: androidx runtime + JetBrains UI artifacts)
 - **Persistence:** Room (local, offline-first)
 - **DI:** Koin
 - **Async:** Coroutines + Flow
 - **State:** ViewModel + `collectAsStateWithLifecycle`
-- **Charts:** Vico
+- **Charts:** Vico (multiplatform)
 - **Crash reporting & analytics:** Firebase Crashlytics + Analytics (release builds only;
   disabled in debug; analytics events carry no personal or financial data)
 
 ---
 
 ## 🏗️ Architecture
+
+Three Gradle modules — **`shared`** (Kotlin Multiplatform: domain, data (Room/DataStore),
+ViewModels, navigation, and the Compose Multiplatform UI; compiles for Android and iOS),
+**`androidApp`** (a thin Android shell: platform integrations, permission/consent glue), and
+**`testutil`** (shared test fakes) — plus **`iosApp`**, the Xcode project that runs the shared
+UI on the iOS simulator. Phase A of the KMP migration is complete and Phase B (real iOS app)
+is in progress ([migration plan](docs/kmp-migration.md)).
 
 Feature-by-layer, with clean architecture inside each feature:
 
@@ -158,12 +183,12 @@ and SMS-imported transactions are both covered through a single path.
 
 ## 🧪 Testing & quality
 
-The domain logic and ViewModels are covered by **152 JVM unit tests** (money math, the SMS
+The domain logic and ViewModels are covered by **197 JVM unit tests** (money math, the SMS
 template parser, budget/limit logic, and ViewModel state) that run on the plain JVM — no
 emulator needed:
 
 ```bash
-./gradlew testProdDebugUnitTest
+./gradlew unitTests
 ```
 
 Quality is enforced, not just hoped for:

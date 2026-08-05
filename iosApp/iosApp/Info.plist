@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<!-- Without this, LocalAuthentication silently skips Face ID and falls back to the passcode. -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Hisabak uses Face ID to unlock the app.</string>
+	<!-- Declaring localizations makes iOS offer the per-app language picker in Settings;
+	     the in-app language row deep-links there. -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ar</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.hisabak.autobackup</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
+	<!-- iOS OAuth client id for Google Drive backup (docs/google-drive-backup-setup.md §5).
+	     Set GOOGLE_OAUTH_CLIENT_ID in Configuration/Config.xcconfig; blank = Drive unavailable. -->
+	<key>GoogleOAuthClientID</key>
+	<string>$(GOOGLE_OAUTH_CLIENT_ID)</string>
+	<!-- Crashlytics stays off until iOSApp.init enables it for non-debug builds (Android parity). -->
+	<key>FirebaseCrashlyticsCollectionEnabled</key>
+	<false/>
+	<!-- prod | staging, from the xcconfig layer — the iOS counterpart of Android's flavors.
+	     The shared AppConfig reads it (staging seeds demo data). -->
+	<key>HisabakFlavor</key>
+	<string>$(HISABAK_FLAVOR)</string>
+</dict>
+</plist>

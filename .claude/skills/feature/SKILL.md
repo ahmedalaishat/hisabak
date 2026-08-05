@@ -78,7 +78,7 @@ Build the feature **and its tests in the same change** — this is a hard `CLAUD
 
 ## 6. QA
 
-- Run `./gradlew testProdDebugUnitTest` until green (the Stop hook also enforces this).
+- Run `./gradlew unitTests` until green (the Stop hook also enforces this).
 - Run a self **`code-review`** pass over the diff and fix real findings.
 - CI (`.github/workflows/test.yml`) re-verifies on the PR.
 - No real-device step for now (out of scope; add later via `verify`/`run` when an emulator
@@ -136,7 +136,7 @@ them here.
 - [ ] Spec + design in `docs/features/<slug>.md`, assumptions recorded
 - [ ] `feat/<slug>` off `develop`
 - [ ] Code **and** tests for every acceptance criterion
-- [ ] `./gradlew testProdDebugUnitTest` green + self code-review done
+- [ ] `./gradlew unitTests` green + self code-review done
 - [ ] Docs/changelog updated (or explicitly noted N/A)
 - [ ] **Consistency check** — CLAUDE.md / README / docs / skills / hooks / workflows / CHANGELOG reviewed against the diff
 - [ ] PR to `develop` with structured body

@@ -13,6 +13,18 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Kotlin/Native rejects , ; : in backtick test names; the JVM tolerates them, so without
+      # this the required check stays green while the (non-required) iOS compile turns red and
+      # auto-merge sails past it. Fail the required job instead. (Bit us in PRs #122 and #125.)
+      - name: Reject test names Kotlin/Native can't compile
+        run: |
+          illegal="$(grep -rn 'fun `[^`]*[,;:][^`]*`' shared/src/commonTest testutil/src --include='*.kt' || true)"
+          if [ -n "$illegal" ]; then
+            echo "Backtick test names must not contain , ; :" >&2
+            printf '%s\n' "$illegal" >&2
+            exit 1
+          fi
+
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
@@ -26,12 +38,14 @@ jobs:
         uses: android-actions/setup-android@v4
 
       - name: Run unit tests
-        run: ./gradlew testProdDebugUnitTest --no-daemon
+        run: ./gradlew unitTests --no-daemon
 
       - name: Upload test report
         if: failure()
         uses: actions/upload-artifact@v6
         with:
           name: unit-test-report
-          path: app/build/reports/tests/testProdDebugUnitTest
+          path: |
+            androidApp/build/reports/tests/testProdDebugUnitTest
+            shared/build/reports/tests/testAndroidHostTest
           if-no-files-found: ignore

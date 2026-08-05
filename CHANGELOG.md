@@ -4,7 +4,93 @@ All notable changes to Hisabak are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] — 2026-08-05
+
+### Highlights
+- Hisabak 2.0 — teach the app your bank's SMS format with parse templates you create by
+  example, let on-device AI read unrecognized messages and plain-text notes (nothing is
+  recorded without your confirmation), capture hands-free on iPhone through Shortcuts, track
+  savings and investment withdrawals (including loans), delete transactions, and count on a
+  Google Drive auto-backup that keeps itself up to date.
+
+### Added
+- **Teach the app your bank's SMS format** — Settings → SMS parsing lists the parse templates
+  (the built-ins plus your own) and lets you create new ones *by example*: paste a bank message
+  (or tap "Create template" on an unparsed message in the SMS inbox), confirm what the app
+  highlighted as the amount, brand, date, and changing text like balances, and save. From then
+  on, messages in that format parse instantly on any device — no AI needed. Safety rails keep a
+  badly-made template from breaking anything: more specific templates always win, a template
+  whose amount lands on non-numeric text is skipped, and before saving you're warned if a
+  draft also matches lots of unrelated stored messages. Templates can be turned off (built-ins
+  too), your own can be edited and deleted, and they're included in Drive backups. Saving a
+  template made from an inbox message imports that message through it on the spot, and the
+  "Create template" action stays available even after the AI has offered its own suggestion —
+  the suggestion is one-shot, a template covers every future message.
+- **One capture box for everything** — the SMS tab's paste box now takes bank messages *and*
+  plain notes in your own words. A recognized bank format imports instantly, as before.
+  Anything else — "lunch 45 yesterday", "100 at noon", or an unrecognized bank SMS — lands in
+  the inbox and the on-device AI reads it while you watch, then offers the usual suggestion
+  card to confirm or dismiss: nothing is ever created without your tap. Typed notes understand
+  relative dates ("yesterday", "last friday") and shorthand like "15k", and pasted backlogs
+  may be dated up to a year back. Runs fully on-device — your text never leaves the phone.
+  Without AI support, unmatched text still lands in the inbox with a clear message and the
+  "Create template" path. Messages imported via AI keep a "Review transaction" shortcut that
+  opens the created entry for a quick human check.
+- **Savings & investment withdrawals** — savings and investment transactions now have a
+  direction: deposit or withdrawal. A withdrawal takes money back out of the bucket, so the
+  dashboard Savings/Invest pills and your cash reflect it, and a brand's total shows the net
+  balance. This also makes loan tracking work: put a person's brand in a savings category,
+  record what you lent as deposits and repayments as withdrawals, and the brand shows what's
+  still outstanding — a fully repaid loan reads 0 instead of disappearing. Savings and
+  investment amounts in the transaction list now use their own colors (blue/purple) with a
+  true +/− sign instead of rendering like income.
+- **Delete a transaction** — added one by mistake? Open it from the Transactions tab and use
+  "Delete transaction" at the bottom of the sheet; a confirmation step guards the tap. The
+  amount comes straight back out of your totals and budgets. If the transaction was captured
+  from a bank message, that message returns to the SMS inbox so you can import it again.
+- **AI parsing for unrecognized bank messages** — when a bank SMS doesn't match any known
+  format, the app's on-device AI (Gemini Nano on Android, Apple Intelligence on iOS) now
+  reads it and proposes the transaction as a suggestion you confirm with one tap; a
+  "Parse with AI" button also appears on unparsed messages. Each suggestion shows the
+  brand, amount, and booking date before you confirm. Suggestions recognize your
+  existing brands — typos, different casing, and abbreviations resolve to the brand you
+  already track instead of creating a duplicate — and messages imported this way keep an
+  "AI parsed" label so you can always tell them apart from template parses. Everything runs on your device —
+  messages never leave your phone. Available on devices with on-device AI support;
+  everywhere else the app behaves as before.
+- **iOS: capture transactions through the Shortcuts app** — Hisabak now provides a
+  "Capture transaction" action in the Shortcuts app. Point a personal automation
+  ("When I get a message" → Run immediately) at it to record bank SMS hands-free — the
+  closest iOS gets to Android's SMS auto-capture, without the app ever reading your
+  messages. The action is silent and reports through notifications — "transaction recorded"
+  on a parse, or "Saved for review" with a tap-through to the SMS inbox when a message
+  couldn't be read — and returns a needs-review flag your shortcut can branch on; a
+  companion "Open SMS inbox" action jumps straight to the review screen.
+- **Reconnect Google Drive from the Backup screen** — if backup is on but no Google account is
+  connected (declined, failed, or revoked access), a "Connect Google account" button now appears;
+  previously the only way back was turning backup off and on again.
+
+### Changed
+- **The keyboard gets out of your way** — it now dismisses when you scroll any list, tap
+  outside a text field, or complete an action (importing a message, saving a template or
+  transaction, opening the date picker).
+- **Bundled fonts** — DM Sans, Geist Mono and Tajawal now ship inside the app instead of being
+  downloaded through Google Play services, so the app's typography renders correctly offline, on
+  first launch, and on devices without Play services.
+
+### Fixed
+- Capturing a message via the iOS Shortcut right after the app started could miss your custom
+  parse templates (only the built-ins were loaded yet) and wrongly send the message to review;
+  capture now waits for your templates to load before matching.
+- **Auto-backup now actually keeps up on iPhone** — opening the app runs any overdue backup
+  on the spot (both platforms), instead of waiting for a background slot the system may never
+  grant. iOS background refresh stays as a bonus path for days the app isn't opened.
+- If Google Drive access expires or is revoked, the backup screen now offers **Connect Google
+  account** again instead of failing forever with no way to reconnect.
+- Staging builds back up to their own Drive file, so testing can no longer overwrite your real
+  backup (they previously shared one file).
+- Double-tapping a row that opens an editor (a brand, a category, a transaction) could crash
+  the app; rapid re-taps are now ignored.
 
 ## [1.9.0] — 2026-07-21
 
@@ -31,6 +117,9 @@ All notable changes to Hisabak are documented here. Format based on
   between them and animate in, for a more polished look.
 
 ### Fixed
+- **Crash on some AI suggestions** — an AI parse whose currency came back as a local
+  abbreviation or symbol (e.g. "Dhs", "د.إ") crashed the app; such results now fall back
+  to your app currency, the same as when the message names no currency at all.
 - **Expense sign** — expense amounts in the Transactions list and SMS Inbox now show a minus (`−`)
   instead of a plus, matching the rest of the app.
 - **Press feedback** — buttons, filter chips, and the segmented control no longer briefly lose their

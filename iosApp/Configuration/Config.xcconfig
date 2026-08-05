@@ -1,0 +1,14 @@
+TEAM_ID=
+
+PRODUCT_NAME=Hisabak
+PRODUCT_BUNDLE_IDENTIFIER=com.hisabak
+
+CURRENT_PROJECT_VERSION=1
+MARKETING_VERSION=1.0
+
+// Flavor tag surfaced to the shared code via the HisabakFlavor Info.plist key
+// (Staging.xcconfig overrides it — the iOS counterpart of Android's product flavors).
+HISABAK_FLAVOR=prod
+
+// iOS OAuth client id for Google Drive backup (create per docs/google-drive-backup-setup.md §5).
+GOOGLE_OAUTH_CLIENT_ID=469916556187-5gh2l5euvu13d4e02nb3k02idf05qnhj.apps.googleusercontent.com

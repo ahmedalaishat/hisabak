@@ -1,0 +1,61 @@
+name: iOS compile
+
+on:
+  # PRs only, and only when shared/KMP-relevant files change: these jobs exist to keep the iOS
+  # targets compiling and the iosApp building, not to test app code — androidApp-only changes
+  # can't break them.
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'shared/**'
+      - 'testutil/**'
+      - 'iosApp/**'
+      - 'gradle/**'
+      - '*.gradle.kts'
+
+jobs:
+  compile:
+    name: Kotlin/Native iOS compile
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Compile iOS simulator target (main + test)
+        run: ./gradlew :shared:compileKotlinIosSimulatorArm64 :shared:compileTestKotlinIosSimulatorArm64 --no-daemon
+
+  app:
+    # Needs an Xcode 26 toolchain: CMP 1.11.x references iOS 26 UIKit symbols
+    # (UIViewLayoutRegion), so linking against the iOS 18.x SDK of Xcode 16.4 fails.
+    # macos-26's default Xcode qualifies (and objectVersion 77 needs >= 16.3 anyway).
+    name: iosApp simulator build
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build iosApp (Debug, unsigned)
+        run: >
+          xcodebuild
+          -project iosApp/iosApp.xcodeproj
+          -scheme iosApp
+          -configuration Debug
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+          build

@@ -1,0 +1,17 @@
+<resources>
+    <!-- app_name is provided per build flavor via resValue (see androidApp/build.gradle.kts). -->
+    <!-- Only strings read via Context.resources outside Compose stay here; all Compose-consumed
+         strings live in shared/src/commonMain/composeResources/ (CMP resources). -->
+    <string name="notification_tx_recorded_title">Transaction recorded</string>
+    <string name="notification_tx_recorded">%1$s at %2$s · %3$s</string>
+    <string name="notification_tx_recorded_uncategorized">%1$s at %2$s · Uncategorized — tap to add a category</string>
+    <string name="notification_budget_reached_title">%1$s budget reached</string>
+    <string name="notification_budget_level_title">%1$s at %2$d%% of budget</string>
+    <string name="notification_budget_message">Spent %1$s of %2$s this month.</string>
+    <string name="notification_channel_budget_name">Budget alerts</string>
+    <string name="notification_channel_budget_desc">Alerts when a category nears or exceeds its monthly limit</string>
+    <string name="notification_channel_tx_name">Transaction updates</string>
+    <string name="notification_channel_tx_desc">Confirms transactions captured from your bank SMS</string>
+    <string name="notification_review_title">Saved for review</string>
+    <string name="notification_review_message">A message couldn\'t be read automatically — tap to review it in the SMS inbox.</string>
+</resources>

@@ -1,6 +1,6 @@
 // One-time codegen: Hugeicons (free, MIT) stroke paths -> Compose ImageVector Kotlin.
 //
-// Usage (regenerate app/.../ui/icons/HugeIcons.kt after editing the maps below):
+// Usage (regenerate shared/.../ui/icons/HugeIcons.kt after editing the maps below):
 //   npm i --no-save @hugeicons/core-free-icons && node tools/gen-hugeicons.mjs
 //
 // Sources:
@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SKILL = resolve(ROOT, '.claude/skills/hisabak-design/ui_kits');
-const OUT = resolve(ROOT, 'app/src/main/java/com/hisabak/ui/icons/HugeIcons.kt');
+const OUT = resolve(ROOT, 'shared/src/commonMain/kotlin/com/hisabak/ui/icons/HugeIcons.kt');
 
 function loadWindow(file) {
   const sandbox = { window: {} };

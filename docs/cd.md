@@ -8,9 +8,18 @@ coexist on one device:
 | `staging` | `com.hisabak.staging` ("Hisabak STG") | Firebase App Distribution → testers | **Yes** (`RECEIVE_SMS`) |
 | `prod` | `com.hisabak` ("Hisabak") | Google Play *(planned)* | **No** — share / select-text / paste |
 
+**iOS mirrors the same two flavors** via Xcode configurations (`DebugStaging`/`ReleaseStaging`,
+`iosApp/Configuration/Staging.xcconfig`) and the **`iosAppStaging`** scheme: bundle id
+`com.hisabak.staging`, "Hisabak STG" on the home screen, seeded demo data (the `HisabakFlavor`
+Info.plist key feeds the shared `AppConfig`). SMS auto-capture stays off in every iOS flavor —
+Apple has no SMS-read API; the Shortcuts "Capture transaction" action is the near-automatic
+path. No iOS distribution channel yet: staging installs are dev-signed direct deploys
+(`xcodebuild -scheme iosAppStaging -configuration DebugStaging` + `devicectl`); a TestFlight
+lane arrives with PR B7 once the paid Apple Developer account exists.
+
 **SMS by flavor.** `RECEIVE_SMS` is a Google Play *restricted permission* that the Play build
 must not declare, so the broadcast receiver + permission live in the **staging flavor only**
-(`app/src/staging/AndroidManifest.xml`). The `prod`/Play build is SMS-free and captures via the
+(`androidApp/src/staging/AndroidManifest.xml`). The `prod`/Play build is SMS-free and captures via the
 permission-free paths (share a bank SMS, select its text → Hisabak, or paste). A
 `BuildConfig.SMS_AUTO_CAPTURE` flag (per flavor) gates the SMS-only UI (onboarding primer,
 auto-import banner).
@@ -59,7 +68,7 @@ GitHub Release here; **live** = Play.
 Release builds of **both** flavors (`assembleStagingRelease`, `bundleProdRelease`/`assembleProdRelease`)
 are minified, so the Crashlytics Gradle plugin uploads the R8 **mapping file** to Firebase during
 the build for deobfuscated stack traces. This needs no extra GitHub secret — it authenticates from
-the committed `app/google-services.json` (project `hisabak-finance-tracking`), not the
+the committed `androidApp/google-services.json` (project `hisabak-finance-tracking`), not the
 service-account keys above. Runtime collection for **both** Crashlytics and Analytics is gated on
 `!BuildConfig.DEBUG` in `HisabakApp`, so only release builds report. Analytics events are strictly
 **no-PII** — booleans, enums, and coarse amount buckets only, never raw amounts, names, notes, or SMS

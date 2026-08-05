@@ -7,11 +7,30 @@ on the plain JVM (no emulator, no Robolectric).
 ## Running
 
 ```bash
-./gradlew testProdDebugUnitTest        # run the unit suite
-./gradlew testProdDebugUnitTest --tests "com.hisabak.feature.*"   # a subset
+./gradlew unitTests                    # run the whole unit suite (androidApp + shared)
+./gradlew :androidApp:testProdDebugUnitTest --tests "com.hisabak.feature.*"   # a subset
 ```
 
-Report: `app/build/reports/tests/testProdDebugUnitTest/index.html`.
+`unitTests` is a root aggregate task: `:androidApp:testProdDebugUnitTest` plus
+`:shared:testAndroidHostTest` (which runs the KMP module's `commonTest` +
+`androidHostTest` sources on the JVM).
+
+Reports: `androidApp/build/reports/tests/testProdDebugUnitTest/index.html` and
+`shared/build/reports/tests/testAndroidHostTest/index.html`.
+
+## Where tests live
+
+- **`shared/src/commonTest/`** — tests for everything in `shared/commonMain` (domain
+  entities/use cases, SMS parsing, backup engine policy, seed data, **and all ViewModel
+  tests**). Written with **kotlin-test** (`kotlin.test.Test`, `assertEquals`,
+  `assertFailsWith`, …) so they also compile for the iOS targets (test names must avoid
+  characters Kotlin/Native rejects — `,` `;` `:` — enforced by a fast grep in both the
+  Stop hook and the required Unit-tests CI job, since the JVM compiles them fine and only
+  the non-required iOS compile job would catch it otherwise); they run on the JVM via
+  `:shared:testAndroidHostTest`.
+- **`androidApp/src/test/`** — only the JVM-bound tests remain (`AesGcmBackupCryptoTest`,
+  `DatabaseDecryptionMigrationTest`, `BackupUseCasesTest` which drives the JVM crypto
+  impl). These stay on **JUnit4**.
 
 ## What's covered
 
@@ -28,18 +47,29 @@ Report: `app/build/reports/tests/testProdDebugUnitTest/index.html`.
 | Misc use cases (find-or-create brand, reassign, set limit) | `*/domain/usecase/*Test` |
 | ViewModels (validation, create/update, list actions) | `*/presentation/**/*ViewModelTest` |
 
-## How it's wired (`src/test/java/com/hisabak/testutil/`)
+## How it's wired (the `:testutil` KMP module)
+
+The shared fakes live in the **`:testutil`** module
+(`testutil/src/commonMain/kotlin/com/hisabak/testutil/`) so both `shared/commonTest`
+and `androidApp/src/test` can use them (KMP has no multiplatform test-fixtures yet).
+They are plain Kotlin — no JUnit — so they compile for every target.
 
 - **`TestClock`** — a `Clock` with a fixed, mutable instant (UTC) so time-dependent
   logic is deterministic.
-- **`MainDispatcherRule`** — swaps `Dispatchers.Main` for a `TestDispatcher` so
-  `viewModelScope` coroutines are controllable. Use `advanceUntilIdle()` after sending
-  intents.
 - **`FakeRepositories.kt`** — in-memory, `StateFlow`-backed fakes for every repository
-  interface, plus `RecordingNotifier` and `FakeCategoryLimitAlertDao`. Prefer these over
-  a mocking framework; build the real use case around a fake repo.
+  interface, plus `RecordingNotifier` and `FakeCategoryLimitAlertStore`. Prefer these
+  over a mocking framework; build the real use case around a fake repo.
 - **`TestData.kt`** — terse builders (`brand()`, `category()`, `transaction()`, …) with
   sensible defaults.
+- **`FakeBackupCrypto`** — a pure-Kotlin stand-in for the JVM-only `AesGcmBackupCrypto`
+  with the same observable contract (`HSBK` magic, round-trip, wrong-passphrase error),
+  so the backup/restore ViewModel tests run in `commonTest`.
+
+ViewModel tests extend **`MainDispatcherTest`**
+(`shared/src/commonTest/kotlin/com/hisabak/testutil/`) — the multiplatform successor to
+the JUnit4 `MainDispatcherRule`: `@BeforeTest`/`@AfterTest` swap `Dispatchers.Main` for a
+`TestDispatcher` so `viewModelScope` coroutines are controllable. Use
+`advanceUntilIdle()` after sending intents.
 
 ### Notes
 
