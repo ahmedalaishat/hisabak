@@ -3,6 +3,7 @@ package com.hisabak.feature.category.presentation.edit
 import com.hisabak.core.presentation.ViewEffect
 import com.hisabak.core.presentation.ViewIntent
 import com.hisabak.core.presentation.ViewState
+import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.CategoryType
 
 data class CategoryEditUiState(
@@ -33,5 +34,5 @@ sealed interface CategoryEditIntent : ViewIntent {
 }
 
 sealed interface CategoryEditEffect : ViewEffect {
-    data object Saved : CategoryEditEffect
+    data class Saved(val id: CategoryId) : CategoryEditEffect
 }

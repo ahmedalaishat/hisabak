@@ -10,6 +10,7 @@ import com.hisabak.feature.brand.domain.BrandRepository
 import com.hisabak.feature.brand.domain.usecase.CreateBrandUseCase
 import com.hisabak.feature.brand.domain.usecase.UpdateBrandUseCase
 import com.hisabak.feature.category.domain.usecase.ObserveCategoriesUseCase
+import com.hisabak.feature.category.presentation.CategoryCreatedBus
 import kotlinx.coroutines.launch
 
 class BrandEditViewModel(
@@ -18,6 +19,7 @@ class BrandEditViewModel(
     private val observeCategories: ObserveCategoriesUseCase,
     private val createBrand: CreateBrandUseCase,
     private val updateBrand: UpdateBrandUseCase,
+    private val categoryCreatedBus: CategoryCreatedBus,
     private val analytics: Analytics,
 ) : BaseViewModel<BrandEditIntent, BrandEditUiState, BrandEditEffect>() {
 
@@ -30,6 +32,15 @@ class BrandEditViewModel(
                     BrandEditUiState.CategoryOption(it.id, it.name, it.color)
                 }
                 setState { copy(categoryOptions = options) }
+            }
+        }
+        // A category created via the "+ New category" detour lands here — select it.
+        viewModelScope.launch {
+            categoryCreatedBus.pending.collect { created ->
+                if (created != null) {
+                    setState { copy(selectedCategoryId = created) }
+                    categoryCreatedBus.consume()
+                }
             }
         }
         if (brandId != null) loadExisting(brandId)

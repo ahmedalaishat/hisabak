@@ -30,6 +30,7 @@ import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.ui.components.ButtonVariant
 import com.hisabak.ui.components.ColoredFilterChip
 import com.hisabak.ui.components.HisabakButton
+import com.hisabak.ui.components.LeadingIconChip
 import com.hisabak.ui.theme.Spacing
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,6 +39,7 @@ fun BrandEditScreen(
     state: BrandEditUiState,
     onNameChange: (String) -> Unit,
     onCategoryChange: (CategoryId?) -> Unit,
+    onCreateCategory: () -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -69,6 +71,7 @@ fun BrandEditScreen(
                 options = state.categoryOptions,
                 selected = state.selectedCategoryId,
                 onSelect = onCategoryChange,
+                onCreateNew = onCreateCategory,
             )
 
             if (state.generalError != null) {
@@ -122,6 +125,7 @@ private fun CategorySection(
     options: List<BrandEditUiState.CategoryOption>,
     selected: CategoryId?,
     onSelect: (CategoryId?) -> Unit,
+    onCreateNew: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
@@ -147,6 +151,14 @@ private fun CategorySection(
                     colorKey = option.color,
                     selected = selected == option.id,
                     onClick = { onSelect(option.id) },
+                )
+            }
+            item {
+                LeadingIconChip(
+                    label = stringResource(Res.string.category_new_title),
+                    leadingIcon = HugeIcons.Add,
+                    selected = false,
+                    onClick = onCreateNew,
                 )
             }
         }

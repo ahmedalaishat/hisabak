@@ -5,6 +5,7 @@ import com.hisabak.feature.brand.domain.usecase.CreateBrandUseCase
 import com.hisabak.feature.brand.domain.usecase.UpdateBrandUseCase
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.usecase.ObserveCategoriesUseCase
+import com.hisabak.feature.category.presentation.CategoryCreatedBus
 import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.testutil.FakeAnalytics
 import com.hisabak.testutil.FakeBrandRepository
@@ -28,6 +29,7 @@ class BrandEditViewModelTest : MainDispatcherTest() {
     private val brandRepo = FakeBrandRepository()
     private val catRepo = FakeCategoryRepository(listOf(category(id = "c1", name = "Food")))
     private val analytics = FakeAnalytics()
+    private val categoryCreatedBus = CategoryCreatedBus()
 
     private fun viewModel(brandId: BrandId? = null) = BrandEditViewModel(
         brandId = brandId,
@@ -35,6 +37,7 @@ class BrandEditViewModelTest : MainDispatcherTest() {
         observeCategories = ObserveCategoriesUseCase(catRepo),
         createBrand = CreateBrandUseCase(brandRepo),
         updateBrand = UpdateBrandUseCase(brandRepo),
+        categoryCreatedBus = categoryCreatedBus,
         analytics = analytics,
     )
 
@@ -79,6 +82,30 @@ class BrandEditViewModelTest : MainDispatcherTest() {
         assertEquals(true, event.params["has_category"])
         // PII guard: the brand name never reaches analytics.
         assertTrue(event.params.values.none { it == "Carrefour" })
+    }
+
+    @Test
+    fun `a category created via the new-category detour is selected and the bus is consumed`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.onIntent(BrandEditIntent.NameChanged("Carrefour"))
+
+        categoryCreatedBus.publish(CategoryId("c2"))
+        advanceUntilIdle()
+
+        assertEquals(CategoryId("c2"), vm.state.value.selectedCategoryId)
+        assertEquals("Carrefour", vm.state.value.nameInput) // editor state survived the detour
+        assertNull(categoryCreatedBus.pending.value)
+    }
+
+    @Test
+    fun `a category id published before the editor opens is not lost`() = runTest {
+        categoryCreatedBus.publish(CategoryId("c2"))
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(CategoryId("c2"), vm.state.value.selectedCategoryId)
+        assertNull(categoryCreatedBus.pending.value)
     }
 
     @Test

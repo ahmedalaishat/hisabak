@@ -4,6 +4,13 @@ All notable changes to Hisabak are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Create a category without leaving the brand editor** — the category row in the brand
+  screen ends with a "New category" chip that opens the category editor; saving returns
+  you to the brand with the new category already selected and your typed name intact.
+
 ## [2.0.0] — 2026-08-05
 
 ### Highlights

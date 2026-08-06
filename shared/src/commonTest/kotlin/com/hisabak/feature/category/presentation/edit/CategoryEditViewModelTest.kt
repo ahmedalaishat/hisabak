@@ -15,6 +15,7 @@ import com.hisabak.testutil.FakeCategoryRepository
 import com.hisabak.testutil.MainDispatcherTest
 import com.hisabak.testutil.TestClock
 import com.hisabak.testutil.aed
+import com.hisabak.testutil.category
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -74,7 +75,8 @@ class CategoryEditViewModelTest : MainDispatcherTest() {
 
         val category = catRepo.current.single()
         assertEquals("Groceries", category.name)
-        assertEquals(CategoryEditEffect.Saved, vm.effect.value)
+        // Saved carries the created id so the "+ New category" detour can select it.
+        assertEquals(CategoryEditEffect.Saved(category.id), vm.effect.value)
         assertEquals(aed(500_00), limitRepo.current.effectiveFor(category.id, YearMonth(2026, 6)))
 
         val event = analytics.logged.single() as AnalyticsEvent.CategoryCreated
@@ -82,6 +84,19 @@ class CategoryEditViewModelTest : MainDispatcherTest() {
         assertEquals(true, event.params["has_limit"])
         // PII guard: the category name never reaches analytics.
         assertTrue(event.params.values.none { it == "Groceries" })
+    }
+
+    @Test
+    fun `updating an existing category emits Saved with its id`() = runTest {
+        catRepo.emit(listOf(category(id = "c1", name = "Food")))
+        val vm = viewModel(CategoryId("c1"))
+        advanceUntilIdle()
+
+        vm.onIntent(CategoryEditIntent.NameChanged("Dining"))
+        vm.onIntent(CategoryEditIntent.Save)
+        advanceUntilIdle()
+
+        assertEquals(CategoryEditEffect.Saved(CategoryId("c1")), vm.effect.value)
     }
 
     @Test

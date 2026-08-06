@@ -125,7 +125,7 @@ class CategoryEditViewModel(
                         )
                     }
                     setState { copy(isSaving = false) }
-                    sendEffect(CategoryEditEffect.Saved)
+                    sendEffect(CategoryEditEffect.Saved(saved.value))
                 }
                 is DomainResult.Failure -> setState {
                     copy(isSaving = false, generalError = saved.error.message)

@@ -39,6 +39,7 @@ import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.brand.presentation.BrandEditBus
 import com.hisabak.feature.brand.presentation.edit.BrandEditRoute
 import com.hisabak.feature.category.domain.CategoryId
+import com.hisabak.feature.category.presentation.CategoryCreatedBus
 import com.hisabak.feature.category.presentation.edit.CategoryEditRoute
 import com.hisabak.feature.dashboard.presentation.CategoryFocusBus
 import com.hisabak.feature.dashboard.presentation.DashboardRoute
@@ -206,6 +207,7 @@ private fun HisabakNav(slots: PlatformSlots) {
     val inboxOpenBus = koinInject<com.hisabak.feature.sms.presentation.InboxOpenBus>()
     val categoryFocusBus = koinInject<CategoryFocusBus>()
     val brandEditBus = koinInject<BrandEditBus>()
+    val categoryCreatedBus = koinInject<CategoryCreatedBus>()
     val notificationRepository = koinInject<NotificationRepository>()
 
     val unreadCount by notificationRepository.observeUnreadCount().collectAsStateWithLifecycle(initialValue = 0)
@@ -433,12 +435,16 @@ private fun HisabakNav(slots: PlatformSlots) {
                     brandId = key.id?.let(::BrandId),
                     onDone = { closeBrandEditor() },
                     onCancel = { closeBrandEditor() },
+                    onCreateCategory = { navigator.navigate(CategoryEditKey(id = null, forPick = true)) },
                 )
             }
             entry<CategoryEditKey>(metadata = fullScreenTransition()) { key ->
                 CategoryEditRoute(
                     categoryId = key.id?.let(::CategoryId),
-                    onDone = { navigator.goBack() },
+                    onDone = { id ->
+                        if (key.forPick) categoryCreatedBus.publish(id)
+                        navigator.goBack()
+                    },
                     onCancel = { navigator.goBack() },
                 )
             }

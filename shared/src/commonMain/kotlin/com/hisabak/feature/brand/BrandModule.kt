@@ -42,6 +42,7 @@ val brandModule = module {
             observeCategories = get(),
             createBrand = get(),
             updateBrand = get(),
+            categoryCreatedBus = get(),
             analytics = get(),
         )
     }
