@@ -295,7 +295,7 @@ retained per tab when switching; the user always exits the app through the **Das
 | Dashboard | DashboardKey | Single screen |
 | Transactions | TransactionsKey | List → Edit (bottom sheet; an uncategorized brand note pushes the brand editor over it) |
 | SMS | SmsKey | Inbox → template editor (full screen) / transaction sheet (review of an AI-parsed entry) |
-| Manage | ManageKey | Brands/Categories list → Edit (full screen) |
+| Manage | ManageKey | Brands/Categories list → Edit (full screen; the brand editor's "+ New category" chip pushes the category editor and auto-selects the result via `CategoryCreatedBus`) |
 | Settings | SettingsKey | Theme + language + app lock → Backup & restore / SMS parsing → template editor (full screen) |
 
 Pattern: `List` → tap row or FAB → push `Edit(id?)` destination → Save/Cancel calls

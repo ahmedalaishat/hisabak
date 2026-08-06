@@ -13,6 +13,7 @@ fun BrandEditRoute(
     brandId: BrandId?,
     onDone: () -> Unit,
     onCancel: () -> Unit,
+    onCreateCategory: () -> Unit,
     viewModel: BrandEditViewModel = koinViewModel(
         key = brandId?.value ?: "new",
         parameters = { parametersOf(brandId) },
@@ -33,6 +34,7 @@ fun BrandEditRoute(
         state = state,
         onNameChange = { viewModel.onIntent(BrandEditIntent.NameChanged(it)) },
         onCategoryChange = { viewModel.onIntent(BrandEditIntent.CategoryChanged(it)) },
+        onCreateCategory = onCreateCategory,
         onSave = { viewModel.onIntent(BrandEditIntent.Save) },
         onCancel = onCancel,
     )

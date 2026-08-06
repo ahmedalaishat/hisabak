@@ -11,6 +11,7 @@ import com.hisabak.feature.category.domain.usecase.ObserveCategoriesUseCase
 import com.hisabak.feature.category.domain.usecase.ObserveCategoryLimitsUseCase
 import com.hisabak.feature.category.domain.usecase.SetCategoryLimitUseCase
 import com.hisabak.feature.category.domain.usecase.UpdateCategoryUseCase
+import com.hisabak.feature.category.presentation.CategoryCreatedBus
 import com.hisabak.feature.category.presentation.edit.CategoryEditViewModel
 import com.hisabak.feature.category.presentation.list.CategoryListViewModel
 import org.koin.core.module.dsl.viewModel
@@ -19,6 +20,7 @@ import org.koin.dsl.module
 val categoryModule = module {
     single<CategoryRepository> { RoomCategoryRepository(dao = get()) }
     single<CategoryLimitRepository> { RoomCategoryLimitRepository(dao = get(), currency = get()) }
+    single { CategoryCreatedBus() }
 
     factory { ObserveCategoriesUseCase(get()) }
     factory { CreateCategoryUseCase(get()) }

@@ -11,7 +11,7 @@ import org.koin.core.parameter.parametersOf
 @Composable
 fun CategoryEditRoute(
     categoryId: CategoryId?,
-    onDone: () -> Unit,
+    onDone: (CategoryId) -> Unit,
     onCancel: () -> Unit,
     viewModel: CategoryEditViewModel = koinViewModel(
         key = categoryId?.value ?: "new",
@@ -25,7 +25,7 @@ fun CategoryEditRoute(
         onConsumeEffect = { viewModel.onIntent(CategoryEditIntent.ConsumeEffect) },
     ) { effect ->
         when (effect) {
-            CategoryEditEffect.Saved -> onDone()
+            is CategoryEditEffect.Saved -> onDone(effect.id)
         }
     }
 
