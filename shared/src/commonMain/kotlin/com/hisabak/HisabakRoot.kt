@@ -36,6 +36,7 @@ import com.hisabak.core.domain.AppPreferences
 import com.hisabak.core.domain.ThemeMode
 import com.hisabak.core.domain.analytics.Analytics
 import com.hisabak.feature.brand.domain.BrandId
+import com.hisabak.feature.brand.presentation.BrandCreatedBus
 import com.hisabak.feature.brand.presentation.BrandEditBus
 import com.hisabak.feature.brand.presentation.edit.BrandEditRoute
 import com.hisabak.feature.category.domain.Category
@@ -193,6 +194,9 @@ private enum class RootTab(
     Settings(SettingsKey, Res.string.nav_settings, HugeIcons.Settings),
 }
 
+/** Which transaction sheet to restore after a brand-editor detour (null id = the new-entry sheet). */
+private data class ReopenSheet(val transactionId: String?)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HisabakNav(slots: PlatformSlots) {
@@ -202,15 +206,17 @@ private fun HisabakNav(slots: PlatformSlots) {
     )
     val navigator = remember { Navigator(navigationState) }
     // Pushing a full screen ON TOP of the bottom-sheet entry breaks the overlay scene on the
-    // way back (duplicate saveable key, observed on device) — so the brand-note detour closes
-    // the sheet first and reopens the same transaction when the brand editor finishes.
-    val reopenTransactionAfterBrandEdit = remember { mutableStateOf<String?>(null) }
+    // way back (duplicate saveable key, observed on device) — so the brand detours close the
+    // sheet first and reopen the same transaction (null id = a new one, whose typed input the
+    // draft bus preserves) when the brand editor finishes.
+    val reopenTransactionAfterBrandEdit = remember { mutableStateOf<ReopenSheet?>(null) }
     val bottomSheetStrategy = remember { BottomSheetSceneStrategy<NavKey>() }
     val filterBus = koinInject<TransactionListFilterBus>()
     val inboxOpenBus = koinInject<com.hisabak.feature.sms.presentation.InboxOpenBus>()
     val categoryFocusBus = koinInject<CategoryFocusBus>()
     val brandEditBus = koinInject<BrandEditBus>()
     val categoryCreatedBus = koinInject<CategoryCreatedBus>()
+    val brandCreatedBus = koinInject<BrandCreatedBus>()
     val notificationRepository = koinInject<NotificationRepository>()
 
     val unreadCount by notificationRepository.observeUnreadCount().collectAsStateWithLifecycle(initialValue = 0)
@@ -419,24 +425,32 @@ private fun HisabakNav(slots: PlatformSlots) {
                     onDone = { navigator.goBack() },
                     onCancel = { navigator.goBack() },
                     onEditBrand = { id ->
-                        reopenTransactionAfterBrandEdit.value = key.id
+                        reopenTransactionAfterBrandEdit.value = ReopenSheet(key.id)
                         navigator.goBack()
                         navigator.navigate(BrandEditKey(id = id.value))
+                    },
+                    onCreateBrand = {
+                        reopenTransactionAfterBrandEdit.value = ReopenSheet(key.id)
+                        navigator.goBack()
+                        navigator.navigate(BrandEditKey(id = null, forPick = true))
                     },
                 )
             }
             entry<BrandEditKey>(metadata = fullScreenTransition()) { key ->
                 val closeBrandEditor = {
                     navigator.goBack()
-                    // Came from the transaction sheet's brand note — put the sheet back.
+                    // Came from the transaction sheet — put the sheet back.
                     reopenTransactionAfterBrandEdit.value?.let {
-                        navigator.navigate(TransactionEditKey(id = it))
+                        navigator.navigate(TransactionEditKey(id = it.transactionId))
                         reopenTransactionAfterBrandEdit.value = null
                     }
                 }
                 BrandEditRoute(
                     brandId = key.id?.let(::BrandId),
-                    onDone = { closeBrandEditor() },
+                    onDone = { id ->
+                        if (key.forPick) brandCreatedBus.publish(id)
+                        closeBrandEditor()
+                    },
                     onCancel = { closeBrandEditor() },
                     onCreateCategory = { prefill ->
                         navigator.navigate(

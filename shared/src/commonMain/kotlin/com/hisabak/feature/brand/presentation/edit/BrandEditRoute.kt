@@ -12,7 +12,7 @@ import org.koin.core.parameter.parametersOf
 @Composable
 fun BrandEditRoute(
     brandId: BrandId?,
-    onDone: () -> Unit,
+    onDone: (BrandId) -> Unit,
     onCancel: () -> Unit,
     onCreateCategory: (CategoryEditPrefill?) -> Unit,
     viewModel: BrandEditViewModel = koinViewModel(
@@ -27,7 +27,7 @@ fun BrandEditRoute(
         onConsumeEffect = { viewModel.onIntent(BrandEditIntent.ConsumeEffect) },
     ) { effect ->
         when (effect) {
-            BrandEditEffect.Saved -> onDone()
+            is BrandEditEffect.Saved -> onDone(effect.id)
             is BrandEditEffect.OpenCategoryEditor -> onCreateCategory(effect.prefill)
         }
     }

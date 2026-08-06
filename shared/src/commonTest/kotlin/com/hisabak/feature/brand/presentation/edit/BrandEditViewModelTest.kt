@@ -82,7 +82,8 @@ class BrandEditViewModelTest : MainDispatcherTest() {
         val saved = brandRepo.current.single()
         assertEquals("Carrefour", saved.name)
         assertEquals(CategoryId("c1"), saved.categoryId)
-        assertEquals(BrandEditEffect.Saved, vm.effect.value)
+        // Saved carries the id so the transaction sheet's "New brand" detour can select it.
+        assertEquals(BrandEditEffect.Saved(saved.id), vm.effect.value)
 
         val event = analytics.logged.single() as AnalyticsEvent.BrandCreated
         assertEquals(true, event.params["has_category"])

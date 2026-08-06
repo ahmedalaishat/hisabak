@@ -135,13 +135,13 @@ class BrandEditViewModel(
         }
         setState { copy(isSaving = true, generalError = null) }
         viewModelScope.launch {
-            val result: DomainResult<Unit> = if (brandId == null) {
-                createBrand(name = name, categoryId = s.selectedCategoryId).map { }
+            val result: DomainResult<BrandId> = if (brandId == null) {
+                createBrand(name = name, categoryId = s.selectedCategoryId).map { it.id }
             } else {
                 when (val existing = brandRepository.getById(brandId)) {
                     is DomainResult.Success -> updateBrand(
                         existing.value.copy(name = name, categoryId = s.selectedCategoryId),
-                    )
+                    ).map { brandId }
                     is DomainResult.Failure -> DomainResult.Failure(existing.error)
                 }
             }
@@ -152,7 +152,7 @@ class BrandEditViewModel(
                         analytics.log(AnalyticsEvent.BrandCreated(hasCategory = s.selectedCategoryId != null))
                     }
                     setState { copy(isSaving = false) }
-                    sendEffect(BrandEditEffect.Saved)
+                    sendEffect(BrandEditEffect.Saved(result.value))
                 }
                 is DomainResult.Failure -> setState {
                     copy(isSaving = false, generalError = result.error.message)

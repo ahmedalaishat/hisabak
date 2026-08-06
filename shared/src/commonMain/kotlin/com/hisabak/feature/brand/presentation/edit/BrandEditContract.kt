@@ -3,6 +3,7 @@ package com.hisabak.feature.brand.presentation.edit
 import com.hisabak.core.presentation.ViewEffect
 import com.hisabak.core.presentation.ViewIntent
 import com.hisabak.core.presentation.ViewState
+import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.brand.domain.ai.CategorySuggestion
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.presentation.edit.CategoryEditPrefill
@@ -38,7 +39,7 @@ sealed interface BrandEditIntent : ViewIntent {
 }
 
 sealed interface BrandEditEffect : ViewEffect {
-    data object Saved : BrandEditEffect
+    data class Saved(val id: BrandId) : BrandEditEffect
 
     /** Accepted "new category" suggestion — open the category editor prefilled, in pick mode. */
     data class OpenCategoryEditor(val prefill: CategoryEditPrefill) : BrandEditEffect
