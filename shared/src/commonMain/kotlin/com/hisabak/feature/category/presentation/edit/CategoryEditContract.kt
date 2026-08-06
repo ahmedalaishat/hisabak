@@ -36,3 +36,11 @@ sealed interface CategoryEditIntent : ViewIntent {
 sealed interface CategoryEditEffect : ViewEffect {
     data class Saved(val id: CategoryId) : CategoryEditEffect
 }
+
+/** Initial values for a new category opened from an accepted AI suggestion (already sanitized). */
+data class CategoryEditPrefill(
+    val name: String,
+    val type: CategoryType,
+    val color: String,
+    val icon: String,
+)

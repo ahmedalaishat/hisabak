@@ -66,6 +66,24 @@ sealed class AnalyticsEvent(
 
     data object AiSuggestionDismissed : AnalyticsEvent("ai_suggestion_dismissed")
 
+    /** The AI proposed a category in the brand editor. [kind] is "existing" or "new". */
+    class AiCategorySuggested(kind: String) : AnalyticsEvent(
+        name = "ai_category_suggested",
+        params = mapOf("kind" to kind),
+    )
+
+    /** The user tapped the suggested-category chip. [kind] is "existing" or "new". */
+    class AiCategoryAccepted(kind: String) : AnalyticsEvent(
+        name = "ai_category_accepted",
+        params = mapOf("kind" to kind),
+    )
+
+    /** [reason] is "unavailable" or "model_empty" — never the brand name. */
+    class AiCategoryFailed(reason: String) : AnalyticsEvent(
+        name = "ai_category_failed",
+        params = mapOf("reason" to reason),
+    )
+
     /** A user saved a parse template from a tagged sample ([edited] = replacing an existing one). */
     class SmsTemplateCreated(edited: Boolean) : AnalyticsEvent(
         name = "sms_template_created",

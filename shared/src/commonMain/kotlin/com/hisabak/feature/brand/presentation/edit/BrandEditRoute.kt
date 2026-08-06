@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hisabak.core.presentation.LaunchedViewEffectHandler
 import com.hisabak.feature.brand.domain.BrandId
+import com.hisabak.feature.category.presentation.edit.CategoryEditPrefill
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -13,7 +14,7 @@ fun BrandEditRoute(
     brandId: BrandId?,
     onDone: () -> Unit,
     onCancel: () -> Unit,
-    onCreateCategory: () -> Unit,
+    onCreateCategory: (CategoryEditPrefill?) -> Unit,
     viewModel: BrandEditViewModel = koinViewModel(
         key = brandId?.value ?: "new",
         parameters = { parametersOf(brandId) },
@@ -27,6 +28,7 @@ fun BrandEditRoute(
     ) { effect ->
         when (effect) {
             BrandEditEffect.Saved -> onDone()
+            is BrandEditEffect.OpenCategoryEditor -> onCreateCategory(effect.prefill)
         }
     }
 
@@ -34,7 +36,8 @@ fun BrandEditRoute(
         state = state,
         onNameChange = { viewModel.onIntent(BrandEditIntent.NameChanged(it)) },
         onCategoryChange = { viewModel.onIntent(BrandEditIntent.CategoryChanged(it)) },
-        onCreateCategory = onCreateCategory,
+        onCreateCategory = { onCreateCategory(null) },
+        onAcceptSuggestion = { viewModel.onIntent(BrandEditIntent.SuggestionAccepted) },
         onSave = { viewModel.onIntent(BrandEditIntent.Save) },
         onCancel = onCancel,
     )

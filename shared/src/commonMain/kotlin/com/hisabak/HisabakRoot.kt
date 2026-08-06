@@ -38,8 +38,11 @@ import com.hisabak.core.domain.analytics.Analytics
 import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.brand.presentation.BrandEditBus
 import com.hisabak.feature.brand.presentation.edit.BrandEditRoute
+import com.hisabak.feature.category.domain.Category
 import com.hisabak.feature.category.domain.CategoryId
+import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.category.presentation.CategoryCreatedBus
+import com.hisabak.feature.category.presentation.edit.CategoryEditPrefill
 import com.hisabak.feature.category.presentation.edit.CategoryEditRoute
 import com.hisabak.feature.dashboard.presentation.CategoryFocusBus
 import com.hisabak.feature.dashboard.presentation.DashboardRoute
@@ -435,12 +438,32 @@ private fun HisabakNav(slots: PlatformSlots) {
                     brandId = key.id?.let(::BrandId),
                     onDone = { closeBrandEditor() },
                     onCancel = { closeBrandEditor() },
-                    onCreateCategory = { navigator.navigate(CategoryEditKey(id = null, forPick = true)) },
+                    onCreateCategory = { prefill ->
+                        navigator.navigate(
+                            CategoryEditKey(
+                                id = null,
+                                forPick = true,
+                                prefillName = prefill?.name,
+                                prefillType = prefill?.type?.name,
+                                prefillColor = prefill?.color,
+                                prefillIcon = prefill?.icon,
+                            ),
+                        )
+                    },
                 )
             }
             entry<CategoryEditKey>(metadata = fullScreenTransition()) { key ->
                 CategoryEditRoute(
                     categoryId = key.id?.let(::CategoryId),
+                    prefill = key.prefillName?.let { name ->
+                        CategoryEditPrefill(
+                            name = name,
+                            type = CategoryType.entries.firstOrNull { it.name == key.prefillType }
+                                ?: CategoryType.EXPENSES,
+                            color = key.prefillColor ?: Category.DEFAULT_COLOR,
+                            icon = key.prefillIcon ?: Category.DEFAULT_ICON,
+                        )
+                    },
                     onDone = { id ->
                         if (key.forPick) categoryCreatedBus.publish(id)
                         navigator.goBack()

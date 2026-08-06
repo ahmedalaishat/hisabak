@@ -7,10 +7,15 @@ import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.core.presentation.BaseViewModel
 import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.brand.domain.BrandRepository
+import com.hisabak.feature.brand.domain.ai.CategorySuggestion
+import com.hisabak.feature.brand.domain.ai.SuggestBrandCategoryUseCase
 import com.hisabak.feature.brand.domain.usecase.CreateBrandUseCase
 import com.hisabak.feature.brand.domain.usecase.UpdateBrandUseCase
 import com.hisabak.feature.category.domain.usecase.ObserveCategoriesUseCase
 import com.hisabak.feature.category.presentation.CategoryCreatedBus
+import com.hisabak.feature.category.presentation.edit.CategoryEditPrefill
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class BrandEditViewModel(
@@ -20,8 +25,11 @@ class BrandEditViewModel(
     private val createBrand: CreateBrandUseCase,
     private val updateBrand: UpdateBrandUseCase,
     private val categoryCreatedBus: CategoryCreatedBus,
+    private val suggestCategory: SuggestBrandCategoryUseCase,
     private val analytics: Analytics,
 ) : BaseViewModel<BrandEditIntent, BrandEditUiState, BrandEditEffect>() {
+
+    private var suggestJob: Job? = null
 
     override fun initialState() = BrandEditUiState(isNew = brandId == null)
 
@@ -38,7 +46,7 @@ class BrandEditViewModel(
         viewModelScope.launch {
             categoryCreatedBus.pending.collect { created ->
                 if (created != null) {
-                    setState { copy(selectedCategoryId = created) }
+                    setState { copy(selectedCategoryId = created, suggestion = null) }
                     categoryCreatedBus.consume()
                 }
             }
@@ -48,12 +56,49 @@ class BrandEditViewModel(
 
     override fun onIntent(intent: BrandEditIntent) {
         when (intent) {
-            is BrandEditIntent.NameChanged ->
-                setState { copy(nameInput = intent.value, nameError = null) }
+            is BrandEditIntent.NameChanged -> {
+                // isSuggesting resets too: cancelling an in-flight request must not strand the spinner.
+                setState { copy(nameInput = intent.value, nameError = null, suggestion = null, isSuggesting = false) }
+                scheduleSuggestion(intent.value)
+            }
             is BrandEditIntent.CategoryChanged ->
                 setState { copy(selectedCategoryId = intent.categoryId) }
+            BrandEditIntent.SuggestionAccepted -> acceptSuggestion()
             BrandEditIntent.Save -> save()
             BrandEditIntent.ConsumeEffect -> clearEffect()
+        }
+    }
+
+    private fun scheduleSuggestion(name: String) {
+        suggestJob?.cancel()
+        val trimmed = name.trim()
+        if (trimmed.length < MIN_SUGGEST_LENGTH) return
+        suggestJob = viewModelScope.launch {
+            delay(SUGGEST_DEBOUNCE_MS)
+            if (state.value.selectedCategoryId != null || !suggestCategory.isAvailable()) return@launch
+            setState { copy(isSuggesting = true) }
+            val suggestion = suggestCategory(trimmed)
+            setState { copy(isSuggesting = false, suggestion = suggestion) }
+        }
+    }
+
+    private fun acceptSuggestion() {
+        when (val suggestion = state.value.suggestion) {
+            is CategorySuggestion.Existing -> {
+                analytics.log(AnalyticsEvent.AiCategoryAccepted("existing"))
+                setState { copy(selectedCategoryId = suggestion.category.id, suggestion = null) }
+            }
+            // The suggestion stays visible: cancelling the prefilled editor returns unchanged,
+            // while a save comes back through the bus and clears it there.
+            is CategorySuggestion.New -> {
+                analytics.log(AnalyticsEvent.AiCategoryAccepted("new"))
+                sendEffect(
+                    BrandEditEffect.OpenCategoryEditor(
+                        CategoryEditPrefill(suggestion.name, suggestion.type, suggestion.color, suggestion.icon),
+                    ),
+                )
+            }
+            null -> Unit
         }
     }
 
@@ -111,5 +156,10 @@ class BrandEditViewModel(
                 }
             }
         }
+    }
+
+    private companion object {
+        const val MIN_SUGGEST_LENGTH = 2
+        const val SUGGEST_DEBOUNCE_MS = 700L
     }
 }

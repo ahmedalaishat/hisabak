@@ -26,6 +26,9 @@ import androidx.compose.ui.Modifier
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.unit.dp
 import com.hisabak.shared.resources.*
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import com.hisabak.feature.brand.domain.ai.CategorySuggestion
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.ui.components.ButtonVariant
 import com.hisabak.ui.components.ColoredFilterChip
@@ -40,6 +43,7 @@ fun BrandEditScreen(
     onNameChange: (String) -> Unit,
     onCategoryChange: (CategoryId?) -> Unit,
     onCreateCategory: () -> Unit,
+    onAcceptSuggestion: () -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -73,6 +77,14 @@ fun BrandEditScreen(
                 onSelect = onCategoryChange,
                 onCreateNew = onCreateCategory,
             )
+
+            if (state.selectedCategoryId == null) {
+                SuggestionRow(
+                    isSuggesting = state.isSuggesting,
+                    suggestion = state.suggestion,
+                    onAccept = onAcceptSuggestion,
+                )
+            }
 
             if (state.generalError != null) {
                 Text(
@@ -117,6 +129,44 @@ private fun NameField(
                 modifier = Modifier.padding(start = Spacing.s2),
             )
         }
+    }
+}
+
+/** The AI suggestion line: a quiet progress hint while the model runs, then a tappable chip. */
+@Composable
+private fun SuggestionRow(
+    isSuggesting: Boolean,
+    suggestion: CategorySuggestion?,
+    onAccept: () -> Unit,
+) {
+    when {
+        isSuggesting -> Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(14.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(Res.string.brand_ai_suggesting),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        suggestion is CategorySuggestion.Existing -> ColoredFilterChip(
+            label = stringResource(Res.string.brand_ai_suggested, suggestion.category.name),
+            colorKey = suggestion.category.color,
+            selected = false,
+            onClick = onAccept,
+        )
+        suggestion is CategorySuggestion.New -> ColoredFilterChip(
+            label = stringResource(Res.string.brand_ai_suggested_new, suggestion.name),
+            colorKey = suggestion.color,
+            selected = false,
+            onClick = onAccept,
+        )
     }
 }
 
