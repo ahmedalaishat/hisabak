@@ -115,6 +115,9 @@ class BrandEditViewModel(
                             selectedCategoryId = b.categoryId,
                         )
                     }
+                    // Categorizing an existing brand (the notification detour) opens with the
+                    // name already filled — suggest without waiting for an edit.
+                    if (b.categoryId == null) scheduleSuggestion(b.name)
                 }
                 is DomainResult.Failure -> setState {
                     copy(isLoading = false, generalError = result.error.message)

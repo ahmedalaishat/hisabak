@@ -199,6 +199,30 @@ class BrandEditViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `opening an uncategorized brand suggests without editing the name`() = runTest {
+        suggester.result = AiRawCategorySuggestion("Food", null, null, null, null)
+        brandRepo.emit(listOf(brand(id = "b1", name = "Carrefour", categoryId = null)))
+
+        val vm = viewModel(BrandId("b1"))
+        advanceUntilIdle()
+
+        assertEquals("c1", ((vm.state.value.suggestion) as CategorySuggestion.Existing).category.id.value)
+        assertEquals(listOf("Carrefour"), suggester.suggestedBrands)
+    }
+
+    @Test
+    fun `opening a categorized brand never suggests`() = runTest {
+        suggester.result = AiRawCategorySuggestion("Food", null, null, null, null)
+        brandRepo.emit(listOf(brand(id = "b1", name = "Carrefour", categoryId = CategoryId("c1"))))
+
+        val vm = viewModel(BrandId("b1"))
+        advanceUntilIdle()
+
+        assertNull(vm.state.value.suggestion)
+        assertTrue(suggester.suggestedBrands.isEmpty())
+    }
+
+    @Test
     fun `editing the name clears a stale suggestion`() = runTest {
         suggester.result = AiRawCategorySuggestion("Food", null, null, null, null)
         val vm = viewModel()
