@@ -164,7 +164,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "PLIST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist\"\nif [ ! -f \"$PLIST\" ]; then\n  echo \"No GoogleService-Info.plist; skipping Crashlytics symbol upload.\"\n  exit 0\nfi\n\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
+			shellScript = "case \"${CONFIGURATION}\" in *Staging) NAME=\"GoogleService-Info-Staging.plist\";; *) NAME=\"GoogleService-Info-Prod.plist\";; esac\nPLIST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/${NAME}\"\nif [ ! -f \"$PLIST\" ]; then\n  echo \"No ${NAME}; skipping Crashlytics symbol upload.\"\n  exit 0\nfi\n\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\" -gsp \"$PLIST\"\n";
 		};
 		E9E9B0AB4916406C00220238 /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
