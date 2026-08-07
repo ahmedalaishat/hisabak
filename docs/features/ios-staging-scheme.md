@@ -36,10 +36,10 @@ comes later with the paid Apple Developer plan (PR B7).
 - **Kotlin:** `bundleFlavor()` in `IosPlatformModule` reads the plist key;
   `AppConfig(seedData = flavor == "staging", …)`. `startIosApp` already branches
   `seedIfEmpty()` vs `seedStartersIfEmpty()` on it — no shared-code changes.
-- **Trade-offs / decisions:** staging reuses prod's `GoogleService-Info.plist` — Firebase
-  logs a bundle-id-mismatch warning, and Crashlytics is collection-off in Debug anyway;
-  registering a staging iOS app in Firebase is deferred until staging release builds
-  matter (B7). Same for the Drive OAuth client: Google validates the redirect scheme, not
+- **Trade-offs / decisions:** ~~staging reuses prod's `GoogleService-Info.plist`~~ —
+  **superseded 2026-08-07 (PR #156):** the staging iOS app is now registered in Firebase and
+  each flavor loads its own plist (`GoogleService-Info-Prod`/`-Staging`, selected by
+  `HisabakFlavor`), so staging crashes attribute to `com.hisabak.staging`. Same for the Drive OAuth client: Google validates the redirect scheme, not
   the runtime bundle id, so staging Drive backup works with the shared client id. Same
   `BGTaskScheduler` identifier string in both apps is fine — identifiers are per-app.
 - **Test strategy:** no unit-testable logic (one plist read); verified by building both
