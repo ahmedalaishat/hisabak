@@ -179,6 +179,9 @@
     <string name="category_add_new">إضافة جديد</string>
     <string name="category_delete_body_empty">تصبح علاماتها بلا فئة. لن تتأثر أي معاملات.</string>
     <string name="brand_name_label">اسم العلامة</string>
+    <string name="brand_ai_suggesting">جارٍ اقتراح فئة…</string>
+    <string name="brand_ai_suggested">مقترح: %1$s</string>
+    <string name="brand_ai_suggested_new">جديدة: %1$s</string>
     <string name="brand_search_placeholder">ابحث في العلامات</string>
     <string name="brand_all_section">كل العلامات</string>
     <string name="brand_empty_title">لا توجد علامات بعد</string>

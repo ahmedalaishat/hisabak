@@ -120,15 +120,24 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   today's date so relative wording resolves, and its plausibility window reaches a year back
   (vs 7 days for live SMS), never the future. Brand snapping is the shared `canonicalizeBrand`
   (`feature/sms/domain/ai/BrandCanonicalizer.kt`). The add-transaction sheet is deliberately
-  manual-only — every AI affordance is confirm-first and lives in the inbox. Parsing is **brand-aware**: the
+  manual-only — every AI affordance is confirm-first: parse suggestions live in the inbox, and
+  the **brand editor suggests a category** (`AiCategorySuggester` port + pure
+  `sanitizeCategorySuggestion` + `SuggestBrandCategoryUseCase` in `feature/brand/domain/ai/`;
+  debounced on name-settle, rendered as a tappable chip — an existing category selects on tap,
+  a proposed new one opens the category editor prefilled via `CategoryEditKey` prefill fields +
+  `forPick`/`CategoryCreatedBus`). Parsing is **brand-aware**: the
   top-50 most-used brand names go into the prompt, and `canonicalize` (exact/substring/
   Levenshtein≤2) snaps the model's merchant string to an existing brand deterministically. Android:
-  `GeminiNanoSmsParser` over the ML Kit GenAI **Prompt API** (`com.google.mlkit:genai-prompt`,
-  beta — OS-managed Gemini Nano via AICore, flagship devices only). iOS: `AiSmsBridge` seam →
-  `FoundationModelsSmsParser.swift` (Apple Foundation Models, iOS 26+, `@Generable`; injected
-  via `startIosApp(gcmCipher, aiSmsBridge)` like the CryptoKit bridge). Unsupported devices
+  `GeminiNanoSmsParser` + `GeminiNanoCategorySuggester` over the ML Kit GenAI **Prompt API**
+  (`com.google.mlkit:genai-prompt`,
+  beta — OS-managed Gemini Nano via AICore, flagship devices only). iOS: `AiSmsBridge` /
+  `AiCategoryBridge` seams →
+  `FoundationModelsSmsParser.swift` / `FoundationModelsCategorySuggester.swift` (Apple
+  Foundation Models, iOS 26+, `@Generable`; injected
+  via `startIosApp(gcmCipher, aiSmsBridge, aiCategoryBridge)` like the CryptoKit bridge).
+  Unsupported devices
   report `Unavailable` and every AI affordance stays hidden. Inference is fully on-device —
-  SMS text never leaves the phone; analytics events (`ai_parse_*`) stay PII-free.
+  SMS text never leaves the phone; analytics events (`ai_parse_*`, `ai_category_*`) stay PII-free.
 - **Platform:** Android only, portrait, edge-to-edge. `minSdk 29`.
 - **Dates & times: use kotlinx-datetime** (`kotlin.time.Instant`, `kotlinx.datetime.LocalDate` /
   `YearMonth` / `TimeZone`), **not `java.time`** — the code is KMP-bound and java.time doesn't
@@ -293,7 +302,7 @@ retained per tab when switching; the user always exits the app through the **Das
 | Tab | Top-level key | Internal screens |
 |-----|---------------|-----------------|
 | Dashboard | DashboardKey | Single screen |
-| Transactions | TransactionsKey | List → Edit (bottom sheet; an uncategorized brand note pushes the brand editor over it) |
+| Transactions | TransactionsKey | List → Edit (bottom sheet; the "New brand" chip and the uncategorized-brand note detour to the brand editor — the sheet closes/reopens around it with its typed input parked in `TransactionDraftBus`, and a created brand auto-selects via `BrandCreatedBus`) |
 | SMS | SmsKey | Inbox → template editor (full screen) / transaction sheet (review of an AI-parsed entry) |
 | Manage | ManageKey | Brands/Categories list → Edit (full screen; the brand editor's "+ New category" chip pushes the category editor and auto-selects the result via `CategoryCreatedBus`) |
 | Settings | SettingsKey | Theme + language + app lock → Backup & restore / SMS parsing → template editor (full screen) |

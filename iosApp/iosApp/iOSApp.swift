@@ -20,7 +20,11 @@ struct iOSApp: App {
             Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
             #endif
         }
-        IosAppStartKt.startIosApp(gcmCipher: CryptoKitGcmCipher(), aiSmsBridge: FoundationModelsSmsParser())
+        IosAppStartKt.startIosApp(
+            gcmCipher: CryptoKitGcmCipher(),
+            aiSmsBridge: FoundationModelsSmsParser(),
+            aiCategoryBridge: FoundationModelsCategorySuggester()
+        )
     }
 
     var body: some Scene {

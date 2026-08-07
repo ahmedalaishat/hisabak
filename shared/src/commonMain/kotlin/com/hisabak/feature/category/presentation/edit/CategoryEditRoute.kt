@@ -13,9 +13,10 @@ fun CategoryEditRoute(
     categoryId: CategoryId?,
     onDone: (CategoryId) -> Unit,
     onCancel: () -> Unit,
+    prefill: CategoryEditPrefill? = null,
     viewModel: CategoryEditViewModel = koinViewModel(
         key = categoryId?.value ?: "new",
-        parameters = { parametersOf(categoryId) },
+        parameters = { parametersOf(categoryId, prefill) },
     ),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()

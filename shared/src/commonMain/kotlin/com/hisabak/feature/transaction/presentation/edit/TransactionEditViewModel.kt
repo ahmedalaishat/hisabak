@@ -10,6 +10,7 @@ import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.core.presentation.BaseViewModel
 import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.brand.domain.usecase.ObserveBrandsUseCase
+import com.hisabak.feature.brand.presentation.BrandCreatedBus
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.category.domain.usecase.ObserveCategoriesUseCase
 import com.hisabak.feature.transaction.domain.TransactionId
@@ -33,6 +34,8 @@ class TransactionEditViewModel(
     private val createTransaction: CreateTransactionUseCase,
     private val updateTransaction: UpdateTransactionUseCase,
     private val deleteTransaction: DeleteTransactionUseCase,
+    private val draftBus: TransactionDraftBus,
+    private val brandCreatedBus: BrandCreatedBus,
     private val analytics: Analytics,
 ) : BaseViewModel<TransactionEditIntent, TransactionEditUiState, TransactionEditEffect>() {
 
@@ -40,6 +43,37 @@ class TransactionEditViewModel(
 
     init {
         if (transactionId == null) setState { copy(occurredAt = clock.now()) }
+        // Reopened after a brand-editor detour: restore the parked input instead of starting
+        // blank (new) or reloading the stored values (edit).
+        val draft = draftBus.pending.value?.takeIf { it.transactionId == transactionId?.value }
+        if (draft != null) {
+            draftBus.consume()
+            setState {
+                copy(
+                    amountInput = draft.amountInput,
+                    selectedType = draft.selectedType,
+                    isWithdrawal = draft.isWithdrawal,
+                    selectedBrandId = draft.selectedBrandId,
+                    noteInput = draft.noteInput,
+                    occurredAt = draft.occurredAt,
+                    fromSms = draft.fromSms,
+                )
+            }
+        }
+        // A brand created via the detour lands here — select it and follow its category's type.
+        viewModelScope.launch {
+            brandCreatedBus.pending.collect { created ->
+                if (created != null) {
+                    brandCreatedBus.consume()
+                    setState { copy(selectedBrandId = created, brandMissing = false) }
+                    resolveBrandType(created)?.let { type ->
+                        setState {
+                            copy(selectedType = type, isWithdrawal = isWithdrawal && type.hasDirection)
+                        }
+                    }
+                }
+            }
+        }
         viewModelScope.launch {
             val selectedTypeFlow = state.map { it.selectedType }.distinctUntilChanged()
             val selectedBrandIdFlow = state.map { it.selectedBrandId }.distinctUntilChanged()
@@ -68,7 +102,7 @@ class TransactionEditViewModel(
                 setState { copy(brandOptions = options) }
             }
         }
-        if (transactionId != null) loadExisting(transactionId)
+        if (transactionId != null && draft == null) loadExisting(transactionId)
     }
 
     override fun onIntent(intent: TransactionEditIntent) {
@@ -97,6 +131,8 @@ class TransactionEditViewModel(
                 setState { copy(showDatePicker = true) }
             TransactionEditIntent.DatePickerDismissed ->
                 setState { copy(showDatePicker = false) }
+            TransactionEditIntent.CreateBrandRequested -> openBrandEditor(null)
+            is TransactionEditIntent.EditBrandRequested -> openBrandEditor(intent.brandId)
             TransactionEditIntent.Save -> save()
             TransactionEditIntent.DeleteRequested ->
                 setState { copy(showDeleteConfirm = true) }
@@ -105,6 +141,23 @@ class TransactionEditViewModel(
             TransactionEditIntent.DeleteConfirmed -> delete()
             TransactionEditIntent.ConsumeEffect -> clearEffect()
         }
+    }
+
+    private fun openBrandEditor(brandId: BrandId?) {
+        val s = state.value
+        draftBus.publish(
+            TransactionEditDraft(
+                transactionId = transactionId?.value,
+                amountInput = s.amountInput,
+                selectedType = s.selectedType,
+                isWithdrawal = s.isWithdrawal,
+                selectedBrandId = s.selectedBrandId,
+                noteInput = s.noteInput,
+                occurredAt = s.occurredAt,
+                fromSms = s.fromSms,
+            ),
+        )
+        sendEffect(TransactionEditEffect.OpenBrandEditor(brandId))
     }
 
     private fun loadExisting(id: TransactionId) {

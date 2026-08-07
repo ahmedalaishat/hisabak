@@ -23,6 +23,7 @@ import kotlinx.datetime.yearMonth
 
 class CategoryEditViewModel(
     private val categoryId: CategoryId?,
+    prefill: CategoryEditPrefill?,
     private val categoryRepository: CategoryRepository,
     private val createCategory: CreateCategoryUseCase,
     private val updateCategory: UpdateCategoryUseCase,
@@ -36,7 +37,13 @@ class CategoryEditViewModel(
     override fun initialState() = CategoryEditUiState(isNew = categoryId == null)
 
     init {
-        if (categoryId != null) loadExisting(categoryId)
+        if (categoryId != null) {
+            loadExisting(categoryId)
+        } else if (prefill != null) {
+            setState {
+                copy(nameInput = prefill.name, type = prefill.type, color = prefill.color, icon = prefill.icon)
+            }
+        }
     }
 
     override fun onIntent(intent: CategoryEditIntent) {

@@ -32,8 +32,12 @@ class CategoryEditViewModelTest : MainDispatcherTest() {
     private val limitRepo = FakeCategoryLimitRepository()
     private val analytics = FakeAnalytics()
 
-    private fun viewModel(categoryId: CategoryId? = null) = CategoryEditViewModel(
+    private fun viewModel(
+        categoryId: CategoryId? = null,
+        prefill: CategoryEditPrefill? = null,
+    ) = CategoryEditViewModel(
         categoryId = categoryId,
+        prefill = prefill,
         categoryRepository = catRepo,
         createCategory = CreateCategoryUseCase(catRepo),
         updateCategory = UpdateCategoryUseCase(catRepo),
@@ -51,6 +55,21 @@ class CategoryEditViewModelTest : MainDispatcherTest() {
         val vm = viewModel(CategoryId("c1"))
         advanceUntilIdle()
         assertEquals(false, vm.state.value.isNew)
+    }
+
+    @Test
+    fun `an AI prefill seeds a new category's fields`() = runTest {
+        val vm = viewModel(
+            prefill = CategoryEditPrefill("Pharmacy", CategoryType.EXPENSES, "teal", "heart"),
+        )
+        advanceUntilIdle()
+
+        val s = vm.state.value
+        assertEquals("Pharmacy", s.nameInput)
+        assertEquals(CategoryType.EXPENSES, s.type)
+        assertEquals("teal", s.color)
+        assertEquals("heart", s.icon)
+        assertEquals(true, s.isNew)
     }
 
     @Test

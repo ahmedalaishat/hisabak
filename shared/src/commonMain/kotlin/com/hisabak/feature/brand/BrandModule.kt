@@ -7,7 +7,9 @@ import com.hisabak.feature.brand.domain.usecase.CreateBrandUseCase
 import com.hisabak.feature.brand.domain.usecase.DeleteBrandUseCase
 import com.hisabak.feature.brand.domain.usecase.FindOrCreateBrandUseCase
 import com.hisabak.feature.brand.domain.usecase.ObserveBrandsUseCase
+import com.hisabak.feature.brand.domain.ai.SuggestBrandCategoryUseCase
 import com.hisabak.feature.brand.domain.usecase.UpdateBrandUseCase
+import com.hisabak.feature.brand.presentation.BrandCreatedBus
 import com.hisabak.feature.brand.presentation.BrandEditBus
 import com.hisabak.feature.brand.presentation.edit.BrandEditViewModel
 import com.hisabak.feature.brand.presentation.list.BrandListViewModel
@@ -17,12 +19,14 @@ import org.koin.dsl.module
 val brandModule = module {
     single<BrandRepository> { RoomBrandRepository(dao = get(), transactionDao = get()) }
     single { BrandEditBus() }
+    single { BrandCreatedBus() }
 
     factory { ObserveBrandsUseCase(get()) }
     factory { CreateBrandUseCase(get()) }
     factory { UpdateBrandUseCase(get()) }
     factory { DeleteBrandUseCase(get()) }
     factory { FindOrCreateBrandUseCase(get()) }
+    factory { SuggestBrandCategoryUseCase(suggester = get(), categoryRepository = get(), analytics = get()) }
 
     viewModel {
         BrandListViewModel(
@@ -43,6 +47,7 @@ val brandModule = module {
             createBrand = get(),
             updateBrand = get(),
             categoryCreatedBus = get(),
+            suggestCategory = get(),
             analytics = get(),
         )
     }
