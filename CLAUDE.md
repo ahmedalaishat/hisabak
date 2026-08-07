@@ -33,8 +33,11 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   Collection is gated on `!BuildConfig.DEBUG` in `HisabakApp` — **on in release, off in debug** —
   so local runs never reach the dashboard. Reports carry no financial/personal data; the
   privacy policy (`docs/privacy.html`) discloses it. **iOS: Crashlytics only, natively in
-  Swift** (`firebase-ios-sdk` via SPM, configured in `iOSApp.init`, guarded on
-  `GoogleService-Info.plist` presence, same debug/release gating; no event analytics —
+  Swift** (`firebase-ios-sdk` via SPM, configured in `iOSApp.init` with **per-flavor plists** —
+  `GoogleService-Info-Prod.plist` / `-Staging.plist`, picked by the `HisabakFlavor` Info.plist
+  key via `FirebaseOptions(contentsOfFile:)` so staging crashes attribute to
+  `com.hisabak.staging`; the dSYM upload build phase picks the same plist by `CONFIGURATION`
+  and passes `-gsp`. Guarded on plist presence, same debug/release gating; no event analytics —
   `NoopAnalytics` is deliberate until iOS has real users).
 - **Analytics:** Firebase Analytics (no extra plugin — uses the same `google-services` setup),
   collection gated the same way (`!BuildConfig.DEBUG`, on in release). Behind a small domain
