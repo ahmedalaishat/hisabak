@@ -73,6 +73,7 @@ import com.hisabak.feature.dashboard.presentation.components.BarSparkline
 import com.hisabak.feature.dashboard.presentation.components.DonutChart
 import com.hisabak.feature.dashboard.presentation.components.DonutSlice
 import com.hisabak.feature.dashboard.presentation.components.GroupedBarChart
+import com.hisabak.ui.components.COMPACT_THRESHOLD_DENSE
 import com.hisabak.ui.components.MoneyText
 import com.hisabak.ui.components.PeriodChipRow
 import com.hisabak.ui.components.animatedAmountMinor
@@ -546,10 +547,13 @@ private fun KpiCard(
             }
         }
         Spacer(Modifier.height(6.dp))
+        // A period total is a shape figure, read against the sparkline beneath it — short and
+        // aligned beats precise, and a tap still reveals the exact amount.
         MoneyText(
             amountMinor = money.amountMinor,
             style = HisabakType.amountLarge,
             color = amountColor,
+            threshold = COMPACT_THRESHOLD_DENSE,
         )
         if (sparklineValues.isNotEmpty()) {
             BarSparkline(

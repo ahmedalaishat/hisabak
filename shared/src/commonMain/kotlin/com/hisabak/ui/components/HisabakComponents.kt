@@ -168,10 +168,11 @@ fun MoneyText(
     color: Color,
     modifier: Modifier = Modifier,
     symbolScale: Float = 0.8f,
+    threshold: Double = COMPACT_THRESHOLD,
 ) {
     val arabic = rememberIsArabic()
     val major = abs(amountMinor / 100.0)
-    val parts = compactAmountParts(major, arabic)
+    val parts = compactAmountParts(major, arabic, threshold)
     val shown = rememberRevealableAmount(parts, major, arabic)
     // Geist Mono has no Arabic-Indic glyphs, so Arabic figures fall back to the system font. Render
     // them in Tajawal (the Arabic UI face) instead, keeping tabular alignment and a consistent look.
