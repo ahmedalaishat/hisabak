@@ -305,6 +305,7 @@
     <string name="notifications_mark_all_read">تعليم الكل كمقروء</string>
     <string name="notifications_dismiss">تجاهل</string>
     <string name="currency_dirham_description">درهم</string>
+    <string name="amount_show_exact">إظهار المبلغ بالكامل</string>
     <string name="onboarding_skip">تخطّي</string>
     <string name="onboarding_next">التالي</string>
     <string name="onboarding_get_started">ابدأ الآن</string>

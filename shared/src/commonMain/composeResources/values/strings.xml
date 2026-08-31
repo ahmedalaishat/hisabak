@@ -305,6 +305,7 @@
     <string name="notifications_mark_all_read">Mark all read</string>
     <string name="notifications_dismiss">Dismiss</string>
     <string name="currency_dirham_description">AED</string>
+    <string name="amount_show_exact">Show the exact amount</string>
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_get_started">Get started</string>

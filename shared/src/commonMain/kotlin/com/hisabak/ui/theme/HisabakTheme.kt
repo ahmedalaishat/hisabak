@@ -5,8 +5,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.intl.Locale
+import com.hisabak.ui.components.LocalRevealedAmount
 
 /*
  * HisabakTheme — wraps MaterialTheme with the Hisabak color scheme, typography, and
@@ -45,6 +48,8 @@ fun HisabakTheme(
         LocalHisabakColors provides semantic,
         LocalHisabakFonts provides fonts,
         LocalReducedMotion provides rememberReducedMotion(),
+        // One expanded amount at a time — see LocalRevealedAmount.
+        LocalRevealedAmount provides remember { mutableStateOf<Any?>(null) },
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

@@ -53,8 +53,6 @@ import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.category.presentation.CategoryStyle
 import com.hisabak.feature.transaction.domain.TransactionId
 import com.hisabak.ui.components.AmountText
-import com.hisabak.ui.components.compactAmountMinor
-import com.hisabak.ui.components.rememberIsArabic
 import com.hisabak.ui.components.AmountTone
 import com.hisabak.ui.components.CircleIconTile
 import com.hisabak.ui.components.PeriodChipRow
@@ -147,15 +145,12 @@ fun TransactionListScreen(
                     Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
                 ) {
-                    val arabic = rememberIsArabic()
                     IncomeStatCard(
-                        value = formatAmountMajor(state.summaryIncome, arabic),
-                        currencySymbol = true,
+                        amountMinor = state.summaryIncome,
                         modifier = Modifier.weight(1f).fillMaxHeight(),
                     )
                     ExpensesStatCard(
-                        value = formatAmountMajor(state.summaryExpenses, arabic),
-                        currencySymbol = true,
+                        amountMinor = state.summaryExpenses,
                         modifier = Modifier.weight(1f).fillMaxHeight(),
                     )
                 }
@@ -494,9 +489,6 @@ internal fun formatMoneyMajor(amountMinor: Long, currency: String): String {
     val prefix = if (currency.isBlank()) "" else "$currency "
     return prefix + amountMinor.toMajor()
 }
-
-/** Compact amount with no currency code (the glyph is shown separately). */
-private fun formatAmountMajor(amountMinor: Long, arabic: Boolean): String = compactAmountMinor(amountMinor, arabic)
 
 internal fun formatSignedAmount(money: Money, positive: Boolean): String {
     val sign = if (positive) "+" else "-"
