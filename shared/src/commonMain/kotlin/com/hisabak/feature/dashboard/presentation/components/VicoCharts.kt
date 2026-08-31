@@ -12,6 +12,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hisabak.ui.components.COMPACT_THRESHOLD_DENSE
 import com.hisabak.ui.components.compactAmount
 import com.hisabak.ui.components.rememberIsArabic
 import com.patrykandpatrick.vico.multiplatform.cartesian.CartesianChartHost
@@ -120,7 +121,7 @@ fun AreaLineChart(
                 val date = xLabels.getOrNull(i).orEmpty()
                 val amount = (target as? LineCartesianLayerMarkerTarget)
                     ?.points?.firstOrNull()?.entry?.y
-                if (amount != null) "$date   ${compactAmount(amount, arabic)}" else date
+                if (amount != null) "$date   ${compactAmount(amount, arabic, COMPACT_THRESHOLD_DENSE)}" else date
             },
         )
     } else null

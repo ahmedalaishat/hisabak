@@ -442,6 +442,7 @@ private fun OverTimeCard(
                 amountMinor = if (animateValue) animatedAmountMinor(money.amountMinor) else money.amountMinor,
                 style = HisabakType.amountHero,
                 color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f, fill = false),
             )
             if (trendPct != null) {
                 TrendBadge(pct = trendPct, positiveIsGood = trendPositiveIsGood)
@@ -584,6 +585,8 @@ private fun TrendBadge(pct: Double, positiveIsGood: Boolean) {
             localizeDigits("${abs(pct).roundToInt()}%", rememberIsArabic()),
             style = MaterialTheme.typography.labelMedium,
             color = color,
+            maxLines = 1,
+            softWrap = false,
         )
     }
 }

@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -45,7 +44,42 @@ fun StatCard(
     modifier: Modifier = Modifier,
     progress: Float? = null,
     accent: StatAccent = StatAccent.Positive,
-    currencySymbol: Boolean = false,
+) = StatCardScaffold(label, icon, modifier, progress, accent) {
+    Text(
+        value,
+        style = MaterialTheme.typography.titleLarge,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+}
+
+/**
+ * StatCard for a money value: renders it through [MoneyText], so the figure carries the dirham
+ * glyph, the mono figures, and the tap-to-reveal that abbreviated amounts need.
+ */
+@Composable
+fun MoneyStatCard(
+    label: String,
+    amountMinor: Long,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    progress: Float? = null,
+    accent: StatAccent = StatAccent.Positive,
+) = StatCardScaffold(label, icon, modifier, progress, accent) {
+    MoneyText(
+        amountMinor = amountMinor,
+        style = MaterialTheme.typography.titleLarge,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+}
+
+@Composable
+private fun StatCardScaffold(
+    label: String,
+    icon: ImageVector,
+    modifier: Modifier,
+    progress: Float?,
+    accent: StatAccent,
+    value: @Composable () -> Unit,
 ) {
     val c = HisabakTheme.colors
     val bg = when (accent) {
@@ -75,27 +109,7 @@ fun StatCard(
             )
         }
         Spacer(Modifier.height(Spacing.s2))
-        if (currencySymbol) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                DirhamGlyph(
-                    size = MaterialTheme.typography.titleLarge.fontSize * 0.8f,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(Modifier.width(Spacing.s1))
-                Text(
-                    value,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                )
-            }
-        } else {
-            Text(
-                value,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
+        value()
         if (progress != null) {
             Spacer(Modifier.height(Spacing.s3))
             ProgressBar(progress = progress, color = fg)
@@ -135,32 +149,28 @@ fun ProgressBar(
 // Convenience wrappers that match the two most common call sites in the design.
 @Composable
 fun IncomeStatCard(
-    value: String,
+    amountMinor: Long,
     progress: Float? = null,
     modifier: Modifier = Modifier,
-    currencySymbol: Boolean = false,
-) = StatCard(
+) = MoneyStatCard(
     label = stringResource(Res.string.category_type_income),
-    value = value,
+    amountMinor = amountMinor,
     icon = HugeIcons.TrendingUp,
     accent = StatAccent.Positive,
     progress = progress,
     modifier = modifier,
-    currencySymbol = currencySymbol,
 )
 
 @Composable
 fun ExpensesStatCard(
-    value: String,
+    amountMinor: Long,
     progress: Float? = null,
     modifier: Modifier = Modifier,
-    currencySymbol: Boolean = false,
-) = StatCard(
+) = MoneyStatCard(
     label = stringResource(Res.string.category_type_expenses),
-    value = value,
+    amountMinor = amountMinor,
     icon = HugeIcons.TrendingDown,
     accent = StatAccent.Negative,
     progress = progress,
     modifier = modifier,
-    currencySymbol = currencySymbol,
 )

@@ -44,9 +44,12 @@ no downloadable-fonts provider.
 Money renders the **dirham glyph** (never the literal text "AED"), tabular figures; income
 `+`, expense true-minus `−`, both colored; hero balances neutral/unsigned. Always use
 `MoneyText` / `AmountText` / `TrailingAmount` (they apply the mono style + `DirhamGlyph`) —
-never hardcode `"AED …"` in a `Text`. Amounts display **compactly** via `compactAmount` /
-`compactAmountMinor` (thousands `K`, millions `M`, 2 decimals; under 1,000 exact); only the
-transaction edit input stays exact.
+never hardcode `"AED …"` in a `Text`. Amounts are **exact below 100K** and abbreviated above it
+via `compactAmount` / `compactAmountMinor` (`K` for six figures, `M` for millions, 2 decimals);
+pass `COMPACT_THRESHOLD_DENSE` on width-starved surfaces (chart axes, mock cards) to abbreviate
+from 1,000 up. An abbreviated amount is tappable — it swaps to the full figure in place for a few
+seconds — so never render a compacted figure outside `MoneyText` / `AmountText` / `MoneyStatCard`
+where that escape hatch is lost.
 
 ## Spacing · radius · sizing
 
@@ -69,7 +72,7 @@ transaction edit input stays exact.
 | `AmountText` | `AmountText`, `MoneyText`, `TrailingAmount` |
 | `Input` / `SearchBar` | `SearchField` (free text: Material `OutlinedTextField`) |
 | `Card` | `SurfaceCard` |
-| `StatCard` | `StatCard`, `IncomeStatCard`, `ExpensesStatCard` |
+| `StatCard` | `StatCard` (string value), `MoneyStatCard`, `IncomeStatCard`, `ExpensesStatCard` (all three take `amountMinor`) |
 | `ListRow` | `ListRow` |
 | `CategoryIcon` / `CategoryTile` | `IconTile` / `CircleIconTile` |
 | `EmptyState` | `EmptyStatePanel` |

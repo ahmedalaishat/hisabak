@@ -6,6 +6,13 @@ All notable changes to Hisabak are documented here. Format based on
 
 ## [Unreleased]
 
+### Changed
+- **Amounts keep their digits** — figures under 100,000 now read in full (`12,450.00`
+  instead of `12.45K`), so everyday transactions, brand totals, and monthly summaries are
+  never rounded away. Six- and seven-figure sums still abbreviate to `K` / `M` to fit their
+  cards, and **tapping one shows the exact amount** in place for a few seconds. Screen
+  readers always hear the full figure.
+
 ### Added
 - **Create a category without leaving the brand editor** — the category row in the brand
   screen ends with a "New category" chip that opens the category editor; saving returns
