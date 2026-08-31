@@ -85,6 +85,9 @@ fun DirhamGlyph(
  *   AmountText(value = 8200.0)            // +⊅ 8,200.00 (green)
  *   AmountText(value = -342.75)           // −⊅ 342.75 (coral)
  *   AmountText(value = 12450.0, tone = AmountTone.Neutral, showSign = false, size = 40.sp)
+ *
+ * Dense lists that want short, aligned figures pass threshold = COMPACT_THRESHOLD_DENSE; the
+ * abbreviated result stays tappable, so the exact amount is still one tap away.
  */
 enum class AmountTone { Auto, Income, Expense, Savings, Investment, Neutral }
 
@@ -97,6 +100,7 @@ fun AmountText(
     tone: AmountTone = AmountTone.Auto,
     size: TextUnit = 16.sp,
     weight: FontWeight = FontWeight.SemiBold,
+    threshold: Double = COMPACT_THRESHOLD,
 ) {
     val c = HisabakTheme.colors
     val resolved = when (tone) {
@@ -130,7 +134,7 @@ fun AmountText(
         fontWeight = weight,
         fontFamily = if (arabic) LocalHisabakFonts.current.arabic else amountStyle.fontFamily,
     )
-    val parts = compactAmountParts(abs(value), arabic)
+    val parts = compactAmountParts(abs(value), arabic, threshold)
     val shown = rememberRevealableAmount(parts, abs(value), arabic)
     Row(
         modifier = modifier.revealOnTap(shown).speakExactly(sign, shown.exact),

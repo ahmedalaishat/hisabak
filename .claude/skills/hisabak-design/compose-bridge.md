@@ -46,8 +46,8 @@ Money renders the **dirham glyph** (never the literal text "AED"), tabular figur
 `MoneyText` / `AmountText` / `TrailingAmount` (they apply the mono style + `DirhamGlyph`) —
 never hardcode `"AED …"` in a `Text`. Amounts are **exact below 100K** and abbreviated above it
 via `compactAmount` / `compactAmountMinor` (`K` for six figures, `M` for millions, 2 decimals);
-pass `COMPACT_THRESHOLD_DENSE` on width-starved surfaces (chart axes, mock cards) to abbreviate
-from 1,000 up. An abbreviated amount is tappable — it swaps to the full figure in place for a few
+pass `COMPACT_THRESHOLD_DENSE` where short, aligned figures matter more than precision (chart
+axes, mock cards, the transaction list rows) to abbreviate from 1,000 up. An abbreviated amount is tappable — it swaps to the full figure in place for a few
 seconds — so never render a compacted figure outside `MoneyText` / `AmountText` / `MoneyStatCard`
 where that escape hatch is lost.
 
