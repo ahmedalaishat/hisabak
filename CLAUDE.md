@@ -429,8 +429,10 @@ rasterizer in `CategoryGlyphIcon.kt` strokes the same vector).
   text, which genuinely contains "AED".) Amounts are shown **exactly below 100K** and
   abbreviated above it — `K` for six figures, `M` for millions, both to 2 decimals (the shared
   `compactAmount` / `compactAmountMinor` + `COMPACT_THRESHOLD`, applied by
-  `MoneyText`/`AmountText`); width-starved surfaces (chart axes/markers, the onboarding mock
-  cards) pass `COMPACT_THRESHOLD_DENSE` to abbreviate from 1,000 up. Anything actually
+  `MoneyText`/`AmountText`); surfaces that want short, aligned figures pass
+  `COMPACT_THRESHOLD_DENSE` to abbreviate from 1,000 up — chart axes/markers and the
+  onboarding mock cards (no room, nothing to tap) plus the **transaction list rows** (a tidy
+  amount column, and the row's own tap opens the sheet with the exact value). Anything actually
   abbreviated is **tappable: it swaps to the full figure in place** for a few seconds
   (`rememberRevealableAmount`; `LocalRevealedAmount`, provided by `HisabakTheme`, keeps only one
   expanded at a time), and screen readers always hear the exact figure. Amounts that lost
