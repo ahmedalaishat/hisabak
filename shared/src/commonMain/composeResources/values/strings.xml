@@ -179,6 +179,9 @@
     <string name="category_add_new">Add new</string>
     <string name="category_delete_body_empty">Its brands become uncategorized. No transactions are affected.</string>
     <string name="brand_name_label">Brand name</string>
+    <string name="brand_ai_suggesting">Suggesting a category…</string>
+    <string name="brand_ai_suggested">Suggested: %1$s</string>
+    <string name="brand_ai_suggested_new">New: %1$s</string>
     <string name="brand_search_placeholder">Search brands</string>
     <string name="brand_all_section">All brands</string>
     <string name="brand_empty_title">No brands yet</string>
@@ -302,6 +305,7 @@
     <string name="notifications_mark_all_read">Mark all read</string>
     <string name="notifications_dismiss">Dismiss</string>
     <string name="currency_dirham_description">AED</string>
+    <string name="amount_show_exact">Show the exact amount</string>
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_get_started">Get started</string>

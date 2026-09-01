@@ -31,6 +31,9 @@ import com.hisabak.feature.notification.domain.NotificationStrings
 import com.hisabak.feature.notification.domain.Notifier
 import com.hisabak.feature.notification.platform.IosNotificationStrings
 import com.hisabak.feature.notification.platform.IosNotifier
+import com.hisabak.feature.brand.domain.ai.AiCategorySuggester
+import com.hisabak.feature.brand.platform.AiCategoryBridge
+import com.hisabak.feature.brand.platform.IosAiCategorySuggester
 import com.hisabak.feature.sms.domain.ai.AiSmsParser
 import com.hisabak.feature.sms.platform.AiSmsBridge
 import com.hisabak.feature.sms.platform.IosAiSmsParser
@@ -55,8 +58,13 @@ private fun bundleFlavor(): String =
  * [Analytics] (no-op pending the B6 Firebase decision). [gcmCipher] is the Swift CryptoKit
  * bridge injected at startup — AES-GCM is the one primitive Kotlin/Native can't reach.
  */
-fun iosPlatformModule(gcmCipher: GcmCipher, aiSmsBridge: AiSmsBridge): Module = module {
+fun iosPlatformModule(
+    gcmCipher: GcmCipher,
+    aiSmsBridge: AiSmsBridge,
+    aiCategoryBridge: AiCategoryBridge,
+): Module = module {
     single<AiSmsParser> { IosAiSmsParser(aiSmsBridge) }
+    single<AiCategorySuggester> { IosAiCategorySuggester(aiCategoryBridge) }
 
     single {
         AppConfig(

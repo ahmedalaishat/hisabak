@@ -28,6 +28,8 @@ import com.hisabak.core.platform.security.BiometricAuthenticator
 import com.hisabak.di.APPLICATION_SCOPE
 import com.hisabak.feature.notification.domain.NotificationStrings
 import com.hisabak.feature.notification.domain.Notifier
+import com.hisabak.feature.brand.domain.ai.AiCategorySuggester
+import com.hisabak.feature.brand.platform.GeminiNanoCategorySuggester
 import com.hisabak.feature.sms.domain.ai.AiSmsParser
 import com.hisabak.feature.sms.platform.GeminiNanoSmsParser
 import com.hisabak.feature.notification.platform.AndroidNotificationStrings
@@ -65,6 +67,7 @@ val platformModule = module {
     single { BiometricAuthenticator(androidContext()) } bind BiometricAvailability::class
 
     single<AiSmsParser> { GeminiNanoSmsParser(appScope = get(APPLICATION_SCOPE)) }
+    single<AiCategorySuggester> { GeminiNanoCategorySuggester(appScope = get(APPLICATION_SCOPE)) }
 
     single { SystemNotifier(androidContext()) } bind Notifier::class
     single<NotificationStrings> { AndroidNotificationStrings(androidContext()) }

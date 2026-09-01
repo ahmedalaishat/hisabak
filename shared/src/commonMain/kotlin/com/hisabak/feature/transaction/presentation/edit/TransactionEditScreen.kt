@@ -65,6 +65,7 @@ import com.hisabak.ui.components.ButtonVariant
 import com.hisabak.ui.components.ColoredFilterChip
 import com.hisabak.ui.components.DirhamGlyph
 import com.hisabak.ui.components.HisabakButton
+import com.hisabak.ui.components.LeadingIconChip
 import com.hisabak.ui.components.NoticeCard
 import com.hisabak.ui.components.NoticeTone
 import com.hisabak.ui.components.SegmentOption
@@ -87,6 +88,7 @@ fun TransactionEditScreen(
     onTypeSelected: (CategoryType) -> Unit,
     onDirectionChange: (Boolean) -> Unit,
     onEditBrand: (BrandId) -> Unit,
+    onCreateBrand: () -> Unit,
     onDateClick: () -> Unit,
     onDateSelected: (Instant) -> Unit,
     onDateDismiss: () -> Unit,
@@ -186,19 +188,26 @@ fun TransactionEditScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            } else {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
-                    contentPadding = PaddingValues(0.dp),
-                ) {
-                    items(state.brandOptions, key = { it.id.value }) { option ->
-                        ColoredFilterChip(
-                            label = option.name,
-                            colorKey = option.categoryColor,
-                            selected = option.id == state.selectedBrandId,
-                            onClick = { onBrandSelected(option.id) },
-                        )
-                    }
+            }
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
+                contentPadding = PaddingValues(0.dp),
+            ) {
+                items(state.brandOptions, key = { it.id.value }) { option ->
+                    ColoredFilterChip(
+                        label = option.name,
+                        colorKey = option.categoryColor,
+                        selected = option.id == state.selectedBrandId,
+                        onClick = { onBrandSelected(option.id) },
+                    )
+                }
+                item {
+                    LeadingIconChip(
+                        label = stringResource(Res.string.brand_new_title),
+                        leadingIcon = HugeIcons.Add,
+                        selected = false,
+                        onClick = onCreateBrand,
+                    )
                 }
             }
             if (state.brandMissing) {
@@ -216,11 +225,9 @@ fun TransactionEditScreen(
                 NoticeCard(
                     text = stringResource(Res.string.transaction_brand_uncategorized),
                     tone = NoticeTone.Info,
-                    // Tap-through only when editing: the detour reopens the sheet fresh, which
-                    // would discard a new transaction's typed input.
-                    onClick = if (state.isNew) null else {
-                        { onEditBrand(selectedBrand.id) }
-                    },
+                    // The detour parks the typed input in the draft bus, so the reopened sheet
+                    // restores it — safe for new transactions too.
+                    onClick = { onEditBrand(selectedBrand.id) },
                 )
             }
         }

@@ -2,6 +2,7 @@ package com.hisabak.feature.category.presentation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import com.hisabak.feature.category.domain.CategoryVocabulary
 import com.hisabak.ui.theme.HisabakTheme
 
 /**
@@ -10,14 +11,9 @@ import com.hisabak.ui.theme.HisabakTheme
  * them to Compose primitives. Unknown keys fall back to a neutral default.
  */
 object CategoryStyle {
-    val palette: List<String> = listOf(
-        "green", "blue", "orange", "red", "teal", "purple", "pink", "gray",
-    )
+    val palette: List<String> = CategoryVocabulary.colors
 
-    val icons: List<String> = listOf(
-        "wallet", "cart", "briefcase", "car", "utensils", "piggy-bank",
-        "home", "film", "book", "heart", "gift", "plane",
-    )
+    val icons: List<String> = CategoryVocabulary.icons
 
     @Composable
     fun color(key: String?): Color {

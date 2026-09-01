@@ -3,6 +3,7 @@ package com.hisabak.feature.transaction.presentation.edit
 import com.hisabak.core.common.Currency
 import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.brand.domain.usecase.ObserveBrandsUseCase
+import com.hisabak.feature.brand.presentation.BrandCreatedBus
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.category.domain.usecase.ObserveCategoriesUseCase
@@ -53,6 +54,8 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
 
     private val analytics = FakeAnalytics()
     private val smsRepo = FakeSmsRepository()
+    private val draftBus = TransactionDraftBus()
+    private val brandCreatedBus = BrandCreatedBus()
 
     private fun viewModel(transactionId: TransactionId? = null) = TransactionEditViewModel(
         transactionId = transactionId,
@@ -64,8 +67,73 @@ class TransactionEditViewModelTest : MainDispatcherTest() {
         createTransaction = CreateTransactionUseCase(txRepo, clock),
         updateTransaction = UpdateTransactionUseCase(txRepo),
         deleteTransaction = DeleteTransactionUseCase(txRepo, smsRepo),
+        draftBus = draftBus,
+        brandCreatedBus = brandCreatedBus,
         analytics = analytics,
     )
+
+    @Test
+    fun `a brand detour parks the typed input and the reopened sheet restores it`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.onIntent(TransactionEditIntent.AmountChanged("42.50"))
+        vm.onIntent(TransactionEditIntent.NoteChanged("lunch"))
+
+        vm.onIntent(TransactionEditIntent.CreateBrandRequested)
+        advanceUntilIdle()
+
+        assertEquals(TransactionEditEffect.OpenBrandEditor(null), vm.effect.value)
+        assertEquals("42.50", draftBus.pending.value?.amountInput)
+
+        // The sheet reopens as a fresh ViewModel — the draft restores the typed input.
+        val reopened = viewModel()
+        advanceUntilIdle()
+        assertEquals("42.50", reopened.state.value.amountInput)
+        assertEquals("lunch", reopened.state.value.noteInput)
+        assertNull(draftBus.pending.value)
+    }
+
+    @Test
+    fun `a draft for another transaction is left alone`() = runTest {
+        txRepo.emit(listOf(transaction(id = "t1", brandId = "b-exp", amountMinor = 10_00)))
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.onIntent(TransactionEditIntent.AmountChanged("42.50"))
+        vm.onIntent(TransactionEditIntent.CreateBrandRequested)
+        advanceUntilIdle()
+
+        // A different sheet (editing t1) must not consume the new-entry draft.
+        val other = viewModel(TransactionId("t1"))
+        advanceUntilIdle()
+        assertEquals("10.00", other.state.value.amountInput)
+        assertEquals("42.50", draftBus.pending.value?.amountInput)
+    }
+
+    @Test
+    fun `a created brand is selected and the type follows its category`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertEquals(CategoryType.EXPENSES, vm.state.value.selectedType)
+
+        brandCreatedBus.publish(BrandId("b-inc"))
+        advanceUntilIdle()
+
+        assertEquals(BrandId("b-inc"), vm.state.value.selectedBrandId)
+        assertEquals(CategoryType.INCOME, vm.state.value.selectedType)
+        assertNull(brandCreatedBus.pending.value)
+    }
+
+    @Test
+    fun `a created uncategorized brand is selected without changing the type`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        brandCreatedBus.publish(BrandId("b-uncat"))
+        advanceUntilIdle()
+
+        assertEquals(BrandId("b-uncat"), vm.state.value.selectedBrandId)
+        assertEquals(CategoryType.EXPENSES, vm.state.value.selectedType)
+    }
 
     @Test
     fun `brand options are filtered by the selected type`() = runTest {

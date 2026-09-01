@@ -4,6 +4,34 @@ All notable changes to Hisabak are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [2.1.0] — 2026-09-01
+
+### Highlights
+- Tap any shortened amount to read it in full, and create a brand or a category without
+  leaving the screen you were on — with on-device AI suggesting the category for you.
+
+### Added
+- **Create a category without leaving the brand editor** — the category row in the brand
+  screen ends with a "New category" chip that opens the category editor; saving returns
+  you to the brand with the new category already selected and your typed name intact.
+- **Create a brand from the transaction sheet** — the brand row ends with a "New brand"
+  chip that opens the brand editor (with its category tools); saving returns to the sheet
+  with the new brand selected and everything you'd typed — amount, note, date — restored.
+  The "uncategorized brand" note is now tappable for new transactions too.
+- **AI-suggested categories** — on devices with on-device AI, typing a brand name makes
+  the brand editor suggest a category: tap "Suggested: Groceries" to pick it, or, when
+  nothing fits, "New: Pharmacy" opens the category editor pre-filled with a sensible
+  name, type, color, and icon. Suggestions are only ever applied when you tap them, and
+  nothing leaves your phone.
+
+### Changed
+- **Tap an amount to see it exactly** — abbreviated figures (`⊅ 1.25K`, `⊅ 1.89M`) expand to
+  the full amount in place for a few seconds, shrinking to fit rather than clipping, and
+  collapse again on their own. Amounts that were never abbreviated stay inert. Screen readers
+  now always hear the exact figure instead of the abbreviation.
+
 ## [2.0.0] — 2026-08-05
 
 ### Highlights

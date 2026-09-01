@@ -53,6 +53,14 @@ class CompactAmountTest {
     }
 
     @Test
+    fun `exact amount drops the abbreviation and keeps every digit`() {
+        // What an abbreviated figure reveals when tapped.
+        assertEquals("1,248,300.50", exactAmount(1_248_300.5, arabic = false))
+        assertEquals("1,250.00", exactAmount(1_250.0, arabic = false))
+        assertEquals("١٬٢٤٨٬٣٠٠٫٥٠", exactAmount(1_248_300.5, arabic = true))
+    }
+
+    @Test
     fun `arabic uses arabic-indic digits separators and suffixes`() {
         // Same output the previous "%,.2f" + ar-u-nu-arab locale produced (U+066C group,
         // U+066B decimal), plus the one-letter أ / م suffixes joined with a space.

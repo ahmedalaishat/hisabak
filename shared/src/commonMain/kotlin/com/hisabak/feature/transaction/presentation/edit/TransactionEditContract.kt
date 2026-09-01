@@ -48,6 +48,10 @@ sealed interface TransactionEditIntent : ViewIntent {
     data class DirectionChanged(val withdrawal: Boolean) : TransactionEditIntent
     data object DatePickerOpened : TransactionEditIntent
     data object DatePickerDismissed : TransactionEditIntent
+
+    /** Brand-editor detours: the VM parks the typed input in the draft bus before the sheet closes. */
+    data object CreateBrandRequested : TransactionEditIntent
+    data class EditBrandRequested(val brandId: BrandId) : TransactionEditIntent
     data object Save : TransactionEditIntent
     data object DeleteRequested : TransactionEditIntent
     data object DeleteConfirmed : TransactionEditIntent
@@ -58,4 +62,7 @@ sealed interface TransactionEditIntent : ViewIntent {
 sealed interface TransactionEditEffect : ViewEffect {
     data object Saved : TransactionEditEffect
     data object Deleted : TransactionEditEffect
+
+    /** Close the sheet and push the brand editor ([brandId] null = create new, for pick). */
+    data class OpenBrandEditor(val brandId: BrandId?) : TransactionEditEffect
 }

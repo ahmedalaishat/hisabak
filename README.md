@@ -95,6 +95,9 @@ Everything below is built and shipping today:
   confirmed first, and hands any bank message that created it back to the SMS inbox).
 - [x] 🗂️ **Organize** — categories (income / expense / savings / investment) with colors and
   icons, and brands mapped to categories. Safe deletion with brand-merge and confirmation.
+  Create a brand right from the transaction sheet and a category right from the brand editor —
+  and on devices with on-device AI, the brand editor suggests the category (existing or a
+  drafted new one) as a tap-to-confirm chip.
 - [x] 🧩 **Custom SMS templates** — teach the app your bank's message format by example:
   paste a sample (or start from an unparsed inbox message), confirm the highlighted
   amount/brand/date, and future messages parse instantly. Specificity-ranked matching and a

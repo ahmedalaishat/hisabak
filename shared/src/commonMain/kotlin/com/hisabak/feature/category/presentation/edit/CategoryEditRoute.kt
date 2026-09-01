@@ -11,11 +11,12 @@ import org.koin.core.parameter.parametersOf
 @Composable
 fun CategoryEditRoute(
     categoryId: CategoryId?,
-    onDone: () -> Unit,
+    onDone: (CategoryId) -> Unit,
     onCancel: () -> Unit,
+    prefill: CategoryEditPrefill? = null,
     viewModel: CategoryEditViewModel = koinViewModel(
         key = categoryId?.value ?: "new",
-        parameters = { parametersOf(categoryId) },
+        parameters = { parametersOf(categoryId, prefill) },
     ),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -25,7 +26,7 @@ fun CategoryEditRoute(
         onConsumeEffect = { viewModel.onIntent(CategoryEditIntent.ConsumeEffect) },
     ) { effect ->
         when (effect) {
-            CategoryEditEffect.Saved -> onDone()
+            is CategoryEditEffect.Saved -> onDone(effect.id)
         }
     }
 

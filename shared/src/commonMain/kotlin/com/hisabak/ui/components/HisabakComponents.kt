@@ -1,28 +1,40 @@
 package com.hisabak.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
 import com.hisabak.shared.resources.Res
+import com.hisabak.shared.resources.amount_show_exact
 import com.hisabak.shared.resources.currency_dirham_description
 import com.hisabak.shared.resources.ic_dirham
 import com.hisabak.ui.theme.HisabakTheme
@@ -32,6 +44,7 @@ import com.hisabak.ui.theme.PillShape
 import com.hisabak.ui.theme.Spacing
 import kotlin.math.abs
 import kotlin.math.round
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -118,14 +131,24 @@ fun AmountText(
         fontFamily = if (arabic) LocalHisabakFonts.current.arabic else amountStyle.fontFamily,
     )
     val parts = compactAmountParts(abs(value), arabic)
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+    val shown = rememberRevealableAmount(parts, abs(value), arabic)
+    Row(
+        modifier = modifier.revealOnTap(shown).speakExactly(sign, shown.exact),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         if (sign.isNotEmpty()) Text(sign, color = color, style = numberStyle)
         DirhamGlyph(size = size * 0.82f, tint = color)
         Spacer(Modifier.width(3.dp))
-        Text(parts.number, color = color, style = numberStyle, maxLines = 1)
-        if (parts.suffix.isNotEmpty()) {
+        Text(
+            shown.number,
+            color = color,
+            style = numberStyle,
+            maxLines = 1,
+            autoSize = if (shown.revealed) revealAutoSize(size) else null,
+        )
+        if (shown.suffix.isNotEmpty()) {
             if (arabic) Spacer(Modifier.width(2.dp))
-            Text(parts.suffix, color = color, style = numberStyle, maxLines = 1)
+            Text(shown.suffix, color = color, style = numberStyle, maxLines = 1)
         }
     }
 }
@@ -143,20 +166,32 @@ fun MoneyText(
     symbolScale: Float = 0.8f,
 ) {
     val arabic = rememberIsArabic()
-    val parts = compactAmountParts(abs(amountMinor / 100.0), arabic)
+    val major = abs(amountMinor / 100.0)
+    val parts = compactAmountParts(major, arabic)
+    val shown = rememberRevealableAmount(parts, major, arabic)
     // Geist Mono has no Arabic-Indic glyphs, so Arabic figures fall back to the system font. Render
     // them in Tajawal (the Arabic UI face) instead, keeping tabular alignment and a consistent look.
     val figureStyle = if (arabic) style.copy(fontFamily = LocalHisabakFonts.current.arabic) else style
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+    val sign = if (amountMinor < 0) "−" else ""
+    Row(
+        modifier = modifier.revealOnTap(shown).speakExactly(sign, shown.exact),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         // True minus before the glyph, matching AmountText — a bucket that nets negative (more
         // withdrawn than deposited) must not render the sign inside the figures after the glyph.
-        if (amountMinor < 0) Text("−", style = figureStyle, color = color)
+        if (sign.isNotEmpty()) Text(sign, style = figureStyle, color = color)
         DirhamGlyph(size = style.fontSize * symbolScale, tint = color)
         Spacer(Modifier.width(3.dp))
-        Text(parts.number, style = figureStyle, color = color, maxLines = 1)
-        if (parts.suffix.isNotEmpty()) {
+        Text(
+            shown.number,
+            style = figureStyle,
+            color = color,
+            maxLines = 1,
+            autoSize = if (shown.revealed) revealAutoSize(figureStyle.fontSize) else null,
+        )
+        if (shown.suffix.isNotEmpty()) {
             if (arabic) Spacer(Modifier.width(2.dp))
-            Text(parts.suffix, style = figureStyle, color = color, maxLines = 1)
+            Text(shown.suffix, style = figureStyle, color = color, maxLines = 1)
         }
     }
 }
@@ -164,6 +199,8 @@ fun MoneyText(
 /**
  * Compact money: thousands as `K`, millions as `M` (both to 2 decimals); under 1,000 exact to
  * 2 decimals. Used app-wide via [MoneyText] / [AmountText] and the per-screen formatters.
+ * Amounts read as columns of short, aligned figures; the exact value is a tap away wherever
+ * something was actually abbreviated (see [rememberRevealableAmount]).
  *
  * The suffix is localized off the current default locale (Arabic uses the words ألف / مليون) —
  * the locale is set by `AppLocale.wrap`, so this stays correct in non-composable callers too.
@@ -203,6 +240,96 @@ fun compactAmountMinor(
     amountMinor: Long,
     arabic: Boolean = Locale.current.language == "ar",
 ): String = compactAmount(amountMinor / 100.0, arabic)
+
+/** The full grouped figure with no magnitude suffix — what an abbreviated amount reveals. */
+fun exactAmount(major: Double, arabic: Boolean): String = formatGrouped2(major, arabic)
+
+/*
+ * Tap to reveal the exact amount.
+ *
+ * An abbreviated figure hides digits (⊅ 1.25M is really ⊅ 1,248,300.50), so every amount that
+ * actually lost something is tappable and swaps to the full figure in place, reverting after a
+ * few seconds. Amounts that were never abbreviated stay inert — no affordance without payoff.
+ * Only one amount is expanded at a time ([LocalRevealedAmount] holds its token), so revealing a
+ * second collapses the first instead of widening two rows at once.
+ */
+private const val REVEAL_TIMEOUT_MS = 4_000L
+
+/** The currently revealed amount's token. [com.hisabak.ui.theme.HisabakTheme] provides it; with
+ *  no provider (previews) each amount falls back to revealing on its own. */
+val LocalRevealedAmount = staticCompositionLocalOf<MutableState<Any?>?> { null }
+
+internal class RevealableAmount(
+    val number: String,
+    val suffix: String,
+    val exact: String,
+    val revealed: Boolean,
+    val canReveal: Boolean,
+    val onToggle: () -> Unit,
+)
+
+@Composable
+internal fun rememberRevealableAmount(
+    parts: CompactParts,
+    major: Double,
+    arabic: Boolean,
+): RevealableAmount {
+    val canReveal = parts.suffix.isNotEmpty()
+    val exact = if (canReveal) exactAmount(major, arabic) else parts.number
+    val token = remember { Any() }
+    val fallback = remember { mutableStateOf<Any?>(null) }
+    val revealedToken = LocalRevealedAmount.current ?: fallback
+    val revealed = canReveal && revealedToken.value === token
+    LaunchedEffect(revealed) {
+        if (revealed) {
+            delay(REVEAL_TIMEOUT_MS)
+            if (revealedToken.value === token) revealedToken.value = null
+        }
+    }
+    return RevealableAmount(
+        number = if (revealed) exact else parts.number,
+        suffix = if (revealed) "" else parts.suffix,
+        exact = exact,
+        revealed = revealed,
+        canReveal = canReveal,
+        onToggle = { revealedToken.value = if (revealed) null else token },
+    )
+}
+
+/** The exact figure is longer than the abbreviation it replaces, and its container (a hero row
+ *  beside a trend badge, a third-width tile) does not grow — so the revealed figure shrinks to
+ *  fit rather than losing its last digits. The glyph is already drawn at 0.8× the figures, so it
+ *  stays put. */
+private fun revealAutoSize(base: TextUnit): TextAutoSize? =
+    if (base.isSpecified) {
+        TextAutoSize.StepBased(minFontSize = base * 0.6f, maxFontSize = base, stepSize = 0.5.sp)
+    } else {
+        null
+    }
+
+@Composable
+private fun Modifier.revealOnTap(amount: RevealableAmount): Modifier {
+    val interactionSource = remember { MutableInteractionSource() }
+    val label = stringResource(Res.string.amount_show_exact)
+    if (!amount.canReveal) return this
+    // No indication: a ripple over an inline figure reads as a button. The swap is the feedback.
+    return clickable(
+        interactionSource = interactionSource,
+        indication = null,
+        onClickLabel = label,
+        onClick = amount.onToggle,
+    )
+}
+
+/** Screen readers always get the full figure, never the abbreviation — and the currency glyph
+ *  reads once as its name instead of the icon plus two separate number Texts. */
+@Composable
+private fun Modifier.speakExactly(sign: String, exact: String): Modifier {
+    val currency = stringResource(Res.string.currency_dirham_description)
+    // U+2212 is the display minus; screen readers announce the ASCII hyphen reliably.
+    val spoken = "${sign.replace('−', '-')}$exact $currency"
+    return clearAndSetSemantics { contentDescription = spoken }
+}
 
 /* Arabic-Indic separators (ICU's for ar): U+066C thousands, U+066B decimal. */
 private const val ARABIC_GROUP_SEPARATOR = '٬'

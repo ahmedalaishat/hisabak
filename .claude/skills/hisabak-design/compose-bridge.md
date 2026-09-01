@@ -46,7 +46,9 @@ Money renders the **dirham glyph** (never the literal text "AED"), tabular figur
 `MoneyText` / `AmountText` / `TrailingAmount` (they apply the mono style + `DirhamGlyph`) —
 never hardcode `"AED …"` in a `Text`. Amounts display **compactly** via `compactAmount` /
 `compactAmountMinor` (thousands `K`, millions `M`, 2 decimals; under 1,000 exact); only the
-transaction edit input stays exact.
+transaction edit input stays exact. An abbreviated amount is tappable — it swaps to the full
+figure in place for a few seconds — so render money through `MoneyText` / `AmountText` /
+`MoneyStatCard`, never a hand-formatted `Text` that loses that escape hatch.
 
 ## Spacing · radius · sizing
 
@@ -69,7 +71,7 @@ transaction edit input stays exact.
 | `AmountText` | `AmountText`, `MoneyText`, `TrailingAmount` |
 | `Input` / `SearchBar` | `SearchField` (free text: Material `OutlinedTextField`) |
 | `Card` | `SurfaceCard` |
-| `StatCard` | `StatCard`, `IncomeStatCard`, `ExpensesStatCard` |
+| `StatCard` | `StatCard` (string value), `MoneyStatCard`, `IncomeStatCard`, `ExpensesStatCard` (all three take `amountMinor`) |
 | `ListRow` | `ListRow` |
 | `CategoryIcon` / `CategoryTile` | `IconTile` / `CircleIconTile` |
 | `EmptyState` | `EmptyStatePanel` |

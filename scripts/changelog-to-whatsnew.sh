@@ -3,7 +3,7 @@
 #
 # Takes the first "## [x.y.z]" section (skipping "## [Unreleased]"), flattens its bullets to
 # plain text — dropping the "### Added/Fixed" subheaders, joining wrapped lines, stripping
-# markdown code ticks — and writes whole bullets up to Play's 500-char limit. release.yml runs
+# markdown code ticks and bold markers — and writes whole bullets up to Play's 500-char limit. release.yml runs
 # this before the Play upload so the storefront notes always match the CHANGELOG.
 set -euo pipefail
 
@@ -34,7 +34,7 @@ awk -v limit="$limit" '
     out = ""
     for (i = 1; i <= n; i++) {
       b = bullets[i]
-      gsub(/`/, "", b); gsub(/[[:space:]]+/, " ", b)
+      gsub(/`/, "", b); gsub(/\*\*/, "", b); gsub(/[[:space:]]+/, " ", b)
       sub(/^ /, "", b); sub(/ $/, "", b)
       cand = (out == "" ? "• " b : out "\n• " b)
       if (length(cand) > limit) break
