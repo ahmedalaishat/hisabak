@@ -45,7 +45,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.TextStyle
 import com.hisabak.ui.components.DirhamGlyph
-import com.hisabak.ui.components.COMPACT_THRESHOLD_DENSE
 import com.hisabak.ui.components.compactAmount
 import com.hisabak.ui.components.compactAmountParts
 import com.hisabak.ui.components.localizeDigits
@@ -142,10 +141,7 @@ private fun appearProgress(active: Boolean, durationMillis: Int): Float {
     return p
 }
 
-/** The demo cards are miniatures of the real thing: keep the dense threshold so their figures
- *  fit the mock rows (nothing here is tappable to reveal). */
-private fun compactMajor(v: Double, arabic: Boolean): String =
-    compactAmount(v, arabic, COMPACT_THRESHOLD_DENSE)
+private fun compactMajor(v: Double, arabic: Boolean): String = compactAmount(v, arabic)
 
 /** Dirham glyph + compact amount, matching the app's [com.hisabak.ui.components.AmountText] look. */
 @Composable
@@ -158,7 +154,7 @@ private fun OnboardingAmount(
     symbolScale: Float = 0.78f,
 ) {
     val arabic = rememberIsArabic()
-    val parts = compactAmountParts(value, arabic, COMPACT_THRESHOLD_DENSE)
+    val parts = compactAmountParts(value, arabic)
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         if (sign.isNotEmpty()) Text(sign, style = style, color = color)
         DirhamGlyph(size = style.fontSize * symbolScale, tint = color)

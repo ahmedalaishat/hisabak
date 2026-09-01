@@ -53,7 +53,6 @@ import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.category.presentation.CategoryStyle
 import com.hisabak.feature.transaction.domain.TransactionId
 import com.hisabak.ui.components.AmountText
-import com.hisabak.ui.components.COMPACT_THRESHOLD_DENSE
 import com.hisabak.ui.components.AmountTone
 import com.hisabak.ui.components.CircleIconTile
 import com.hisabak.ui.components.PeriodChipRow
@@ -461,15 +460,12 @@ private fun TransactionRowContent(
         trailing = {
             Column(horizontalAlignment = Alignment.End) {
                 // Signed value: a savings/investment withdrawal is stored negative and must read −.
-                // Rows stay abbreviated from 1,000 up so the amount column reads as a column;
-                // tapping the figure still reveals the exact amount.
                 AmountText(
                     value = amountValue,
                     currency = row.amount.currency.code,
                     showSign = true,
                     tone = tone,
                     size = 14.sp,
-                    threshold = COMPACT_THRESHOLD_DENSE,
                 )
                 Text(
                     text = dateLabel,
