@@ -146,13 +146,17 @@ fun TransactionListScreen(
                     Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
                 ) {
+                    // Half-width cards, and the same period totals the dashboard abbreviates:
+                    // short figures here, exact on tap.
                     IncomeStatCard(
                         amountMinor = state.summaryIncome,
                         modifier = Modifier.weight(1f).fillMaxHeight(),
+                        threshold = COMPACT_THRESHOLD_DENSE,
                     )
                     ExpensesStatCard(
                         amountMinor = state.summaryExpenses,
                         modifier = Modifier.weight(1f).fillMaxHeight(),
+                        threshold = COMPACT_THRESHOLD_DENSE,
                     )
                 }
                 IncomeRatioBar(

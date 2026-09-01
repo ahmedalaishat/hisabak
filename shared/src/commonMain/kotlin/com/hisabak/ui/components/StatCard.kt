@@ -64,11 +64,13 @@ fun MoneyStatCard(
     modifier: Modifier = Modifier,
     progress: Float? = null,
     accent: StatAccent = StatAccent.Positive,
+    threshold: Double = COMPACT_THRESHOLD,
 ) = StatCardScaffold(label, icon, modifier, progress, accent) {
     MoneyText(
         amountMinor = amountMinor,
         style = MaterialTheme.typography.titleLarge,
         color = MaterialTheme.colorScheme.onSurface,
+        threshold = threshold,
     )
 }
 
@@ -152,6 +154,7 @@ fun IncomeStatCard(
     amountMinor: Long,
     progress: Float? = null,
     modifier: Modifier = Modifier,
+    threshold: Double = COMPACT_THRESHOLD,
 ) = MoneyStatCard(
     label = stringResource(Res.string.category_type_income),
     amountMinor = amountMinor,
@@ -159,6 +162,7 @@ fun IncomeStatCard(
     accent = StatAccent.Positive,
     progress = progress,
     modifier = modifier,
+    threshold = threshold,
 )
 
 @Composable
@@ -166,6 +170,7 @@ fun ExpensesStatCard(
     amountMinor: Long,
     progress: Float? = null,
     modifier: Modifier = Modifier,
+    threshold: Double = COMPACT_THRESHOLD,
 ) = MoneyStatCard(
     label = stringResource(Res.string.category_type_expenses),
     amountMinor = amountMinor,
@@ -173,4 +178,5 @@ fun ExpensesStatCard(
     accent = StatAccent.Negative,
     progress = progress,
     modifier = modifier,
+    threshold = threshold,
 )
