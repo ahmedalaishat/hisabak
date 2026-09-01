@@ -90,7 +90,7 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   digits. CMP's `%1$d` interpolation is *not* locale-aware (plain `toString()` substitution,
   positional `%1$d`/`%1$s` only, no `%%` escape), so numeric format args are localized at the
   call site via `localizedFormatArg(n)`; amounts get Arabic-Indic digits + `٬`/`٫` separators
-  from the pure-Kotlin `compactAmountParts(major, arabic, threshold)`, and the few fixed-format numbers
+  from the pure-Kotlin `compactAmountParts(major, arabic)`, and the few fixed-format numbers
   use `localizeDigits(text, arabic)` (all in `ui/components/HisabakComponents.kt`, shared).
   Arabic plural selection works in CMP (full CLDR rules, all 6 Arabic categories). Amounts
   always read LTR (glyph · number · K/M-or-أ/م suffix) via a forced `LayoutDirection.Ltr`,
@@ -426,17 +426,14 @@ rasterizer in `CategoryGlyphIcon.kt` strokes the same vector).
   `ui/components/HisabakComponents.kt`, glyph = `shared/src/commonMain/composeResources/drawable/
   ic_dirham.xml`) — which render the glyph + Geist Mono tabular figures.
   Never hardcode `"AED …"` in a `Text`. (The only exception is simulated bank-SMS sample
-  text, which genuinely contains "AED".) Amounts are shown **exactly below 100K** and
-  abbreviated above it — `K` for six figures, `M` for millions, both to 2 decimals (the shared
-  `compactAmount` / `compactAmountMinor` + `COMPACT_THRESHOLD`, applied by
-  `MoneyText`/`AmountText`); surfaces that want short, aligned figures pass
-  `COMPACT_THRESHOLD_DENSE` to abbreviate from 1,000 up — chart axes/markers and the
-  onboarding mock cards (no room, nothing to tap) plus the **transaction list rows** (a tidy
-  amount column, and the row's own tap opens the sheet with the exact value). Anything actually
-  abbreviated is **tappable: it swaps to the full figure in place** for a few seconds
-  (`rememberRevealableAmount`; `LocalRevealedAmount`, provided by `HisabakTheme`, keeps only one
-  expanded at a time), and screen readers always hear the exact figure. Amounts that lost
-  nothing are inert — no affordance without payoff.
+  text, which genuinely contains "AED".) Amounts are shown **compactly** — thousands as `K`,
+  millions as `M`, both to 2 decimals, under 1,000 exact (the shared `compactAmount` /
+  `compactAmountMinor`, applied by `MoneyText`/`AmountText`); only the transaction edit input
+  stays exact. Anything actually abbreviated is **tappable: it swaps to the full figure in
+  place** for a few seconds, shrinking to fit its container rather than clipping
+  (`rememberRevealableAmount` + `exactAmount`; `LocalRevealedAmount`, provided by
+  `HisabakTheme`, keeps only one expanded at a time), and screen readers always hear the exact
+  figure. Amounts that lost nothing are inert — no affordance without payoff.
   Income shows `+`, expenses the true minus `−` (U+2212), both colored. Hero balances drop the
   sign and use neutral text.
 - Every list screen needs a real empty state: icon + "No … yet" + one-line guidance + a CTA.

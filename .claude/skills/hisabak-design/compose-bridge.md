@@ -44,12 +44,11 @@ no downloadable-fonts provider.
 Money renders the **dirham glyph** (never the literal text "AED"), tabular figures; income
 `+`, expense true-minus `−`, both colored; hero balances neutral/unsigned. Always use
 `MoneyText` / `AmountText` / `TrailingAmount` (they apply the mono style + `DirhamGlyph`) —
-never hardcode `"AED …"` in a `Text`. Amounts are **exact below 100K** and abbreviated above it
-via `compactAmount` / `compactAmountMinor` (`K` for six figures, `M` for millions, 2 decimals);
-pass `COMPACT_THRESHOLD_DENSE` where short, aligned figures matter more than precision (chart
-axes, mock cards, the transaction list rows) to abbreviate from 1,000 up. An abbreviated amount is tappable — it swaps to the full figure in place for a few
-seconds — so never render a compacted figure outside `MoneyText` / `AmountText` / `MoneyStatCard`
-where that escape hatch is lost.
+never hardcode `"AED …"` in a `Text`. Amounts display **compactly** via `compactAmount` /
+`compactAmountMinor` (thousands `K`, millions `M`, 2 decimals; under 1,000 exact); only the
+transaction edit input stays exact. An abbreviated amount is tappable — it swaps to the full
+figure in place for a few seconds — so render money through `MoneyText` / `AmountText` /
+`MoneyStatCard`, never a hand-formatted `Text` that loses that escape hatch.
 
 ## Spacing · radius · sizing
 

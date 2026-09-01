@@ -85,9 +85,6 @@ fun DirhamGlyph(
  *   AmountText(value = 8200.0)            // +⊅ 8,200.00 (green)
  *   AmountText(value = -342.75)           // −⊅ 342.75 (coral)
  *   AmountText(value = 12450.0, tone = AmountTone.Neutral, showSign = false, size = 40.sp)
- *
- * Dense lists that want short, aligned figures pass threshold = COMPACT_THRESHOLD_DENSE; the
- * abbreviated result stays tappable, so the exact amount is still one tap away.
  */
 enum class AmountTone { Auto, Income, Expense, Savings, Investment, Neutral }
 
@@ -100,7 +97,6 @@ fun AmountText(
     tone: AmountTone = AmountTone.Auto,
     size: TextUnit = 16.sp,
     weight: FontWeight = FontWeight.SemiBold,
-    threshold: Double = COMPACT_THRESHOLD,
 ) {
     val c = HisabakTheme.colors
     val resolved = when (tone) {
@@ -134,7 +130,7 @@ fun AmountText(
         fontWeight = weight,
         fontFamily = if (arabic) LocalHisabakFonts.current.arabic else amountStyle.fontFamily,
     )
-    val parts = compactAmountParts(abs(value), arabic, threshold)
+    val parts = compactAmountParts(abs(value), arabic)
     val shown = rememberRevealableAmount(parts, abs(value), arabic)
     Row(
         modifier = modifier.revealOnTap(shown).speakExactly(sign, shown.exact),
@@ -201,20 +197,10 @@ fun MoneyText(
 }
 
 /**
- * Amounts at or above this abbreviate to `K` / `M`; anything below renders exactly. 100K keeps
- * every everyday figure — a salary, a rent payment, a monthly category total — precise, and only
- * the six- and seven-digit sums that would blow out a card get abbreviated (and those reveal
- * themselves on tap, see [rememberRevealableAmount]).
- */
-const val COMPACT_THRESHOLD = 100_000.0
-
-/** Threshold for width-starved surfaces — chart axes and markers, onboarding's mock cards —
- *  where a grouped figure has no room at all and there is nothing to tap. */
-const val COMPACT_THRESHOLD_DENSE = 1_000.0
-
-/**
- * Compact money: thousands as `K`, millions as `M` (both to 2 decimals); below [threshold] exact
- * to 2 decimals. Used app-wide via [MoneyText] / [AmountText] and the per-screen formatters.
+ * Compact money: thousands as `K`, millions as `M` (both to 2 decimals); under 1,000 exact to
+ * 2 decimals. Used app-wide via [MoneyText] / [AmountText] and the per-screen formatters.
+ * Amounts read as columns of short, aligned figures; the exact value is a tap away wherever
+ * something was actually abbreviated (see [rememberRevealableAmount]).
  *
  * The suffix is localized off the current default locale (Arabic uses the words ألف / مليون) —
  * the locale is set by `AppLocale.wrap`, so this stays correct in non-composable callers too.
@@ -225,29 +211,24 @@ const val COMPACT_THRESHOLD_DENSE = 1_000.0
  *  Arabic letter suffix would otherwise reorder inside one Text, flipping the visual order. */
 class CompactParts(val number: String, val suffix: String)
 
-fun compactAmountParts(
-    major: Double,
-    arabic: Boolean,
-    threshold: Double = COMPACT_THRESHOLD,
-): CompactParts {
+fun compactAmountParts(major: Double, arabic: Boolean): CompactParts {
     val a = abs(major)
     // Arabic uses Arabic-Indic digits (٠١٢…) and the one-letter abbreviations أ (ألف) / م (مليون),
     // which fit the same footprint as K/M (the full words overflow). The digit script is pinned to
     // [arabic] (from the Compose locale), so it can't drift after a language switch; English keeps
     // Western digits/separators on any device.
     return when {
-        a < threshold -> CompactParts(formatGrouped2(major, arabic), "")
         a >= 1_000_000 -> CompactParts(formatGrouped2(major / 1_000_000.0, arabic), if (arabic) "م" else "M")
-        else -> CompactParts(formatGrouped2(major / 1_000.0, arabic), if (arabic) "أ" else "K")
+        a >= 1_000 -> CompactParts(formatGrouped2(major / 1_000.0, arabic), if (arabic) "أ" else "K")
+        else -> CompactParts(formatGrouped2(major, arabic), "")
     }
 }
 
 fun compactAmount(
     major: Double,
     arabic: Boolean = Locale.current.language == "ar",
-    threshold: Double = COMPACT_THRESHOLD,
 ): String {
-    val p = compactAmountParts(major, arabic, threshold)
+    val p = compactAmountParts(major, arabic)
     return when {
         p.suffix.isEmpty() -> p.number
         arabic -> "${p.number} ${p.suffix}"
@@ -258,8 +239,7 @@ fun compactAmount(
 fun compactAmountMinor(
     amountMinor: Long,
     arabic: Boolean = Locale.current.language == "ar",
-    threshold: Double = COMPACT_THRESHOLD,
-): String = compactAmount(amountMinor / 100.0, arabic, threshold)
+): String = compactAmount(amountMinor / 100.0, arabic)
 
 /** The full grouped figure with no magnitude suffix — what an abbreviated amount reveals. */
 fun exactAmount(major: Double, arabic: Boolean): String = formatGrouped2(major, arabic)
