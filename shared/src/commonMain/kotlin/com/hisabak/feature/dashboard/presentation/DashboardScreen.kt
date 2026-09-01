@@ -73,6 +73,7 @@ import com.hisabak.feature.dashboard.presentation.components.BarSparkline
 import com.hisabak.feature.dashboard.presentation.components.DonutChart
 import com.hisabak.feature.dashboard.presentation.components.DonutSlice
 import com.hisabak.feature.dashboard.presentation.components.GroupedBarChart
+import com.hisabak.ui.components.COMPACT_THRESHOLD
 import com.hisabak.ui.components.COMPACT_THRESHOLD_DENSE
 import com.hisabak.ui.components.MoneyText
 import com.hisabak.ui.components.PeriodChipRow
@@ -327,6 +328,7 @@ private fun SummaryTab(
                 period = period,
                 lineColor = c.income,
                 modifier = Modifier.fillMaxWidth(),
+                threshold = COMPACT_THRESHOLD_DENSE,
             )
         }
 
@@ -341,6 +343,7 @@ private fun SummaryTab(
                 period = period,
                 lineColor = c.expense,
                 modifier = Modifier.fillMaxWidth(),
+                threshold = COMPACT_THRESHOLD_DENSE,
             )
         }
     }
@@ -430,6 +433,7 @@ private fun OverTimeCard(
     lineColor: Color,
     modifier: Modifier = Modifier,
     animateValue: Boolean = false,
+    threshold: Double = COMPACT_THRESHOLD,
 ) {
     DashCard(modifier = modifier) {
         Text(
@@ -444,6 +448,7 @@ private fun OverTimeCard(
                 style = HisabakType.amountHero,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f, fill = false),
+                threshold = threshold,
             )
             if (trendPct != null) {
                 TrendBadge(pct = trendPct, positiveIsGood = trendPositiveIsGood)
@@ -509,10 +514,13 @@ private fun TotalPill(
             Text(label, style = MaterialTheme.typography.labelSmall, color = fgColor)
         }
         Spacer(Modifier.height(6.dp))
+        // A third-width tile has room for ~8 characters: a five-figure balance would clip if it
+        // rendered in full, and only a revealed amount shrinks to fit.
         MoneyText(
             amountMinor = money.amountMinor,
             style = HisabakType.amount,
             color = MaterialTheme.colorScheme.onSurface,
+            threshold = COMPACT_THRESHOLD_DENSE,
         )
     }
 }
@@ -689,6 +697,7 @@ private fun DonutLegendRow(color: Color, label: String, amount: Money, pct: Doub
             amountMinor = amount.amountMinor,
             style = HisabakType.amount,
             color = MaterialTheme.colorScheme.onSurface,
+            threshold = COMPACT_THRESHOLD_DENSE,
         )
         Spacer(Modifier.width(Spacing.s2))
         Text(
@@ -810,6 +819,7 @@ private fun CategoryLimitCard(
                 amountMinor = row.spent,
                 style = HisabakType.amount,
                 color = MaterialTheme.colorScheme.onSurface,
+                threshold = COMPACT_THRESHOLD_DENSE,
             )
             Icon(
                 if (expanded) HugeIcons.ExpandLess else HugeIcons.ExpandMore,
@@ -961,6 +971,7 @@ private fun UncategorizedCard(
                 amountMinor = total.amountMinor,
                 style = HisabakType.amount,
                 color = MaterialTheme.colorScheme.onSurface,
+                threshold = COMPACT_THRESHOLD_DENSE,
             )
             Icon(
                 if (expanded) HugeIcons.ExpandLess else HugeIcons.ExpandMore,
@@ -1014,6 +1025,7 @@ private fun LimitProgressRow(spent: Long, limit: Long) {
                 amountMinor = limit,
                 style = MaterialTheme.typography.labelSmall,
                 color = if (over) c.expense else MaterialTheme.colorScheme.onSurfaceVariant,
+                threshold = COMPACT_THRESHOLD_DENSE,
             )
             if (over) {
                 Text(
