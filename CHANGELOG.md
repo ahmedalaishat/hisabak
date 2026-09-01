@@ -6,11 +6,11 @@ All notable changes to Hisabak are documented here. Format based on
 
 ## [Unreleased]
 
-### Changed
-- **Tap an amount to see it exactly** — abbreviated figures (`⊅ 1.25K`, `⊅ 1.89M`) expand to
-  the full amount in place for a few seconds, shrinking to fit rather than clipping, and
-  collapse again on their own. Amounts that were never abbreviated stay inert. Screen readers
-  now always hear the exact figure instead of the abbreviation.
+## [2.1.0] — 2026-09-01
+
+### Highlights
+- Tap any shortened amount to read it in full, and create a brand or a category without
+  leaving the screen you were on — with on-device AI suggesting the category for you.
 
 ### Added
 - **Create a category without leaving the brand editor** — the category row in the brand
@@ -25,6 +25,12 @@ All notable changes to Hisabak are documented here. Format based on
   nothing fits, "New: Pharmacy" opens the category editor pre-filled with a sensible
   name, type, color, and icon. Suggestions are only ever applied when you tap them, and
   nothing leaves your phone.
+
+### Changed
+- **Tap an amount to see it exactly** — abbreviated figures (`⊅ 1.25K`, `⊅ 1.89M`) expand to
+  the full amount in place for a few seconds, shrinking to fit rather than clipping, and
+  collapse again on their own. Amounts that were never abbreviated stay inert. Screen readers
+  now always hear the exact figure instead of the abbreviation.
 
 ## [2.0.0] — 2026-08-05
 
