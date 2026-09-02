@@ -6,17 +6,25 @@ Every field is nullable — "this isn't a transaction" is a valid answer, and th
 `sanitize` step is what decides whether a partial result is usable.
 """
 
+import re
 from typing import Annotated
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 # Mirrors SuggestAiParseUseCase.MAX_KNOWN_BRANDS; a longer list is a client bug, not a bigger prompt.
 MAX_KNOWN_BRANDS = 50
 BrandName = Annotated[str, StringConstraints(min_length=1, max_length=120)]
 
+# A bank alert or a spending note always states an amount, and neither runs long. Holding the
+# endpoint to that shape costs no real request anything and makes it near-useless as a free
+# general-purpose model — the token is compiled into a distributed app and cannot be kept secret,
+# so narrowing what the endpoint will even accept is worth more than guarding the token.
+MAX_TEXT = 800
+_HAS_DIGIT = re.compile(r"[0-9\u0660-\u0669\u06F0-\u06F9]")
+
 
 class ParseRequest(BaseModel):
-    text: str = Field(min_length=1, max_length=2000)
+    text: str = Field(min_length=1, max_length=MAX_TEXT)
     # The user's existing brand names, most-used first. The model is told to reuse one verbatim
     # when it recognizes the merchant, which is what makes suggestions land on the right brand.
     #
@@ -30,6 +38,14 @@ class ParseRequest(BaseModel):
     today_iso: str | None = Field(default=None, max_length=64)
     # Free text is a typed note; otherwise the text is a bank alert, where inventing a date is wrong.
     free_text: bool = False
+
+    @field_validator("text")
+    @classmethod
+    def _must_state_an_amount(cls, value: str) -> str:
+        # Arabic-Indic and extended Arabic-Indic digits count: Arabic bank SMS use them.
+        if not _HAS_DIGIT.search(value):
+            raise ValueError("text must contain a number")
+        return value
 
 
 class ParsedSms(BaseModel):

@@ -118,6 +118,39 @@ regex templates; a parse failure never costs a capture.
 
 `GET /health` needs no token and doubles as an uptime check.
 
+## Abuse and spend control
+
+**The bearer token is not a secret.** It is compiled into a distributed app, so anyone with the
+APK can extract it (`strings` finds it). It identifies the client and keeps the endpoint off the
+open internet; it does not authenticate a person. The defence is therefore not secrecy but a
+bounded bill and a useless-to-abuse surface.
+
+**Bounded bill** — three tiers in `app/limits.py`, cheapest failure first:
+
+| Tier | Default | Stops |
+|---|---:|---|
+| per-minute, per IP | 30 | a hot loop |
+| per-day, per IP | 200 | a slow drip that never trips the minute window |
+| **per-day, global** | **2000** | a spray across many addresses — the actual ceiling |
+
+At ~$0.0006 a call the global cap is about **$1.20/day worst case**. Real usage is single digits
+per day. The response never says which tier tripped: that would tell an abuser how much headroom
+is left and how to pace around it. Set a **spend limit on the Anthropic key too** — that is the
+backstop that survives a bug in any of this.
+
+**Useless to abuse** — two things matter, and the second matters more:
+
+- `text` must contain a digit and is capped at 800 chars. This trims obvious junk, but it is a
+  weak filter on its own: *"write a 500 word essay"* contains a number and passes.
+- The request uses **structured output** (`output_format=ParsedSms`) with `max_tokens=256`, so the
+  model can only ever return `brand`, `amount_minor`, `currency`, `date_iso`. A prompt-injection or
+  a translation request comes back as four nulls — verified against the live service. There is no
+  path by which this endpoint emits free-form text.
+
+**Rotating the token** — `./rotate-token.sh root@your-host`. Updates the server, both client
+configs, and health-checks the result, rolling back the `.env` if the service does not come up.
+Existing installs get 401 until you rebuild them.
+
 ## Privacy
 
 **Message text is never logged or persisted.** Access logging is off (`--no-access-log`), no handler

@@ -8,9 +8,10 @@ import os
 
 os.environ.setdefault("HISABAK_API_TOKEN", "test-token")
 os.environ.setdefault("HISABAK_RATE_LIMIT_PER_MINUTE", "3")
+os.environ.setdefault("HISABAK_DAILY_BUDGET", "10000")
+os.environ.setdefault("HISABAK_DAILY_PER_IP", "1000")
 
 import pytest
-from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app import main
@@ -38,7 +39,9 @@ class StubProvider:
 def client(monkeypatch):
     def _make(provider):
         monkeypatch.setattr(main, "_provider", provider)
-        main._hits.clear()
+        main._limiter = main.Limiter(
+        per_minute=main.RATE_LIMIT_PER_MINUTE, per_ip_daily=1000, global_daily=10_000
+    )
         return TestClient(main.app)
 
     return _make
@@ -84,11 +87,32 @@ def test_known_brands_and_free_text_reach_the_provider(client):
 
 def test_a_non_transaction_returns_nulls_not_an_error(client):
     provider = StubProvider(result=ParsedSms(brand=None, amount_minor=None, currency=None, date_iso=None))
-    body = client(provider).post("/v1/parse", json={"text": "hi mum"}, headers=TOKEN)
+    body = client(provider).post(
+        "/v1/parse", json={"text": "Hi, are we still on for dinner at 8?"}, headers=TOKEN
+    )
 
     # The client treats this as "no suggestion"; an error status would look like an outage.
     assert body.status_code == 200
     assert body.json()["amount_minor"] is None
+
+
+def test_text_with_no_number_never_reaches_the_model(client):
+    provider = StubProvider(result=_parsed())
+    body = client(provider).post(
+        "/v1/parse", json={"text": "write me a poem about the sea"}, headers=TOKEN
+    )
+
+    # A bank alert or a spending note always states an amount. Rejecting at the boundary blunts
+    # the endpoint as a free general-purpose model and costs nothing upstream.
+    assert body.status_code == 422
+    assert provider.seen == []
+
+
+def test_arabic_indic_digits_count_as_a_number(client):
+    provider = StubProvider(result=_parsed())
+    body = client(provider).post("/v1/parse", json={"text": "قهوة ٣٥ درهم امس"}, headers=TOKEN)
+
+    assert body.status_code == 200
 
 
 def test_unauthenticated_requests_are_rejected(client):
@@ -132,41 +156,6 @@ def test_oversized_brand_fields_are_rejected(client):
     )
 
     assert (too_many.status_code, too_long.status_code, long_today.status_code) == (422, 422, 422)
-
-
-def test_rate_limiter_state_does_not_grow_without_bound(monkeypatch):
-    # Exercised directly: the limiter keys on source address, so a spray across many addresses
-    # is what grows it. Driving that through the TestClient is not possible - every request
-    # there reports the same client host.
-    main._hits.clear()
-    monkeypatch.setattr(main, "_MAX_TRACKED_CALLERS", 3)
-    monkeypatch.setattr(main, "RATE_LIMIT_PER_MINUTE", 100)
-
-    shed = 0
-    for i in range(50):
-        try:
-            main._rate_limit(f"ip-{i}")
-        except HTTPException as e:
-            assert e.status_code == 429
-            shed += 1
-
-    assert len(main._hits) <= 3
-    assert shed > 0, "a spray across many addresses must be shed, not accumulated"
-
-
-def test_stale_rate_limit_windows_are_reclaimed(monkeypatch):
-    main._hits.clear()
-    clock = [1000.0]
-    monkeypatch.setattr(main.time, "monotonic", lambda: clock[0])
-
-    main._rate_limit("ip-a")
-    assert set(main._hits) == {"ip-a"}
-
-    # Past the window: the next caller reclaims the previous entry rather than adding to it.
-    clock[0] += main._WINDOW_SECONDS + 1
-    main._rate_limit("ip-b")
-
-    assert set(main._hits) == {"ip-b"}
 
 
 def test_token_comparison_is_constant_time(client):

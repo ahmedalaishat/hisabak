@@ -12,6 +12,8 @@ services:
       HISABAK_API_TOKEN: ${HISABAK_API_TOKEN:?set HISABAK_API_TOKEN in .env}
       HISABAK_MODEL: ${HISABAK_MODEL:-claude-haiku-4-5}
       HISABAK_RATE_LIMIT_PER_MINUTE: ${HISABAK_RATE_LIMIT_PER_MINUTE:-30}
+      HISABAK_DAILY_PER_IP: ${HISABAK_DAILY_PER_IP:-200}
+      HISABAK_DAILY_BUDGET: ${HISABAK_DAILY_BUDGET:-2000}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8080/health')"]
       interval: 30s

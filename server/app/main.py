@@ -14,12 +14,12 @@ import logging
 import os
 import secrets
 import time
-from collections import defaultdict, deque
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.providers.anthropic_provider import AnthropicProvider
+from app.limits import Limiter, RateLimitExceeded
 from app.providers.base import ParseProvider
 from app.schema import ParseRequest, ParseResponse
 
@@ -31,14 +31,20 @@ log = logging.getLogger("hisabak")
 
 API_TOKEN = os.getenv("HISABAK_API_TOKEN", "")
 RATE_LIMIT_PER_MINUTE = int(os.getenv("HISABAK_RATE_LIMIT_PER_MINUTE", "30"))
+# The ceiling that actually bounds the bill. At roughly $0.0006 a call, 2000/day is about
+# $1.20/day worst case — orders of magnitude above real use, and a known number either way.
+DAILY_BUDGET = int(os.getenv("HISABAK_DAILY_BUDGET", "2000"))
+# Stops a slow drip that never trips the per-minute window.
+DAILY_PER_IP = int(os.getenv("HISABAK_DAILY_PER_IP", "200"))
 
 app = FastAPI(title="Hisabak parse service", docs_url=None, redoc_url=None)
 _bearer = HTTPBearer(auto_error=False)
 _provider: ParseProvider = AnthropicProvider()
-_hits: dict[str, deque[float]] = defaultdict(deque)
-_WINDOW_SECONDS = 60.0
-# Bounds the limiter's own memory; ~10k entries is a few MB and far above real usage.
-_MAX_TRACKED_CALLERS = 10_000
+_limiter = Limiter(
+    per_minute=RATE_LIMIT_PER_MINUTE,
+    per_ip_daily=DAILY_PER_IP,
+    global_daily=DAILY_BUDGET,
+)
 
 
 def _authorize(
@@ -57,27 +63,16 @@ def _authorize(
 
 
 def _rate_limit(caller: str) -> None:
-    """Per-caller sliding window. A runaway client must not be able to run up an API bill.
+    """Applies the per-minute, per-IP-daily, and global-daily tiers.
 
-    The window map is pruned on every call and hard-capped: it is keyed by source address, so
-    without that, traffic from many addresses grows it without bound — the limiter would itself
-    become the exhaustion vector it exists to prevent.
+    The response never says which tier tripped: that would tell an abuser exactly how much
+    headroom is left and how to pace around it.
     """
-    now = time.monotonic()
-
-    for key in [k for k, w in _hits.items() if not w or now - w[-1] > _WINDOW_SECONDS]:
-        del _hits[key]
-    if caller not in _hits and len(_hits) >= _MAX_TRACKED_CALLERS:
-        # Every tracked caller is inside its window, so this is a spray across many addresses.
-        # Shedding is the safe failure: it bounds memory and cannot run up an API bill.
-        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Rate limit exceeded")
-
-    window = _hits[caller]
-    while window and now - window[0] > _WINDOW_SECONDS:
-        window.popleft()
-    if len(window) >= RATE_LIMIT_PER_MINUTE:
-        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Rate limit exceeded")
-    window.append(now)
+    try:
+        _limiter.check(caller, time.monotonic())
+    except RateLimitExceeded as exceeded:
+        log.warning("rate limited scope=%s used_today=%d", exceeded.scope, _limiter.used_today)
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Rate limit exceeded") from exceeded
 
 
 @app.get("/health")
