@@ -35,6 +35,11 @@ import com.hisabak.feature.brand.domain.ai.AiCategorySuggester
 import com.hisabak.feature.brand.platform.AiCategoryBridge
 import com.hisabak.feature.brand.platform.IosAiCategorySuggester
 import com.hisabak.feature.sms.domain.ai.AiSmsParser
+import com.hisabak.feature.sms.platform.IosRemoteParseClient
+import com.hisabak.feature.sms.domain.ai.ParseServiceConfig
+import com.hisabak.feature.sms.domain.ai.RemoteParseClient
+import com.hisabak.feature.sms.domain.ai.RemoteAiSmsParser
+import com.hisabak.feature.sms.domain.ai.PreferOnDeviceAiSmsParser
 import com.hisabak.feature.sms.platform.AiSmsBridge
 import com.hisabak.feature.sms.platform.IosAiSmsParser
 import kotlin.experimental.ExperimentalNativeApi
@@ -48,6 +53,10 @@ import platform.Foundation.NSBundle
 private fun bundleBuildNumber(): Int =
     (NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleVersion") as? String)
         ?.toIntOrNull() ?: 0
+
+/** Parse-service settings from Info.plist; absent or blank disables the remote parser. */
+private fun bundleString(key: String): String =
+    NSBundle.mainBundle.objectForInfoDictionaryKey(key) as? String ?: ""
 
 /** HisabakFlavor from Info.plist ("prod" | "staging") — the iOS counterpart of Android's flavors. */
 private fun bundleFlavor(): String =
@@ -63,7 +72,17 @@ fun iosPlatformModule(
     aiSmsBridge: AiSmsBridge,
     aiCategoryBridge: AiCategoryBridge,
 ): Module = module {
-    single<AiSmsParser> { IosAiSmsParser(aiSmsBridge) }
+    single<RemoteParseClient> {
+        val config: AppConfig = get()
+        IosRemoteParseClient(ParseServiceConfig(config.parseServiceUrl, config.parseServiceToken))
+    }
+
+    single<AiSmsParser> {
+        PreferOnDeviceAiSmsParser(
+            onDevice = IosAiSmsParser(aiSmsBridge),
+            remote = RemoteAiSmsParser(client = get(), preferences = get()),
+        )
+    }
     single<AiCategorySuggester> { IosAiCategorySuggester(aiCategoryBridge) }
 
     single {
@@ -75,6 +94,8 @@ fun iosPlatformModule(
             smsAutoCapture = false,
             isDebug = Platform.isDebugBinary,
             versionCode = bundleBuildNumber(),
+            parseServiceUrl = bundleString("HisabakParseServiceURL"),
+            parseServiceToken = bundleString("HisabakParseServiceToken"),
         )
     }
 

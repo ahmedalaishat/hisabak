@@ -67,9 +67,12 @@ fun SettingsScreen(
     language: String,
     appLockEnabled: Boolean,
     appLockSupported: Boolean,
+    remoteParseEnabled: Boolean,
+    remoteParseSupported: Boolean,
     onThemeChange: (ThemeMode) -> Unit,
     onLanguageChange: (String) -> Unit,
     onAppLockChange: (Boolean) -> Unit,
+    onRemoteParseChange: (Boolean) -> Unit,
     onOpenBackup: () -> Unit,
     onOpenSmsTemplates: () -> Unit,
     passphraseReminderVisible: Boolean,
@@ -129,6 +132,18 @@ fun SettingsScreen(
                     )
                 },
             )
+            // Only shown when a parse service is actually configured — offering to send messages
+            // somewhere that doesn't exist would be a promise the build can't keep.
+            if (remoteParseSupported) {
+                SettingCard(
+                    icon = HugeIcons.CloudSync,
+                    title = stringResource(Res.string.settings_remote_parse),
+                    hint = stringResource(Res.string.settings_remote_parse_hint),
+                    trailing = {
+                        Switch(checked = remoteParseEnabled, onCheckedChange = onRemoteParseChange)
+                    },
+                )
+            }
         }
 
         SettingsGroup(title = stringResource(Res.string.settings_group_preferences)) {

@@ -158,6 +158,22 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   the gate rather than the source tells them apart: a note leaves too little literal anchor to
   pass. The inbox snackbar offers **Undo**; `sms_template_synthesis_skipped` reasons say whether
   the local locator is the bottleneck.
+- **Server-side parsing (opt-in, reaches every device):** on-device models cover a small minority
+  of phones — Gemini Nano needs AICore (flagship silicon) and Apple Foundation Models an
+  iPhone 15 Pro+ — so `RemoteAiSmsParser` (`feature/sms/domain/ai/`) implements the same
+  `AiSmsParser` port against a small self-hosted service (`server/`, FastAPI + Docker; Claude
+  Haiku 4.5 by default behind a `ParseProvider` protocol, so a self-hosted model is a swap with no
+  client change). `PreferOnDeviceAiSmsParser` composes the two: **on-device first** (free, offline,
+  nothing transmitted), remote only when there is no local model or it returned nothing. Transport
+  follows the `BackupRemote` pattern rather than adding an HTTP dependency —
+  `RemoteParseClient` in commonMain, `HttpRemoteParseClient` (androidApp, `HttpURLConnection`) and
+  `IosRemoteParseClient` (iosMain, `NSURLSession`); every failure is `null`, so an outage degrades
+  to the regex templates. **Strictly opt-in:** the `remoteParseEnabled` pref gates it, is re-checked
+  per call so revocation is immediate, and the Settings row only appears when the build actually has
+  a service configured (`AppConfig.parseServiceUrl`/`parseServiceToken` — Android BuildConfig from
+  gradle properties, iOS Info.plist). The service never logs or stores message text, and
+  `docs/privacy.html` discloses the whole flow. Cost stays bounded because template synthesis turns
+  each parse into a regex, so it is called roughly once per bank *format*.
 - **Platform:** Android only, portrait, edge-to-edge. `minSdk 29`.
 - **Dates & times: use kotlinx-datetime** (`kotlin.time.Instant`, `kotlinx.datetime.LocalDate` /
   `YearMonth` / `TimeZone`), **not `java.time`** — the code is KMP-bound and java.time doesn't

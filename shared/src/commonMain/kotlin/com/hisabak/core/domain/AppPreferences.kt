@@ -51,4 +51,14 @@ interface AppPreferences {
     val lastBackupAt: Flow<Long>
 
     suspend fun setLastBackupAt(value: Long)
+
+    /**
+     * Whether unmatched message text may be sent to the parse service; defaults to `false`.
+     *
+     * This is the consent gate for the only feature that transmits message content off the device,
+     * so it is opt-in and nothing reaches the network while it is false.
+     */
+    val remoteParseEnabled: Flow<Boolean>
+
+    suspend fun setRemoteParseEnabled(value: Boolean)
 }

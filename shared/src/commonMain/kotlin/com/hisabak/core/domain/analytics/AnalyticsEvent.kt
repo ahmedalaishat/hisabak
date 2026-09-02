@@ -113,6 +113,12 @@ sealed class AnalyticsEvent(
     /** The user undid a just-learned template from the inbox snackbar. */
     data object SmsTemplateSynthesisUndone : AnalyticsEvent("sms_template_synthesis_undone")
 
+    /** The user turned server-side parsing on or off. Consent state only — never message text. */
+    class RemoteParseToggled(enabled: Boolean) : AnalyticsEvent(
+        name = "remote_parse_toggled",
+        params = mapOf("enabled" to enabled),
+    )
+
     /** [type] is a [CategoryType] name, lowercased. */
     class CategoryCreated(type: String, hasLimit: Boolean) : AnalyticsEvent(
         name = "category_created",

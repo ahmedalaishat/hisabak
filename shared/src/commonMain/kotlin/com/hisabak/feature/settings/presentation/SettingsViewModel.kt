@@ -24,6 +24,9 @@ class SettingsViewModel(
 
     val appLockEnabled: Flow<Boolean> = preferences.appLockEnabled
 
+    /** Consent for sending unmatched message text to the parse service. Off unless the user says so. */
+    val remoteParseEnabled: Flow<Boolean> = preferences.remoteParseEnabled
+
     /** Show the "do you still remember your backup passphrase?" card once it's been a while. */
     val passphraseReminderVisible: Flow<Boolean> = combine(
         preferences.backupEnabled,
@@ -57,6 +60,11 @@ class SettingsViewModel(
     fun setAppLockEnabled(value: Boolean) {
         analytics.log(AnalyticsEvent.AppLockToggled(value))
         viewModelScope.launch { preferences.setAppLockEnabled(value) }
+    }
+
+    fun setRemoteParseEnabled(value: Boolean) {
+        analytics.log(AnalyticsEvent.RemoteParseToggled(value))
+        viewModelScope.launch { preferences.setRemoteParseEnabled(value) }
     }
 
     /** The locale switch itself happens in the UI layer (AppCompatDelegate); this only records it. */

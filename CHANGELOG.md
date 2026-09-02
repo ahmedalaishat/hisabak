@@ -7,6 +7,12 @@ All notable changes to Hisabak are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **Parsing that works on every phone** — on-device AI only exists on flagship Androids and
+  iPhone 15 Pro or newer, so most phones never saw it. You can now point Hisabak at a small parsing
+  service (self-hosted; see `server/`) and have unrecognised bank messages read by a proper model
+  instead. It is **off by default** and lives in Settings → SMS parsing: only messages no template
+  recognises are sent, only while the setting is on, and nothing is stored. Because Hisabak learns a
+  template from each parse, the same bank format is only ever sent once.
 - **The app learns your bank's message format** — when you confirm an AI-parsed message, Hisabak
   saves the pattern behind it as a parsing rule. The next message from that bank in the same
   format is read instantly, with no AI involved, and it keeps working on devices that have no

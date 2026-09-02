@@ -23,6 +23,7 @@ class AppPreferencesDataStore(private val dataStore: DataStore<Preferences>) : A
     private val restoreOfferedKey = booleanPreferencesKey("restore_offered")
     private val passphraseConfirmedAtKey = longPreferencesKey("passphrase_confirmed_at")
     private val lastBackupAtKey = longPreferencesKey("last_backup_at")
+    private val remoteParseEnabledKey = booleanPreferencesKey("remote_parse_enabled")
 
     override val onboardingCompleted: Flow<Boolean> =
         dataStore.data.map { it[onboardingKey] ?: false }
@@ -90,5 +91,13 @@ class AppPreferencesDataStore(private val dataStore: DataStore<Preferences>) : A
 
     override suspend fun setLastBackupAt(value: Long) {
         dataStore.edit { it[lastBackupAtKey] = value }
+    }
+
+    // Defaults to false: this is the consent gate for sending message text off the device.
+    override val remoteParseEnabled: Flow<Boolean> =
+        dataStore.data.map { it[remoteParseEnabledKey] ?: false }
+
+    override suspend fun setRemoteParseEnabled(value: Boolean) {
+        dataStore.edit { it[remoteParseEnabledKey] = value }
     }
 }
