@@ -115,6 +115,26 @@ def test_arabic_indic_digits_count_as_a_number(client):
     assert body.status_code == 200
 
 
+def test_the_previous_token_is_accepted_during_a_rotation(client, monkeypatch):
+    monkeypatch.setattr(main, "API_TOKEN_PREVIOUS", "old-token")
+    c = client(StubProvider(result=_parsed()))
+
+    old = c.post("/v1/parse", json={"text": SMS}, headers={"Authorization": "Bearer old-token"})
+    new = c.post("/v1/parse", json={"text": SMS}, headers=TOKEN)
+
+    # Without the overlap, rotating 401s every installed app the instant the server restarts.
+    assert (old.status_code, new.status_code) == (200, 200)
+
+
+def test_a_retired_token_stops_working_once_cleared(client, monkeypatch):
+    monkeypatch.setattr(main, "API_TOKEN_PREVIOUS", "")
+    c = client(StubProvider(result=_parsed()))
+
+    body = c.post("/v1/parse", json={"text": SMS}, headers={"Authorization": "Bearer old-token"})
+
+    assert body.status_code == 401
+
+
 def test_unauthenticated_requests_are_rejected(client):
     c = client(StubProvider(result=_parsed()))
     assert c.post("/v1/parse", json={"text": SMS}).status_code == 401

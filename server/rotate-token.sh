@@ -7,23 +7,33 @@
 #
 #   ./rotate-token.sh root@1.2.3.4 [remote-dir]
 #
+# SSH_OPTS is passed to ssh, for hosts that need a non-default key:
+#   SSH_OPTS="-i ~/.ssh/id_hetzner" ./rotate-token.sh root@1.2.3.4
+#
 # Afterwards rebuild and reinstall both apps — until then they will get 401s.
 set -euo pipefail
 
 REMOTE="${1:?usage: rotate-token.sh user@host [remote-dir]}"
 DIR="${2:-/root/hisabak-parse}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck disable=SC2086 - deliberate word splitting; SSH_OPTS holds multiple flags.
+SSH_OPTS="${SSH_OPTS:-}"
 GRADLE_PROPS="$HOME/.gradle/gradle.properties"
 LOCAL_XCCONFIG="$REPO_ROOT/iosApp/Configuration/Local.xcconfig"
 
 NEW="$(openssl rand -hex 32)"
 
 echo "==> server: $REMOTE:$DIR"
-ssh "$REMOTE" "
+ssh $SSH_OPTS "$REMOTE" "
   set -e
   cd '$DIR'
   cp .env .env.bak
-  # Replace in place, preserving every other setting.
+  # The outgoing token becomes PREVIOUS so installed apps keep working until they are rebuilt.
+  OLD=\$(grep '^HISABAK_API_TOKEN=' .env | cut -d= -f2-)
+  # Replace in place, preserving every other setting. PREVIOUS first: the current-token pattern
+  # would otherwise also match the PREVIOUS line.
+  grep -q '^HISABAK_API_TOKEN_PREVIOUS=' .env || echo 'HISABAK_API_TOKEN_PREVIOUS=' >> .env
+  sed -i \"s|^HISABAK_API_TOKEN_PREVIOUS=.*|HISABAK_API_TOKEN_PREVIOUS=\$OLD|\" .env
   sed -i 's|^HISABAK_API_TOKEN=.*|HISABAK_API_TOKEN=$NEW|' .env
   chmod 600 .env
   docker compose up -d --force-recreate >/dev/null 2>&1
@@ -49,6 +59,8 @@ else
 fi
 
 echo
-echo "Rotated. Existing installs now get 401 until you rebuild:"
+echo "Rotated. The previous token is still accepted, so installed apps keep working."
+echo "Rebuild and reinstall, then clear HISABAK_API_TOKEN_PREVIOUS on the server once"
+echo "\"auth via previous token\" stops appearing in the logs:"
 echo "  ./gradlew :androidApp:installStagingDebug"
 echo "  xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosAppStaging ... build"

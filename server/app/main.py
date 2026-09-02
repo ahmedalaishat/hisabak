@@ -30,6 +30,10 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 log = logging.getLogger("hisabak")
 
 API_TOKEN = os.getenv("HISABAK_API_TOKEN", "")
+# Accepted alongside the current one so a rotation has an overlap window. The token is compiled
+# into the apps, so without this every installed build 401s the instant the server rotates —
+# which in practice means the token never gets rotated at all.
+API_TOKEN_PREVIOUS = os.getenv("HISABAK_API_TOKEN_PREVIOUS", "")
 RATE_LIMIT_PER_MINUTE = int(os.getenv("HISABAK_RATE_LIMIT_PER_MINUTE", "30"))
 # The ceiling that actually bounds the bill. At roughly $0.0006 a call, 2000/day is about
 # $1.20/day worst case — orders of magnitude above real use, and a known number either way.
@@ -55,10 +59,22 @@ def _authorize(
     user — it exists to keep the endpoint off the open internet, not to authenticate a person."""
     if not API_TOKEN:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Service not configured")
-    # compare_digest, not ==: a short-circuiting comparison leaks the token prefix through
-    # response timing, and this token is the only thing protecting the endpoint.
-    if credentials is None or not secrets.compare_digest(credentials.credentials, API_TOKEN):
+    if credentials is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unauthorized")
+
+    # compare_digest, not ==: a short-circuiting comparison leaks the token prefix through
+    # response timing, and this token is the only thing protecting the endpoint. Both branches
+    # are evaluated so the reply time does not reveal which token matched either.
+    matches_current = secrets.compare_digest(credentials.credentials, API_TOKEN)
+    matches_previous = bool(API_TOKEN_PREVIOUS) and secrets.compare_digest(
+        credentials.credentials, API_TOKEN_PREVIOUS
+    )
+    if not (matches_current or matches_previous):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unauthorized")
+    if matches_previous and not matches_current:
+        # Watch for this to go quiet: it means every install has picked up the new token and the
+        # previous one can be dropped from the environment.
+        log.info("auth via previous token")
     return request.client.host if request.client else "unknown"
 
 
