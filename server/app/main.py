@@ -23,6 +23,10 @@ from app.providers.anthropic_provider import AnthropicProvider
 from app.providers.base import ParseProvider
 from app.schema import ParseRequest, ParseResponse
 
+# uvicorn configures its own loggers and leaves everything else silent, so without this the
+# operational lines below are dropped. Kept to a single stream handler: no file, no rotation,
+# nothing that could persist a request body by accident.
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("hisabak")
 
 API_TOKEN = os.getenv("HISABAK_API_TOKEN", "")
