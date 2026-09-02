@@ -6,16 +6,28 @@ Every field is nullable — "this isn't a transaction" is a valid answer, and th
 `sanitize` step is what decides whether a partial result is usable.
 """
 
-from pydantic import BaseModel, Field
+from typing import Annotated
+
+from pydantic import BaseModel, Field, StringConstraints
+
+# Mirrors SuggestAiParseUseCase.MAX_KNOWN_BRANDS; a longer list is a client bug, not a bigger prompt.
+MAX_KNOWN_BRANDS = 50
+BrandName = Annotated[str, StringConstraints(min_length=1, max_length=120)]
 
 
 class ParseRequest(BaseModel):
     text: str = Field(min_length=1, max_length=2000)
     # The user's existing brand names, most-used first. The model is told to reuse one verbatim
     # when it recognizes the merchant, which is what makes suggestions land on the right brand.
-    known_brands: list[str] = Field(default_factory=list, max_length=50)
+    #
+    # Both the count and each name are bounded: everything here is interpolated into the prompt,
+    # so an unbounded field is an unbounded token bill as well as unbounded memory.
+    known_brands: list[BrandName] = Field(
+        default_factory=list,
+        max_length=MAX_KNOWN_BRANDS,
+    )
     # "2026-09-02, Wednesday" — only sent for free text, where "yesterday" has to resolve.
-    today_iso: str | None = None
+    today_iso: str | None = Field(default=None, max_length=64)
     # Free text is a typed note; otherwise the text is a bank alert, where inventing a date is wrong.
     free_text: bool = False
 

@@ -10,6 +10,7 @@ os.environ.setdefault("HISABAK_API_TOKEN", "test-token")
 os.environ.setdefault("HISABAK_RATE_LIMIT_PER_MINUTE", "3")
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app import main
@@ -114,6 +115,67 @@ def test_rate_limit_caps_a_runaway_client(client):
 def test_provider_failure_degrades_to_502(client):
     c = client(StubProvider(error=RuntimeError("upstream down")))
     assert c.post("/v1/parse", json={"text": SMS}, headers=TOKEN).status_code == 502
+
+
+def test_oversized_brand_fields_are_rejected(client):
+    c = client(StubProvider(result=_parsed()))
+
+    # Every brand is interpolated into the prompt, so an unbounded field is an unbounded bill.
+    too_many = c.post(
+        "/v1/parse", json={"text": SMS, "known_brands": ["b"] * 51}, headers=TOKEN
+    )
+    too_long = c.post(
+        "/v1/parse", json={"text": SMS, "known_brands": ["x" * 121]}, headers=TOKEN
+    )
+    long_today = c.post(
+        "/v1/parse", json={"text": SMS, "today_iso": "y" * 65}, headers=TOKEN
+    )
+
+    assert (too_many.status_code, too_long.status_code, long_today.status_code) == (422, 422, 422)
+
+
+def test_rate_limiter_state_does_not_grow_without_bound(monkeypatch):
+    # Exercised directly: the limiter keys on source address, so a spray across many addresses
+    # is what grows it. Driving that through the TestClient is not possible - every request
+    # there reports the same client host.
+    main._hits.clear()
+    monkeypatch.setattr(main, "_MAX_TRACKED_CALLERS", 3)
+    monkeypatch.setattr(main, "RATE_LIMIT_PER_MINUTE", 100)
+
+    shed = 0
+    for i in range(50):
+        try:
+            main._rate_limit(f"ip-{i}")
+        except HTTPException as e:
+            assert e.status_code == 429
+            shed += 1
+
+    assert len(main._hits) <= 3
+    assert shed > 0, "a spray across many addresses must be shed, not accumulated"
+
+
+def test_stale_rate_limit_windows_are_reclaimed(monkeypatch):
+    main._hits.clear()
+    clock = [1000.0]
+    monkeypatch.setattr(main.time, "monotonic", lambda: clock[0])
+
+    main._rate_limit("ip-a")
+    assert set(main._hits) == {"ip-a"}
+
+    # Past the window: the next caller reclaims the previous entry rather than adding to it.
+    clock[0] += main._WINDOW_SECONDS + 1
+    main._rate_limit("ip-b")
+
+    assert set(main._hits) == {"ip-b"}
+
+
+def test_token_comparison_is_constant_time(client):
+    # A short-circuiting == leaks the token prefix through response timing.
+    import inspect
+
+    source = inspect.getsource(main._authorize)
+    assert "compare_digest" in source
+    assert "!= API_TOKEN" not in source
 
 
 def test_health_needs_no_token(client):
