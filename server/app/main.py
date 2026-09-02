@@ -102,12 +102,23 @@ async def parse(request: ParseRequest, caller: str = Depends(_authorize)) -> Par
     _rate_limit(caller)
     try:
         parsed = await _provider.parse(request)
-    except Exception:
-        # Deliberately bare: the client treats any failure as "no suggestion" and falls back to
-        # the regex templates, so an upstream outage degrades instead of breaking capture.
-        # logging.exception would be safe here (no body), but the traceback can carry the prompt.
-        log.error("parse failed: provider=%s", _provider.name)
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Upstream parse failed")
+    except Exception as exc:
+        # Caught broadly: the client treats any failure as "no suggestion" and falls back to the
+        # regex templates, so an upstream outage degrades instead of breaking capture.
+        #
+        # The provider's own message is logged because without it every failure looks identical —
+        # a dead key, a malformed request, and a network blip are all just "parse failed", which
+        # makes this service impossible to operate. A traceback is still not logged: it can carry
+        # the prompt, and the prompt carries the message text.
+        detail = getattr(exc, "message", None) or str(exc)
+        log.error(
+            "parse failed: provider=%s type=%s status=%s detail=%s",
+            _provider.name,
+            type(exc).__name__,
+            getattr(exc, "status_code", "-"),
+            detail[:300],
+        )
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Upstream parse failed") from exc
 
     log.info(
         "parse ok len=%d brands=%d free_text=%s hit=%s",

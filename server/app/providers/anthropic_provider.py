@@ -25,7 +25,16 @@ class AnthropicProvider:
 
     def __init__(self) -> None:
         # Credentials resolve from ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN / an `ant auth` profile.
-        self._client = anthropic.AsyncAnthropic(timeout=20.0, max_retries=2)
+        #
+        # An identity-linked key (personal or service account) that is not scoped to a single
+        # workspace must name the workspace on every request, or the API rejects it with a 400.
+        # A workspace-scoped key needs no header, so this stays unset in that case.
+        workspace = os.getenv("ANTHROPIC_WORKSPACE_ID", "").strip()
+        self._client = anthropic.AsyncAnthropic(
+            timeout=20.0,
+            max_retries=2,
+            default_headers={"anthropic-workspace-id": workspace} if workspace else None,
+        )
         self._model = os.getenv("HISABAK_MODEL", DEFAULT_MODEL)
 
     @property

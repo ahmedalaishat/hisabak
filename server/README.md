@@ -40,6 +40,10 @@ small shared box — a Hetzner CX22 (2 vCPU / 4 GB) is far more than enough.
 
 ## Deploy
 
+If your Anthropic key is a personal or service-account key that is **not scoped to a single
+workspace**, set `ANTHROPIC_WORKSPACE_ID` too (Console → Settings → Workspaces, ID column).
+Without it the API rejects every request with a 400. A workspace-scoped key needs nothing extra.
+
 ```bash
 cp .env.example .env
 # Set ANTHROPIC_API_KEY, and generate the shared secret:
