@@ -39,6 +39,7 @@ Reports: `androidApp/build/reports/tests/testProdDebugUnitTest/index.html` and
 | `Money` arithmetic & currency guards | `core/common/MoneyTest` |
 | SMS template detection (regex masking, first-match, `ignore`) | `sms/data/parser/RegexSmsTemplateDetectorTest` |
 | SMS field parsing (amount/date/time normalization) | `sms/data/parser/TemplateSmsParserTest` |
+| Learned templates (span locating, round-trip, rejection gates) | `sms/domain/template/AiTemplateSynthesisTest`, `SynthesizeTemplateUseCaseTest` |
 | Budget window + progress math | `budget/domain/usecase/*Test` |
 | SMS → transaction orchestration | `sms/domain/SmsTransactionProcessorTest`, `usecase/IngestSmsUseCaseTest` |
 | Capture funnel (per-source side-effect policy) | `sms/domain/capture/CaptureTransactionUseCaseTest` |

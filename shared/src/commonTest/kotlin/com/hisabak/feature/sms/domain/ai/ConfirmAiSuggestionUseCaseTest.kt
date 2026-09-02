@@ -10,6 +10,9 @@ import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessage
 import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsTransactionProcessor
+import com.hisabak.feature.sms.domain.template.PreviewSmsTemplateUseCase
+import com.hisabak.feature.sms.domain.template.SaveSmsTemplateUseCase
+import com.hisabak.feature.sms.domain.template.SynthesizeTemplateUseCase
 import com.hisabak.testutil.FakeAnalytics
 import com.hisabak.testutil.FakeBrandRepository
 import com.hisabak.testutil.FakeCategoryLimitAlertStore
@@ -18,16 +21,18 @@ import com.hisabak.testutil.FakeCategoryRepository
 import com.hisabak.testutil.FakeNotificationRepository
 import com.hisabak.testutil.FakeNotificationStrings
 import com.hisabak.testutil.FakeSmsRepository
+import com.hisabak.testutil.FakeSmsTemplateRepository
 import com.hisabak.testutil.FakeTransactionRepository
 import com.hisabak.testutil.RecordingNotifier
 import com.hisabak.testutil.TestClock
 import com.hisabak.testutil.aed
-import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
+import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.TimeZone
 
 class ConfirmAiSuggestionUseCaseTest {
@@ -60,7 +65,16 @@ class ConfirmAiSuggestionUseCaseTest {
         strings = FakeNotificationStrings(),
     )
 
-    private val confirm = ConfirmAiSuggestionUseCase(smsRepo, processor, limitMonitor, analytics)
+    private val templateRepo = FakeSmsTemplateRepository()
+    private val synthesize = SynthesizeTemplateUseCase(
+        repository = templateRepo,
+        saveTemplate = SaveSmsTemplateUseCase(templateRepo, clock, analytics),
+        previewTemplate = PreviewSmsTemplateUseCase(smsRepo),
+        clock = clock,
+        analytics = analytics,
+    )
+
+    private val confirm = ConfirmAiSuggestionUseCase(smsRepo, processor, limitMonitor, synthesize, analytics)
 
     private val occurredAt = Instant.parse("2026-03-04T09:30:00Z")
     private val suggestion = ParsedSmsData("Noon", aed(12_50), occurredAt)
@@ -83,7 +97,7 @@ class ConfirmAiSuggestionUseCaseTest {
         val result = confirm(message.id)
 
         assertTrue(result is DomainResult.Success)
-        val tx = (result as DomainResult.Success).value
+        val tx = (result as DomainResult.Success).value.transaction
         assertEquals(aed(12_50), tx.amount)
         assertEquals(occurredAt, tx.occurredAt)
         assertEquals("Noon", brandRepo.current.single().name)
@@ -94,6 +108,49 @@ class ConfirmAiSuggestionUseCaseTest {
         // Retained on purpose: the suggestion doubles as the "AI parsed" provenance marker.
         assertEquals(suggestion, stored.suggested)
         assertEquals(listOf("ai_suggestion_confirmed"), analytics.names())
+    }
+
+    @Test
+    fun `confirming installs the template derived at suggest time`() = runTest {
+        val message = storedMessage().let {
+            val withPattern = it.copy(suggestedPattern = "Your card was charged {amount} at {brand}")
+            smsRepo.upsert(withPattern)
+            withPattern
+        }
+
+        val result = confirm(message.id)
+
+        val learned = assertNotNull((result as DomainResult.Success).value.learnedTemplateId)
+        val template = templateRepo.current.single()
+        assertEquals(learned, template.id)
+        assertTrue(template.derivedByAi)
+    }
+
+    @Test
+    fun `a message with no derived pattern still confirms and reports nothing learned`() = runTest {
+        val message = storedMessage()
+
+        val result = confirm(message.id)
+
+        assertNull((result as DomainResult.Success).value.learnedTemplateId)
+        assertTrue(templateRepo.current.isEmpty())
+    }
+
+    @Test
+    fun `a rejected template never costs the user their transaction`() = runTest {
+        val message = storedMessage().let {
+            // Too little literal anchor to be trusted as a parsing rule.
+            val withPattern = it.copy(suggestedPattern = "{amount} at {brand}")
+            smsRepo.upsert(withPattern)
+            withPattern
+        }
+
+        val result = confirm(message.id)
+
+        assertTrue(result is DomainResult.Success)
+        assertNull((result as DomainResult.Success).value.learnedTemplateId)
+        assertEquals(aed(12_50), result.value.transaction.amount)
+        assertTrue(templateRepo.current.isEmpty())
     }
 
     @Test

@@ -11,6 +11,8 @@ data class SmsMessage(
     val parsed: ParsedSmsData? = null,
     /** Unconfirmed AI parse — shown as a suggestion until the user confirms (then it becomes [parsed]). */
     val suggested: ParsedSmsData? = null,
+    /** Template pattern derived from [suggested] at parse time, installed if the user confirms. */
+    val suggestedPattern: String? = null,
 ) {
     val isLinked: Boolean get() = transactionId != null
 }

@@ -18,6 +18,7 @@ import com.hisabak.testutil.aed
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
@@ -50,6 +51,29 @@ class SuggestAiParseUseCaseTest {
         )
         smsRepo.upsert(message)
         return message
+    }
+
+    @Test
+    fun `a stored suggestion carries a template pattern derived from the body`() = runTest {
+        val message = storedMessage()
+        aiParser.result = AiParsedSms("Noon", 12_50, "AED", null)
+
+        suggest(message.id, source = "auto")
+
+        val pattern = assertNotNull(smsRepo.current.single().suggestedPattern)
+        assertEquals("Your card was charged {amount} at {brand}", pattern)
+    }
+
+    @Test
+    fun `free-text input never yields a template pattern`() = runTest {
+        val message = storedMessage()
+        aiParser.freeTextResult = AiParsedSms("Noon", 12_50, "AED", null)
+
+        suggest(message.id, source = "paste", freeText = true)
+
+        // "lunch 45 yesterday" is a note, not a bank format — a rule derived from one would
+        // match nothing useful and could shadow real templates.
+        assertNull(smsRepo.current.single().suggestedPattern)
     }
 
     @Test

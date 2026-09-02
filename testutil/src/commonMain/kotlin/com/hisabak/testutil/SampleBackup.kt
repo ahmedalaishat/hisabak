@@ -30,6 +30,7 @@ fun sampleBackupData() = BackupData(
             isDefault = false,
             enabled = true,
             createdAtMillis = 4L,
+            derivedByAi = true,
         ),
     ),
 )

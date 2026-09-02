@@ -33,12 +33,13 @@ import com.hisabak.feature.transaction.data.local.TransactionEntity
         NotificationEntity::class,
         CategoryLimitAlertEntity::class,
     ],
-    version = HisabakDatabase.SCHEMA_VERSION, // v5: sms_templates table
+    version = HisabakDatabase.SCHEMA_VERSION, // v6: synthesized-template columns
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 2, to = 3, spec = DropSyncColumnsSpec::class),
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5),
+        AutoMigration(from = 5, to = 6),
     ],
 )
 @ConstructedBy(HisabakDatabaseConstructor::class)
@@ -56,7 +57,7 @@ abstract class HisabakDatabase : RoomDatabase() {
         const val NAME = "hisabak.db"
 
         /** Single source of truth for the Room schema version; also stamped into backup files. */
-        const val SCHEMA_VERSION = 5
+        const val SCHEMA_VERSION = 6
     }
 }
 

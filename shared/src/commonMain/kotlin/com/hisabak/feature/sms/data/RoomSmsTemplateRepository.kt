@@ -76,6 +76,7 @@ internal fun SmsTemplateEntity.toDomain() = SmsParserTemplate(
     isDefault = isDefault,
     enabled = enabled,
     createdAt = Instant.fromEpochMilliseconds(createdAtMillis),
+    derivedByAi = derivedByAi,
 )
 
 internal fun SmsParserTemplate.toEntity() = SmsTemplateEntity(
@@ -85,4 +86,5 @@ internal fun SmsParserTemplate.toEntity() = SmsTemplateEntity(
     isDefault = isDefault,
     enabled = enabled,
     createdAtMillis = createdAt.toEpochMilliseconds(),
+    derivedByAi = derivedByAi,
 )

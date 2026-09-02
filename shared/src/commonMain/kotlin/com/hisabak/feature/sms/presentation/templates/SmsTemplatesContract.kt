@@ -16,6 +16,7 @@ data class SmsTemplatesUiState(
         val pattern: String,
         val isDefault: Boolean,
         val enabled: Boolean,
+        val derivedByAi: Boolean,
     )
 }
 

@@ -28,6 +28,7 @@ class SmsTemplatesViewModel(
                         pattern = it.pattern,
                         isDefault = it.isDefault,
                         enabled = it.enabled,
+                        derivedByAi = it.derivedByAi,
                     )
                 }
                 setState { copy(templates = rows, isLoading = false) }

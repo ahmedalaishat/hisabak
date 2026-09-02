@@ -23,7 +23,8 @@ platform-native model pair.
   `Unavailable`, every AI affordance is hidden, behavior is identical to before. A
   DOWNLOADABLE Nano model triggers a background download and stays unavailable for the
   session.
-- **Out of scope (follow-ups):** auto-categorization; template synthesis; provenance
+- **Out of scope (follow-ups):** auto-categorization; template synthesis (**since shipped** —
+  see `ai-template-synthesis.md`); provenance
   column; suggestion notifications; partial suggestions; batch parse; Nano
   download-progress UX; backing up suggestions.
 

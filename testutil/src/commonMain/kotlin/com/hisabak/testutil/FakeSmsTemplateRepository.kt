@@ -34,6 +34,7 @@ fun parserTemplate(
     isDefault: Boolean = false,
     enabled: Boolean = true,
     createdAtMillis: Long = 0L,
+    derivedByAi: Boolean = false,
 ): SmsParserTemplate = SmsParserTemplate(
     id = SmsTemplateId(id),
     pattern = pattern,
@@ -41,4 +42,5 @@ fun parserTemplate(
     isDefault = isDefault,
     enabled = enabled,
     createdAt = Instant.fromEpochMilliseconds(createdAtMillis),
+    derivedByAi = derivedByAi,
 )

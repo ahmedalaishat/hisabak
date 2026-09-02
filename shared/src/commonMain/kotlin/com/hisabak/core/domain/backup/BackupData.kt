@@ -69,6 +69,7 @@ data class SmsTemplateRecord(
     val isDefault: Boolean,
     val enabled: Boolean = true,
     val createdAtMillis: Long,
+    val derivedByAi: Boolean = false,
 )
 
 @Serializable

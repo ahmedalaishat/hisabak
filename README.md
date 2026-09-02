@@ -106,6 +106,9 @@ Everything below is built and shipping today:
   paste a sample (or start from an unparsed inbox message), confirm the highlighted
   amount/brand/date, and future messages parse instantly. Specificity-ranked matching and a
   save-time preview keep a bad template from breaking the built-ins. Backed up with your data.
+  Confirming an AI-parsed message **teaches a template automatically** — the next message in that
+  format parses with no AI at all, on any device. Learned rules are marked as such and can be
+  edited, deleted, or undone on the spot.
 - [x] ✨ **Smart capture** — the SMS inbox takes anything: auto-captured bank SMS, pasted
   messages, or plain notes ("lunch 45 yesterday"). Known formats import instantly; everything
   else gets an on-device AI suggestion you confirm with one tap. Fully on-device.

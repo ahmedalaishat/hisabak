@@ -3,11 +3,15 @@ package com.hisabak.feature.sms.presentation.inbox
 import androidx.lifecycle.viewModelScope
 import com.hisabak.core.common.DomainError
 import com.hisabak.core.common.DomainResult
+import com.hisabak.core.domain.analytics.Analytics
+import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.core.presentation.BaseViewModel
 import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessage
+import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsParser
 import com.hisabak.feature.sms.domain.SmsTemplateDetector
+import com.hisabak.feature.sms.domain.SmsTemplateId
 import com.hisabak.feature.sms.domain.ai.AiParserAvailability
 import com.hisabak.feature.sms.domain.ai.AiSmsParser
 import com.hisabak.feature.sms.domain.ai.ConfirmAiSuggestionUseCase
@@ -16,10 +20,10 @@ import com.hisabak.feature.sms.domain.ai.SuggestAiParseUseCase
 import com.hisabak.feature.sms.domain.capture.CaptureResult
 import com.hisabak.feature.sms.domain.capture.CaptureSource
 import com.hisabak.feature.sms.domain.capture.CaptureTransactionUseCase
+import com.hisabak.feature.sms.domain.template.DeleteSmsTemplateUseCase
 import com.hisabak.feature.sms.domain.usecase.DeleteSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ImportParsedSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ObserveSmsMessagesUseCase
-import com.hisabak.feature.sms.domain.SmsMessageId
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -39,6 +43,8 @@ class SmsInboxViewModel(
     private val suggestAiParse: SuggestAiParseUseCase,
     private val confirmAiSuggestion: ConfirmAiSuggestionUseCase,
     private val dismissAiSuggestion: DismissAiSuggestionUseCase,
+    private val deleteTemplate: DeleteSmsTemplateUseCase,
+    private val analytics: Analytics,
 ) : BaseViewModel<SmsInboxIntent, SmsInboxUiState, SmsInboxEffect>() {
 
     override fun initialState() = SmsInboxUiState()
@@ -74,6 +80,7 @@ class SmsInboxViewModel(
                 viewModelScope.launch { dismissAiSuggestion(intent.id) }
             is SmsInboxIntent.PermissionChanged ->
                 setState { copy(autoImportGranted = intent.granted) }
+            is SmsInboxIntent.UndoLearnedTemplate -> undoLearnedTemplate(intent.id)
             SmsInboxIntent.ConsumeEffect -> clearEffect()
         }
     }
@@ -154,10 +161,22 @@ class SmsInboxViewModel(
     private fun confirmSuggestion(id: SmsMessageId) {
         viewModelScope.launch {
             when (val result = confirmAiSuggestion(id)) {
-                is DomainResult.Success ->
-                    sendEffect(SmsInboxEffect.TransactionCreated(amount = result.value.amount))
+                is DomainResult.Success -> sendEffect(
+                    SmsInboxEffect.TransactionCreated(
+                        amount = result.value.transaction.amount,
+                        learnedTemplateId = result.value.learnedTemplateId,
+                    ),
+                )
                 is DomainResult.Failure ->
                     sendEffect(SmsInboxEffect.ParseFailed(reasonFor(result.error)))
+            }
+        }
+    }
+
+    private fun undoLearnedTemplate(id: SmsTemplateId) {
+        viewModelScope.launch {
+            if (deleteTemplate(id) is DomainResult.Success) {
+                analytics.log(AnalyticsEvent.SmsTemplateSynthesisUndone)
             }
         }
     }
