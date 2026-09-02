@@ -153,9 +153,11 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   installs it on confirm behind the same gate hand-made templates pass
   (`SaveSmsTemplateUseCase.validate`, plus dedupe and a `PreviewSmsTemplateUseCase` conflict
   check). Declining is a success with a null value: a rule that can't be trusted is simply not
-  installed, and the user's transaction is never at risk. Free-text input is excluded — a note
-  is not a bank format. The inbox snackbar offers **Undo**; `sms_template_synthesis_skipped`
-  reasons say whether the local locator is the bottleneck.
+  installed, and the user's transaction is never at risk. **Pasted text is included** — notes and
+  bank SMS share one input field, and on iOS (no SMS API) pasting is how bank messages arrive, so
+  the gate rather than the source tells them apart: a note leaves too little literal anchor to
+  pass. The inbox snackbar offers **Undo**; `sms_template_synthesis_skipped` reasons say whether
+  the local locator is the bottleneck.
 - **Platform:** Android only, portrait, edge-to-edge. `minSdk 29`.
 - **Dates & times: use kotlinx-datetime** (`kotlin.time.Instant`, `kotlinx.datetime.LocalDate` /
   `YearMonth` / `TimeZone`), **not `java.time`** — the code is KMP-bound and java.time doesn't

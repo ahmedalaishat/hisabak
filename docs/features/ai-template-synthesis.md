@@ -11,12 +11,18 @@ parses offline instead of needing the model again.
   backup carries it across.
 - **Where it fires:** the candidate pattern is derived at **suggest** time (it needs the model's
   raw merchant string, which `sanitize` replaces with a canonical brand) and stored on the
-  message; it is installed as a template only when the user **confirms** the suggestion.
+  message; it is installed as a template only when the user **confirms** the suggestion. Every
+  capture source qualifies — share sheet, Shortcut, Android broadcast, and paste.
 - **Trust UX:** confirming the parse is the consent. The inbox snackbar says a rule was learned
   and offers **Undo**; the template shows a "Learned" badge in Settings → SMS parsing and is
   editable and deletable exactly like a hand-made one.
 - **Never at the user's expense:** synthesis failure cannot fail the confirm. A rejected rule
   returns success-with-null — the transaction is the outcome the user asked for.
+- **Pasted text included, notes filtered by the gate not the source.** The inbox takes pasted bank
+  SMS and typed notes through one field, and on iOS — no SMS API — pasting is how bank messages
+  arrive, so excluding the free-text path would leave the platform unable to learn at all. A note
+  like "lunch 45 yesterday" is stopped instead by the anchor minimum, which is the same rule that
+  stops an over-generic hand-made template.
 - **Out of scope (follow-ups):** the server-side path (a real model tagging the spans for devices
   with no on-device AI, plus the opt-in consent flow and privacy-policy change it needs);
   re-teaching from a corrected template; sharing learned templates between users.

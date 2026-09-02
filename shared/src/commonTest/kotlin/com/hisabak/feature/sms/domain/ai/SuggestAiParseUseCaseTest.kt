@@ -65,15 +65,18 @@ class SuggestAiParseUseCaseTest {
     }
 
     @Test
-    fun `free-text input never yields a template pattern`() = runTest {
+    fun `a pasted bank message yields a template pattern too`() = runTest {
         val message = storedMessage()
         aiParser.freeTextResult = AiParsedSms("Noon", 12_50, "AED", null)
 
+        // Paste is the free-text path, but on iOS it is also how bank SMS arrive — excluding it
+        // would leave the whole platform unable to learn.
         suggest(message.id, source = "paste", freeText = true)
 
-        // "lunch 45 yesterday" is a note, not a bank format — a rule derived from one would
-        // match nothing useful and could shadow real templates.
-        assertNull(smsRepo.current.single().suggestedPattern)
+        assertEquals(
+            "Your card was charged {amount} at {brand}",
+            smsRepo.current.single().suggestedPattern,
+        )
     }
 
     @Test
