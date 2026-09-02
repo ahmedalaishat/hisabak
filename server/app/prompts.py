@@ -14,6 +14,9 @@ Rules:
 - currency is an ISO-4217 code (AED, USD, SAR). Map local spellings: "Dhs", "د.إ", "AED" -> AED.
 - brand is the merchant or counterparty, cleaned of branch codes and terminal ids
   ("CARREFOUR MOE-4471" -> "CARREFOUR MOE"). Not the bank's own name.
+- brand_text and amount_text must be copied VERBATIM from the message, character for character.
+  They are checked against the original text, so a cleaned or reformatted value fails the check.
+  brand_text stays as written even when brand is set to one of the known brands below.
 - If the text is not a transaction, return null for every field."""
 
 _KNOWN_BRANDS = """

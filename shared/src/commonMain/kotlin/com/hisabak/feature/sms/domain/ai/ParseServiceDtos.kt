@@ -18,7 +18,9 @@ data class ParseRequestDto(
 @Serializable
 data class ParseResponseDto(
     val brand: String? = null,
+    @SerialName("brand_text") val brandText: String? = null,
     @SerialName("amount_minor") val amountMinor: Long? = null,
+    @SerialName("amount_text") val amountText: String? = null,
     val currency: String? = null,
     @SerialName("date_iso") val dateIso: String? = null,
 ) {
@@ -29,5 +31,7 @@ data class ParseResponseDto(
         amountMinor = amountMinor,
         currencyCode = currency,
         occurredAtEpochMillis = dateIso?.let(::parseAiIsoDate),
+        brandText = brandText,
+        amountText = amountText,
     )
 }

@@ -123,7 +123,13 @@ class SuggestAiParseUseCase(
     private fun derivePattern(body: String, raw: AiParsedSms, suggestion: ParsedSmsData): String? {
         val rawBrand = raw.brandName?.trim().orEmpty()
         val amountMinor = suggestion.amount?.amountMinor ?: return null
-        val spans = deriveAiSpans(body, rawBrand, amountMinor) ?: return null
+        val spans = deriveAiSpans(
+            body = body,
+            rawBrand = rawBrand,
+            amountMinor = amountMinor,
+            brandText = raw.brandText,
+            amountText = raw.amountText,
+        ) ?: return null
         return deriveTemplatePattern(body, spans)
     }
 

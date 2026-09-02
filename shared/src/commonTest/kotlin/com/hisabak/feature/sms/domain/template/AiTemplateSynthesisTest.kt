@@ -96,6 +96,41 @@ class AiTemplateSynthesisTest {
     }
 
     @Test
+    fun `verbatim brand evidence keeps a branch code out of the pattern`() {
+        // The prompt asks the model to reuse an existing brand name, so a message reading
+        // "TALABAT-DXB-991" comes back as "Talabat". Locating that snapped name matches only the
+        // first seven characters and leaves "-DXB-" literal, pinning the rule to one branch.
+        val body = "Purchase of AED 89.00 at TALABAT-DXB-991 with card 1234"
+
+        val inferred = assertNotNull(patternFor(body, "Talabat", 8_900))
+        assertTrue("DXB" in inferred, "precondition: inference alone leaves the branch code")
+
+        val spans = assertNotNull(
+            deriveAiSpans(body, "Talabat", 8_900, brandText = "TALABAT-DXB-991", amountText = "89.00"),
+        )
+        val withEvidence = deriveTemplatePattern(body, spans)
+
+        assertTrue("DXB" !in withEvidence, "branch code still literal: $withEvidence")
+        val match = assertNotNull(
+            matchTemplate(withEvidence, "Purchase of AED 12.00 at CARREFOUR-AUH-114 with card 9999"),
+        )
+        assertEquals("CARREFOUR-AUH-114", match.fields["brand"])
+    }
+
+    @Test
+    fun `evidence that is not actually in the message is ignored`() {
+        val body = "Purchase of AED 89.00 at TALABAT with card 1234"
+
+        // A model that reformats or invents its evidence must not be trusted over the body.
+        val spans = assertNotNull(
+            deriveAiSpans(body, "TALABAT", 8_900, brandText = "Talabat Restaurant", amountText = "89.00"),
+        )
+
+        val brand = spans.single { it.role == TagRole.BRAND }
+        assertEquals("TALABAT", body.substring(brand.start, brand.end))
+    }
+
+    @Test
     fun `no template when the amount is absent from the body`() {
         assertNull(deriveAiSpans("Purchase at NOON completed successfully", "NOON", 12_550))
     }

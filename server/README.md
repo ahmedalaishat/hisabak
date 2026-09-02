@@ -113,8 +113,20 @@ where the feature was previously absent entirely.
 ```
 POST /v1/parse          Authorization: Bearer <HISABAK_API_TOKEN>
 { "text": "...", "known_brands": [...], "today_iso": "2026-09-02, Wednesday", "free_text": false }
-→ { "brand": "...", "amount_minor": 12550, "currency": "AED", "date_iso": null, "model": "..." }
+→ { "brand": "...", "brand_text": "...", "amount_minor": 12550, "amount_text": "125.50",
+    "currency": "AED", "date_iso": null, "model": "..." }
 ```
+
+`brand` is the merchant snapped to one of `known_brands` where it matches, so the suggestion links
+to a brand the user already has. `brand_text` and `amount_text` are the **verbatim substrings** from
+the message, which is a different thing and deliberately so: the client verifies them against the
+original text rather than trusting the parse, and template synthesis needs to know exactly which
+characters to replace. For `at TALABAT-DXB-991` the two differ — `brand` is `Talabat`, `brand_text`
+is `TALABAT-DXB-991` — and using the former would bake the branch code into the learned rule.
+
+This is also why there is no confidence score: a model's self-reported probability is poorly
+calibrated and clusters near 0.9 whether it is right or wrong, while "this substring is in the
+message" is something the client can check.
 
 Every field may be null — "this isn't a transaction" is a valid answer, and the app's shared
 `sanitize` step decides whether a partial result is usable. Non-200 means the app falls back to its

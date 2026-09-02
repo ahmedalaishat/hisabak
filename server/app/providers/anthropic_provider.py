@@ -55,5 +55,6 @@ class AnthropicProvider:
         )
         # Structured output guarantees the shape; a refusal or an empty turn does not.
         return response.parsed_output or ParsedSms(
-            brand=None, amount_minor=None, currency=None, date_iso=None
+            brand=None, brand_text=None, amount_minor=None,
+            amount_text=None, currency=None, date_iso=None,
         )

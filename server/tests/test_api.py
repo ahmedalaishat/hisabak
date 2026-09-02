@@ -48,7 +48,10 @@ def client(monkeypatch):
 
 
 def _parsed(**kw):
-    base = dict(brand="CARREFOUR MALL", amount_minor=12550, currency="AED", date_iso=None)
+    base = dict(
+        brand="CARREFOUR MALL", brand_text="CARREFOUR MALL",
+        amount_minor=12550, amount_text="125.50", currency="AED", date_iso=None,
+    )
     return ParsedSms(**{**base, **kw})
 
 
@@ -59,7 +62,9 @@ def test_parses_a_bank_message(client):
     assert body.status_code == 200
     assert body.json() == {
         "brand": "CARREFOUR MALL",
+        "brand_text": "CARREFOUR MALL",
         "amount_minor": 12550,
+        "amount_text": "125.50",
         "currency": "AED",
         "date_iso": None,
         "model": "stub-1",
@@ -86,7 +91,7 @@ def test_known_brands_and_free_text_reach_the_provider(client):
 
 
 def test_a_non_transaction_returns_nulls_not_an_error(client):
-    provider = StubProvider(result=ParsedSms(brand=None, amount_minor=None, currency=None, date_iso=None))
+    provider = StubProvider(result=ParsedSms(brand=None, brand_text=None, amount_minor=None, amount_text=None, currency=None, date_iso=None))
     body = client(provider).post(
         "/v1/parse", json={"text": "Hi, are we still on for dinner at 8?"}, headers=TOKEN
     )

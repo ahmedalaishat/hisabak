@@ -49,10 +49,30 @@ class ParseRequest(BaseModel):
 
 
 class ParsedSms(BaseModel):
-    """What the model is constrained to return. Nulls are expected, not failures."""
+    """What the model is constrained to return. Nulls are expected, not failures.
+
+    The `*_text` fields are **evidence**, not decoration: they let the client verify the parse
+    against the original message instead of trusting it, and they tell template synthesis exactly
+    which characters to replace with a placeholder. A self-reported confidence score would be
+    worse — models are poorly calibrated and cluster near 0.9 whether right or wrong, whereas
+    "this substring is in the message" is checkable.
+    """
 
     brand: str | None = Field(description="Merchant name, cleaned. Null if there isn't one.")
+    brand_text: str | None = Field(
+        description=(
+            "The merchant EXACTLY as it appears in the message, copied character for character, "
+            "even when `brand` was set to a different known brand name. For "
+            "'at TALABAT-DXB-991' this is 'TALABAT-DXB-991'. Null if there is no merchant."
+        )
+    )
     amount_minor: int | None = Field(description="Amount in minor units (cents). 12.50 -> 1250.")
+    amount_text: str | None = Field(
+        description=(
+            "The amount EXACTLY as written in the message, without the currency: '62.00', "
+            "'1,255.00', '400'. Null if there is no amount."
+        )
+    )
     currency: str | None = Field(description="ISO-4217 code such as AED. Null if not stated.")
     date_iso: str | None = Field(description="ISO-8601 date or date-time. Null if not stated.")
 
