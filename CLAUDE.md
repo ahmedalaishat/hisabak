@@ -148,7 +148,13 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   (`feature/sms/domain/template/AiTemplateSynthesis.kt`, pure) locates the amount and brand the
   model returned back in the body and lets `suggestSpans` handle the rest (dates, times, and the
   other number tokens, which must become `{ignore}` or the pattern would be pinned to one
-  message). The candidate rides on `SmsMessage.suggestedPattern` from suggest time — the *raw*
+  message). The remote parser also returns **verbatim evidence** (`brandText`/`amountText`: the
+  substrings exactly as written), which `deriveAiSpans` prefers over inference and verifies against
+  the body — `brandName` may have been snapped to an existing brand, so locating *it* matches only
+  a prefix and leaves a branch code ("TALABAT-DXB-991" → "-DXB-") literal in the rule. On-device
+  engines report no evidence and fall back to value-matching. There is deliberately **no confidence
+  score**: model self-assessment is poorly calibrated, a substring claim is checkable.
+  The candidate rides on `SmsMessage.suggestedPattern` from suggest time — the *raw*
   merchant string is only available before `canonicalizeBrand` — and `SynthesizeTemplateUseCase`
   installs it on confirm behind the same gate hand-made templates pass
   (`SaveSmsTemplateUseCase.validate`, plus dedupe and a `PreviewSmsTemplateUseCase` conflict
