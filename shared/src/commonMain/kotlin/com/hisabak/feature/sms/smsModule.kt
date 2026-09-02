@@ -21,6 +21,7 @@ import com.hisabak.feature.sms.domain.template.ObserveSmsTemplatesUseCase
 import com.hisabak.feature.sms.domain.template.PreviewSmsTemplateUseCase
 import com.hisabak.feature.sms.domain.template.SaveSmsTemplateUseCase
 import com.hisabak.feature.sms.domain.template.SetSmsTemplateEnabledUseCase
+import com.hisabak.feature.sms.domain.template.SynthesizeTemplateUseCase
 import com.hisabak.feature.sms.domain.usecase.DeleteSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ImportParsedSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.IngestSmsUseCase
@@ -78,6 +79,7 @@ val smsModule = module {
             smsRepository = get(),
             processor = get(),
             limitMonitor = get(),
+            synthesizeTemplate = get(),
             analytics = get(),
         )
     }
@@ -113,6 +115,15 @@ val smsModule = module {
     factory { DeleteSmsTemplateUseCase(repository = get(), analytics = get()) }
     factory { SetSmsTemplateEnabledUseCase(repository = get(), analytics = get()) }
     factory { PreviewSmsTemplateUseCase(smsRepository = get()) }
+    factory {
+        SynthesizeTemplateUseCase(
+            repository = get(),
+            saveTemplate = get(),
+            previewTemplate = get(),
+            clock = get(),
+            analytics = get(),
+        )
+    }
 
     viewModel {
         SmsTemplatesViewModel(
@@ -147,6 +158,8 @@ val smsModule = module {
             suggestAiParse = get(),
             confirmAiSuggestion = get(),
             dismissAiSuggestion = get(),
+            deleteTemplate = get(),
+            analytics = get(),
         )
     }
 }

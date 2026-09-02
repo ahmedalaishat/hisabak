@@ -32,6 +32,7 @@ fun SmsMessageEntity.toDomain(): SmsMessage {
         transactionId = transactionId?.let(::TransactionId),
         parsed = parsed,
         suggested = suggested,
+        suggestedPattern = suggestedPattern,
     )
 }
 
@@ -48,4 +49,5 @@ fun SmsMessage.toEntity(): SmsMessageEntity = SmsMessageEntity(
     suggestedAmountMinor = suggested?.amount?.amountMinor,
     suggestedCurrency = suggested?.amount?.currency?.code,
     suggestedOccurredAtMillis = suggested?.occurredAt?.toEpochMilliseconds(),
+    suggestedPattern = suggestedPattern,
 )

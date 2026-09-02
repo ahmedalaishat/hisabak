@@ -97,6 +97,22 @@ sealed class AnalyticsEvent(
         params = mapOf("enabled" to enabled),
     )
 
+    /** A confirmed AI parse was turned into a reusable template. */
+    data object SmsTemplateSynthesized : AnalyticsEvent("sms_template_synthesized")
+
+    /**
+     * Synthesis declined. [reason] is "no_amount_span", "no_brand_span", "weak_anchor",
+     * "duplicate", or "conflict" — the mix says whether the local span locator is the
+     * bottleneck, which is what decides if a server-side tagger is worth building.
+     */
+    class SmsTemplateSynthesisSkipped(reason: String) : AnalyticsEvent(
+        name = "sms_template_synthesis_skipped",
+        params = mapOf("reason" to reason),
+    )
+
+    /** The user undid a just-learned template from the inbox snackbar. */
+    data object SmsTemplateSynthesisUndone : AnalyticsEvent("sms_template_synthesis_undone")
+
     /** [type] is a [CategoryType] name, lowercased. */
     class CategoryCreated(type: String, hasLimit: Boolean) : AnalyticsEvent(
         name = "category_created",

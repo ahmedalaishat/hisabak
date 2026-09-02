@@ -241,6 +241,9 @@
     <string name="sms_templates_empty_subtitle">أضف قالبًا من رسالة بنكية نموذجية</string>
     <string name="sms_template_badge_default">مدمج</string>
     <string name="sms_template_badge_custom">خاص بك</string>
+    <string name="sms_template_badge_learned">مُتعلَّم</string>
+    <string name="sms_template_learned">الرسائل المشابهة ستُحلَّل تلقائيًا من الآن</string>
+    <string name="sms_template_learned_undo">تراجع</string>
     <string name="sms_template_delete_title">حذف هذا القالب؟</string>
     <string name="sms_template_delete_body">لن تُحلَّل الرسائل المستقبلية بهذه الصيغة تلقائيًا. المعاملات الحالية لن تتأثر.</string>
     <string name="sms_template_new_title">قالب جديد</string>

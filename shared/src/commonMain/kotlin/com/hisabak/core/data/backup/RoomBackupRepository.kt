@@ -65,11 +65,11 @@ class RoomBackupRepository(
 }
 
 private fun SmsTemplateEntity.toRecord() = SmsTemplateRecord(
-    id, pattern, sampleBody, isDefault, enabled, createdAtMillis,
+    id, pattern, sampleBody, isDefault, enabled, createdAtMillis, derivedByAi,
 )
 
 private fun SmsTemplateRecord.toEntity() = SmsTemplateEntity(
-    id, pattern, sampleBody, isDefault, enabled, createdAtMillis,
+    id, pattern, sampleBody, isDefault, enabled, createdAtMillis, derivedByAi,
 )
 
 private fun CategoryEntity.toRecord() = CategoryRecord(id, name, type, color, icon)

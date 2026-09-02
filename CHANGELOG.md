@@ -7,6 +7,13 @@ All notable changes to Hisabak are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **The app learns your bank's message format** — when you confirm an AI-parsed message, Hisabak
+  saves the pattern behind it as a parsing rule. The next message from that bank in the same
+  format is read instantly, with no AI involved, and it keeps working on devices that have no
+  on-device AI at all. The rule appears in Settings → SMS parsing marked "Learned", where you can
+  edit or delete it like any other, and the confirmation snackbar offers Undo straight away. A
+  rule is only kept if it is specific enough to be safe and doesn't contradict messages you have
+  already captured.
 - **A real icon library for categories** — 144 icons across 11 groups (food, transport,
   shopping, home and bills, health, travel, work, money, leisure, tech, other) replace the
   original 12. Tap the icon tile in the category editor to open a picker with search; it

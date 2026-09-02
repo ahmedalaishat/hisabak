@@ -4,9 +4,10 @@ import com.hisabak.core.common.Money
 import com.hisabak.core.presentation.ViewEffect
 import com.hisabak.core.presentation.ViewIntent
 import com.hisabak.core.presentation.ViewState
-import com.hisabak.feature.transaction.domain.TransactionId
 import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessageId
+import com.hisabak.feature.sms.domain.SmsTemplateId
+import com.hisabak.feature.transaction.domain.TransactionId
 import kotlin.time.Instant
 
 data class SmsInboxRow(
@@ -47,12 +48,15 @@ sealed interface SmsInboxIntent : ViewIntent {
     data class SuggestParse(val id: SmsMessageId) : SmsInboxIntent
     data class ConfirmSuggestion(val id: SmsMessageId) : SmsInboxIntent
     data class DismissSuggestion(val id: SmsMessageId) : SmsInboxIntent
+    /** Remove a template that confirming a suggestion just installed. */
+    data class UndoLearnedTemplate(val id: SmsTemplateId) : SmsInboxIntent
     data class PermissionChanged(val granted: Boolean) : SmsInboxIntent
     data object ConsumeEffect : SmsInboxIntent
 }
 
 sealed interface SmsInboxEffect : ViewEffect {
     data class ParseFailed(val reason: String) : SmsInboxEffect
-    data class TransactionCreated(val amount: Money) : SmsInboxEffect
+    /** [learnedTemplateId] is set when the confirm also installed a template, which the snackbar offers to undo. */
+    data class TransactionCreated(val amount: Money, val learnedTemplateId: SmsTemplateId? = null) : SmsInboxEffect
     data object AiParseFailed : SmsInboxEffect
 }

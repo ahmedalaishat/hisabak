@@ -110,7 +110,8 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   (user templates store their sample so editing re-tags via `reconstructSpans`, which
   `matchEntire`s). Save enforces a 10-char literal anchor minimum + a numeric amount tag, and
   previews how many stored messages the draft also matches. Templates ride in the backup
-  envelope (schema v5).
+  envelope (schema v6). Templates are also **learned from AI parses** — see the AI section
+  below; those carry `derivedByAi` and show a "Learned" badge in Settings.
 - **On-device AI (SMS parse fallback + smart entry):** bank SMS that match no regex template get
   parsed by the platform's on-device model into a **confirm-first suggestion** (never an
   auto-created transaction). The port is `AiSmsParser` + `SuggestAiParse/ConfirmAiSuggestion/
@@ -141,6 +142,20 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   Unsupported devices
   report `Unavailable` and every AI affordance stays hidden. Inference is fully on-device —
   SMS text never leaves the phone; analytics events (`ai_parse_*`, `ai_category_*`) stay PII-free.
+- **Learn-once template synthesis:** a confirmed AI parse also **teaches the regex engine**, so
+  the next message of that bank format parses offline on any device — including the majority
+  that have no on-device model at all. No extra model call: `deriveAiSpans`
+  (`feature/sms/domain/template/AiTemplateSynthesis.kt`, pure) locates the amount and brand the
+  model returned back in the body and lets `suggestSpans` handle the rest (dates, times, and the
+  other number tokens, which must become `{ignore}` or the pattern would be pinned to one
+  message). The candidate rides on `SmsMessage.suggestedPattern` from suggest time — the *raw*
+  merchant string is only available before `canonicalizeBrand` — and `SynthesizeTemplateUseCase`
+  installs it on confirm behind the same gate hand-made templates pass
+  (`SaveSmsTemplateUseCase.validate`, plus dedupe and a `PreviewSmsTemplateUseCase` conflict
+  check). Declining is a success with a null value: a rule that can't be trusted is simply not
+  installed, and the user's transaction is never at risk. Free-text input is excluded — a note
+  is not a bank format. The inbox snackbar offers **Undo**; `sms_template_synthesis_skipped`
+  reasons say whether the local locator is the bottleneck.
 - **Platform:** Android only, portrait, edge-to-edge. `minSdk 29`.
 - **Dates & times: use kotlinx-datetime** (`kotlin.time.Instant`, `kotlinx.datetime.LocalDate` /
   `YearMonth` / `TimeZone`), **not `java.time`** — the code is KMP-bound and java.time doesn't

@@ -6,6 +6,7 @@ import com.hisabak.core.domain.backup.BackupException
 import com.hisabak.testutil.sampleBackupData
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 import kotlin.test.Test
 
 class JsonBackupCodecTest {
@@ -29,6 +30,17 @@ class JsonBackupCodecTest {
         val json = codec.encode(envelope).decodeToString()
             .replaceFirst("{", "{\"futureField\":123,")
         assertEquals(envelope, codec.decode(json.encodeToByteArray()))
+    }
+
+    @Test
+    fun `a template backed up before the learned flag existed restores as hand-made`() {
+        val json = codec.encode(envelope).decodeToString().replace(",\"derivedByAi\":true", "")
+            .replace(",\"derivedByAi\":false", "")
+
+        val restored = codec.decode(json.encodeToByteArray())
+
+        assertEquals(envelope.data.smsTemplates.size, restored.data.smsTemplates.size)
+        assertTrue(restored.data.smsTemplates.none { it.derivedByAi })
     }
 
     @Test

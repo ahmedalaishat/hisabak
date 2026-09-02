@@ -16,6 +16,10 @@ import com.hisabak.feature.sms.domain.ai.ConfirmAiSuggestionUseCase
 import com.hisabak.feature.sms.domain.ai.DismissAiSuggestionUseCase
 import com.hisabak.feature.sms.domain.ai.SuggestAiParseUseCase
 import com.hisabak.feature.sms.domain.capture.CaptureTransactionUseCase
+import com.hisabak.feature.sms.domain.template.DeleteSmsTemplateUseCase
+import com.hisabak.feature.sms.domain.template.PreviewSmsTemplateUseCase
+import com.hisabak.feature.sms.domain.template.SaveSmsTemplateUseCase
+import com.hisabak.feature.sms.domain.template.SynthesizeTemplateUseCase
 import com.hisabak.feature.sms.domain.usecase.DeleteSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ImportParsedSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.IngestSmsUseCase
@@ -29,23 +33,24 @@ import com.hisabak.testutil.FakeCategoryRepository
 import com.hisabak.testutil.FakeNotificationRepository
 import com.hisabak.testutil.FakeNotificationStrings
 import com.hisabak.testutil.FakeSmsRepository
-import com.hisabak.testutil.smsMessage
+import com.hisabak.testutil.FakeSmsTemplateRepository
 import com.hisabak.testutil.FakeTransactionRepository
 import com.hisabak.testutil.MainDispatcherTest
 import com.hisabak.testutil.RecordingNotifier
 import com.hisabak.testutil.TestClock
 import com.hisabak.testutil.aed
+import com.hisabak.testutil.smsMessage
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import kotlin.test.assertTrue
-import kotlin.time.Instant
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.Test
 import kotlinx.datetime.TimeZone
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -56,6 +61,14 @@ class SmsInboxViewModelTest : MainDispatcherTest() {
     private val brandRepo = FakeBrandRepository()
     private val transactionRepo = FakeTransactionRepository()
     private val notifier = RecordingNotifier()
+    private val templateRepo = FakeSmsTemplateRepository()
+    private val synthesizeTemplate = SynthesizeTemplateUseCase(
+        repository = templateRepo,
+        saveTemplate = SaveSmsTemplateUseCase(templateRepo, clock, FakeAnalytics()),
+        previewTemplate = PreviewSmsTemplateUseCase(smsRepo),
+        clock = clock,
+        analytics = FakeAnalytics(),
+    )
     private val detector = RegexSmsTemplateDetector(listOf("Purchase of AED {amount} at {brand} done"))
     private val parser = TemplateSmsParser(Currency.AED, TimeZone.UTC)
 
@@ -118,7 +131,11 @@ class SmsInboxViewModelTest : MainDispatcherTest() {
         parser = parser,
         aiParser = aiParser,
         suggestAiParse = suggestAiParse,
-        confirmAiSuggestion = ConfirmAiSuggestionUseCase(smsRepo, processor, limitMonitor, FakeAnalytics()),
+        confirmAiSuggestion = ConfirmAiSuggestionUseCase(
+            smsRepo, processor, limitMonitor, synthesizeTemplate, FakeAnalytics(),
+        ),
+        deleteTemplate = DeleteSmsTemplateUseCase(templateRepo, FakeAnalytics()),
+        analytics = FakeAnalytics(),
         dismissAiSuggestion = DismissAiSuggestionUseCase(smsRepo, FakeAnalytics()),
     )
 
@@ -325,5 +342,32 @@ class SmsInboxViewModelTest : MainDispatcherTest() {
         assertEquals(true, row.isLinked)
         // Kept as the "AI parsed" provenance marker on the linked row.
         assertEquals("Noon", row.suggestedBrand)
+    }
+
+    @Test
+    fun `confirming a suggestion with a derived pattern reports the learned template`() = runTest {
+        val at = Instant.parse("2026-03-04T09:30:00Z")
+        val message = SmsMessage(
+            id = SmsMessageId.new(),
+            body = "Your card was charged 12.50 at Noon",
+            receivedAt = at,
+            suggested = ParsedSmsData("Noon", aed(12_50), at),
+            suggestedPattern = "Your card was charged {amount} at {brand}",
+        )
+        smsRepo.upsert(message)
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onIntent(SmsInboxIntent.ConfirmSuggestion(message.id))
+        advanceUntilIdle()
+
+        val effect = vm.effect.value as SmsInboxEffect.TransactionCreated
+        val learned = assertNotNull(effect.learnedTemplateId)
+        assertEquals(learned, templateRepo.current.single().id)
+
+        vm.onIntent(SmsInboxIntent.UndoLearnedTemplate(learned))
+        advanceUntilIdle()
+
+        assertTrue(templateRepo.current.isEmpty())
     }
 }

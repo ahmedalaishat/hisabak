@@ -12,6 +12,8 @@ import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessage
 import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsRepository
+import com.hisabak.feature.sms.domain.template.deriveAiSpans
+import com.hisabak.feature.sms.domain.template.deriveTemplatePattern
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
@@ -70,7 +72,12 @@ class SuggestAiParseUseCase(
         }
 
         analytics.log(AnalyticsEvent.AiParseSucceeded(source, suggestion.amount!!))
-        val updated = message.copy(suggested = suggestion)
+        // Derived here rather than on confirm because it needs the model's *raw* merchant string:
+        // sanitize canonicalizes the brand to an existing one, which often isn't the text the
+        // message actually contains. Free text is excluded — "lunch 45 yesterday" is a note, not
+        // a bank format, and would yield a rule that matches nothing useful.
+        val candidatePattern = if (freeText) null else derivePattern(message.body, raw, suggestion)
+        val updated = message.copy(suggested = suggestion, suggestedPattern = candidatePattern)
         return smsRepository.upsert(updated).map { updated }
     }
 
@@ -106,6 +113,13 @@ class SuggestAiParseUseCase(
             amount = Money(amountMinor, Currency(currencyCode)),
             occurredAt = occurredAt,
         )
+    }
+
+    private fun derivePattern(body: String, raw: AiParsedSms, suggestion: ParsedSmsData): String? {
+        val rawBrand = raw.brandName?.trim().orEmpty()
+        val amountMinor = suggestion.amount?.amountMinor ?: return null
+        val spans = deriveAiSpans(body, rawBrand, amountMinor) ?: return null
+        return deriveTemplatePattern(body, spans)
     }
 
     private fun todayContext(): String {

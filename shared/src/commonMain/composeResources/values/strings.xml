@@ -241,6 +241,9 @@
     <string name="sms_templates_empty_subtitle">Add one from a sample bank message</string>
     <string name="sms_template_badge_default">Built-in</string>
     <string name="sms_template_badge_custom">Yours</string>
+    <string name="sms_template_badge_learned">Learned</string>
+    <string name="sms_template_learned">Messages like this will now parse automatically</string>
+    <string name="sms_template_learned_undo">Undo</string>
     <string name="sms_template_delete_title">Delete this template?</string>
     <string name="sms_template_delete_body">Future messages in this format will no longer parse automatically. Existing transactions are not affected.</string>
     <string name="sms_template_new_title">New template</string>

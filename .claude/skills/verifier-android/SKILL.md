@@ -33,7 +33,7 @@ durable anchors that make that fast; the checks themselves come from whatever yo
 | Launcher | `com.hisabak/.MainActivity` |
 | Bottom-nav tabs | Dashboard · Transactions · SMS · Manage · Settings |
 | Capture entry point | `com.hisabak/.feature.sms.platform.CaptureActivity` (exported; `ACTION_SEND` + `ACTION_PROCESS_TEXT`, `text/plain`) |
-| Bank-SMS templates | `androidApp/src/main/java/com/hisabak/feature/sms/domain/DefaultSmsTemplates.kt` (e.g. `Purchase of AED {amount} with {card} at {brand},`) |
+| Bank-SMS templates | `shared/src/commonMain/kotlin/com/hisabak/feature/sms/domain/DefaultSmsTemplates.kt` (e.g. `Purchase of AED {amount} with {card} at {brand},`) |
 | Emulators (AVDs) | `Pixel_10_Pro`, `Pixel_6_Pro_Rooted` |
 
 ## Get a handle
