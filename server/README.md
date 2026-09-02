@@ -85,15 +85,24 @@ parseServiceUrl=https://parse.example.com
 parseServiceToken=<the HISABAK_API_TOKEN value>
 ```
 
-iOS — in `iosApp/Configuration/Config.xcconfig`:
+iOS — in `iosApp/Configuration/Local.xcconfig` (gitignored; `Config.xcconfig` is committed and
+must stay blank):
 
 ```
 HISABAK_PARSE_SERVICE_URL = https:/$()/parse.example.com
 HISABAK_PARSE_SERVICE_TOKEN = <the HISABAK_API_TOKEN value>
 ```
 
+The `$()` in the URL is not a typo — a bare `//` starts a comment in xcconfig, so the scheme's
+slashes have to be split by an empty variable expansion or the value is truncated to `https:`.
+
 Leave either blank and the remote parser reports `Unavailable`; the app behaves exactly as it does
 today. **The user must also opt in** (Settings → SMS parsing) before any text is sent.
+
+Note the ordering: `PreferOnDeviceAiSmsParser` tries the on-device model first, so a device that has
+one (a flagship Android, or an iPhone 15 Pro or newer) will not call this service unless the local
+model returns nothing. The service is there for the devices that have no local model — which is
+where the feature was previously absent entirely.
 
 ## API
 

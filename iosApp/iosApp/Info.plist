@@ -33,5 +33,10 @@
 	     The shared AppConfig reads it (staging seeds demo data). -->
 	<key>HisabakFlavor</key>
 	<string>$(HISABAK_FLAVOR)</string>
+	<!-- Parse service; blank disables the remote parser (AiParserAvailability.Unavailable). -->
+	<key>HisabakParseServiceURL</key>
+	<string>$(HISABAK_PARSE_SERVICE_URL)</string>
+	<key>HisabakParseServiceToken</key>
+	<string>$(HISABAK_PARSE_SERVICE_TOKEN)</string>
 </dict>
 </plist>
