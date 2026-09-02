@@ -40,6 +40,7 @@ Reports: `androidApp/build/reports/tests/testProdDebugUnitTest/index.html` and
 | SMS template detection (regex masking, first-match, `ignore`) | `sms/data/parser/RegexSmsTemplateDetectorTest` |
 | SMS field parsing (amount/date/time normalization) | `sms/data/parser/TemplateSmsParserTest` |
 | Learned templates (span locating, round-trip, rejection gates) | `sms/domain/template/AiTemplateSynthesisTest`, `SynthesizeTemplateUseCaseTest` |
+| Remote parsing (consent gate, on-device-first fallback) | `sms/domain/ai/RemoteAiSmsParserTest`, `PreferOnDeviceAiSmsParserTest` |
 | Budget window + progress math | `budget/domain/usecase/*Test` |
 | SMS → transaction orchestration | `sms/domain/SmsTransactionProcessorTest`, `usecase/IngestSmsUseCaseTest` |
 | Capture funnel (per-source side-effect policy) | `sms/domain/capture/CaptureTransactionUseCaseTest` |
@@ -84,3 +85,17 @@ the JUnit4 `MainDispatcherRule`: `@BeforeTest`/`@AfterTest` swap `Dispatchers.Ma
 
 Room DAO tests (in-memory SQLite), Compose UI / navigation tests, screenshot tests,
 GitHub Actions CI, and Jacoco coverage.
+
+## Parse service (`server/`)
+
+The Python service has its own suite, not part of `./gradlew unitTests`:
+
+```bash
+cd server
+python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt pytest httpx
+./.venv/bin/python -m pytest tests -q
+```
+
+It stubs the model provider, so it runs with no network, no API key, and no spend — covering the
+wire contract, auth, validation, rate limiting, and failure handling. The model call itself is
+deliberately not covered.
