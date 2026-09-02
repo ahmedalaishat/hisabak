@@ -25,9 +25,20 @@ data class TransactionRow(
     val occurredAt: Instant,
 )
 
-data class BrandFilterOption(val id: BrandId, val name: String)
+data class BrandFilterOption(
+    val id: BrandId,
+    val name: String,
+    /** The brand's category, so a long brand list still groups visually. */
+    val categoryColor: String?,
+    val categoryIcon: String?,
+)
 
-data class CategoryFilterOption(val id: CategoryId, val name: String, val color: String)
+data class CategoryFilterOption(
+    val id: CategoryId,
+    val name: String,
+    val color: String,
+    val icon: String?,
+)
 
 /** Sentinel category id meaning "transactions whose brand has no category". */
 val UncategorizedCategoryId = CategoryId("__uncategorized__")
@@ -46,6 +57,8 @@ data class TransactionListUiState(
     val period: SummaryPeriod = SummaryPeriod.CURRENT_MONTH,
     val summaryIncome: Long = 0L,
     val summaryExpenses: Long = 0L,
+    /** Every transaction, before the list filters — the "of 175" in "12 of 175". */
+    val totalCount: Int = 0,
     val brandFilter: BrandId? = null,
     val categoryFilter: CategoryId? = null,
     val dateRange: DateRangeFilter = DateRangeFilter.ALL,

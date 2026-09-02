@@ -22,7 +22,6 @@ class IosAiCategorySuggester(private val bridge: AiCategoryBridge) : AiCategoryS
                         existingName = it.existingName,
                         newName = it.newName,
                         newType = it.newType,
-                        newColor = it.newColor,
                         newIcon = it.newIcon,
                     )
                 },

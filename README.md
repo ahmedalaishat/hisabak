@@ -93,8 +93,12 @@ Everything below is built and shipping today:
 - [x] 🧾 **Transactions** — searchable, filterable list (by brand, category, date range), with
   uncategorized spending surfaced for quick cleanup. Add, edit, or delete an entry (deletion is
   confirmed first, and hands any bank message that created it back to the SMS inbox).
-- [x] 🗂️ **Organize** — categories (income / expense / savings / investment) with colors and
-  icons, and brands mapped to categories. Safe deletion with brand-merge and confirmation.
+- [x] 🗂️ **Organize** — categories (income / expense / savings / investment) with **144 icons**
+  across 11 groups (searchable in English *and* Arabic) and **any colour you like** — you pick the
+  hue, the app derives shades that stay readable in light, dark, and notifications. Naming a
+  category picks its icon for you, and it warns when a colour or icon clashes with one you already
+  use. Brands map to categories, and either links straight to its transactions. Safe deletion with
+  brand-merge and confirmation.
   Create a brand right from the transaction sheet and a category right from the brand editor —
   and on devices with on-device AI, the brand editor suggests the category (existing or a
   drafted new one) as a tap-to-confirm chip.

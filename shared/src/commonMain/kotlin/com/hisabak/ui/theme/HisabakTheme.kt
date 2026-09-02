@@ -27,6 +27,9 @@ import com.hisabak.ui.components.LocalRevealedAmount
 
 val LocalHisabakColors = staticCompositionLocalOf { HisabakLightSemantic }
 
+/** The resolved theme mode. Derived category colors need it — a hue renders differently per theme. */
+val LocalIsDarkTheme = staticCompositionLocalOf { false }
+
 @Composable
 fun HisabakTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -46,6 +49,7 @@ fun HisabakTheme(
 
     CompositionLocalProvider(
         LocalHisabakColors provides semantic,
+        LocalIsDarkTheme provides darkTheme,
         LocalHisabakFonts provides fonts,
         LocalReducedMotion provides rememberReducedMotion(),
         // One expanded amount at a time — see LocalRevealedAmount.
@@ -64,4 +68,7 @@ fun HisabakTheme(
 object HisabakTheme {
     val colors: HisabakSemanticColors
         @Composable @ReadOnlyComposable get() = LocalHisabakColors.current
+
+    val isDark: Boolean
+        @Composable @ReadOnlyComposable get() = LocalIsDarkTheme.current
 }

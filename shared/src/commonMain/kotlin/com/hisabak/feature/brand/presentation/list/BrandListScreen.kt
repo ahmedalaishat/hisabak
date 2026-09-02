@@ -16,8 +16,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.items as staggeredItems
 import androidx.compose.material3.AlertDialog
 import com.hisabak.ui.components.SkeletonRowList
 import androidx.compose.material3.DropdownMenu
@@ -46,6 +46,7 @@ import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.ui.components.AmountText
 import com.hisabak.ui.components.AmountTone
 import com.hisabak.ui.components.CircleIconTile
+import com.hisabak.ui.components.ChipLaneGrid
 import com.hisabak.ui.components.ColoredFilterChip
 import com.hisabak.ui.components.CreateActionButton
 import com.hisabak.ui.components.EmptyStatePanel
@@ -59,16 +60,16 @@ import com.hisabak.ui.components.tintPairForColor
 import com.hisabak.ui.theme.PillShape
 import com.hisabak.ui.theme.Sizing
 import com.hisabak.ui.theme.Spacing
+import androidx.compose.foundation.layout.offset
 
 @Composable
 fun BrandListScreen(
     state: BrandListUiState,
     onSearchChange: (String) -> Unit,
     onCategoryFilterChange: (CategoryId?) -> Unit,
-    onDelete: (BrandId) -> Unit,
-    onMerge: (BrandId, BrandId) -> Unit,
     onAdd: () -> Unit,
     onEdit: (BrandId) -> Unit,
+    onViewTransactions: (BrandId) -> Unit,
     showHeader: Boolean = true,
 ) {
     if (state.isLoading) {
@@ -82,7 +83,6 @@ fun BrandListScreen(
         return
     }
 
-    var pendingDelete by remember { mutableStateOf<BrandRow?>(null) }
 
     val allLabel = stringResource(Res.string.common_all)
     val filterOptions: List<Pair<String, CategoryId?>> = buildList {
@@ -116,6 +116,7 @@ fun BrandListScreen(
                 CategoryFilterRow(
                     allOptions = filterOptions,
                     colorByCategory = state.availableCategories.associate { it.id to it.color },
+                    iconByCategory = state.availableCategories.associate { it.id to it.icon },
                     selected = state.categoryFilter,
                     onSelect = onCategoryFilterChange,
                 )
@@ -148,7 +149,7 @@ fun BrandListScreen(
                 BrandRowItem(
                     row = row,
                     onEdit = { onEdit(row.id) },
-                    onDelete = { pendingDelete = row },
+                    onViewTransactions = { onViewTransactions(row.id) },
                     modifier = Modifier.animateItem(),
                 )
             }
@@ -157,96 +158,6 @@ fun BrandListScreen(
         item { Spacer(Modifier.height(Spacing.s3)) }
     }
 
-    pendingDelete?.let { row ->
-        BrandDeleteDialog(
-            row = row,
-            otherBrands = state.rows.filter { it.id != row.id },
-            onDismiss = { pendingDelete = null },
-            onConfirmDelete = { onDelete(row.id); pendingDelete = null },
-            onConfirmMerge = { target -> onMerge(row.id, target); pendingDelete = null },
-        )
-    }
-}
-
-@Composable
-private fun BrandDeleteDialog(
-    row: BrandRow,
-    otherBrands: List<BrandRow>,
-    onDismiss: () -> Unit,
-    onConfirmDelete: () -> Unit,
-    onConfirmMerge: (BrandId) -> Unit,
-) {
-    if (row.transactionCount == 0) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text(stringResource(Res.string.common_delete_title, row.name)) },
-            text = { Text(stringResource(Res.string.brand_delete_empty_body)) },
-            confirmButton = { TextButton(onClick = onConfirmDelete) { Text(stringResource(Res.string.action_delete)) } },
-            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) } },
-        )
-        return
-    }
-
-    var target by remember { mutableStateOf<BrandRow?>(null) }
-    var expanded by remember { mutableStateOf(false) }
-    val count = row.transactionCount
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(Res.string.common_delete_title, row.name)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
-                Text(pluralStringResource(Res.plurals.brand_delete_move_body, count, localizedFormatArg(count)))
-                if (otherBrands.isEmpty()) {
-                    Text(
-                        stringResource(Res.string.brand_delete_no_target),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                } else {
-                    Box {
-                        Row(
-                            modifier = Modifier
-                                .clip(PillShape)
-                                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                                .clickable { expanded = true }
-                                .padding(horizontal = Spacing.s4, vertical = Spacing.s3),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
-                        ) {
-                            Text(
-                                target?.name ?: stringResource(Res.string.brand_delete_choose),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (target == null) MaterialTheme.colorScheme.onSurfaceVariant
-                                else MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Icon(
-                                HugeIcons.ExpandMore,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(Sizing.iconSm),
-                            )
-                        }
-                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                            otherBrands.forEach { brand ->
-                                DropdownMenuItem(
-                                    text = { Text(brand.name, maxLines = 1) },
-                                    onClick = { target = brand; expanded = false },
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { target?.let { onConfirmMerge(it.id) } },
-                enabled = target != null,
-            ) { Text(stringResource(Res.string.brand_delete_and_move)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) } },
-    )
 }
 
 @Composable
@@ -269,17 +180,16 @@ private fun HeaderRow(onCreate: () -> Unit) {
 private fun CategoryFilterRow(
     allOptions: List<Pair<String, CategoryId?>>,
     colorByCategory: Map<CategoryId, String>,
+    iconByCategory: Map<CategoryId, String>,
     selected: CategoryId?,
     onSelect: (CategoryId?) -> Unit,
 ) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
-        contentPadding = PaddingValues(vertical = Spacing.s1),
-    ) {
-        items(allOptions) { (label, value) ->
+    ChipLaneGrid(chipCount = allOptions.size) {
+        staggeredItems(allOptions) { (label, value) ->
             ColoredFilterChip(
                 label = label,
                 colorKey = value?.let { colorByCategory[it] },
+                iconKey = value?.let { iconByCategory[it] },
                 selected = selected == value,
                 onClick = { onSelect(value) },
             )
@@ -291,7 +201,7 @@ private fun CategoryFilterRow(
 private fun BrandRowItem(
     row: BrandRow,
     onEdit: () -> Unit,
-    onDelete: () -> Unit,
+    onViewTransactions: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val (bg, fg) = tintPairForColor(row.categoryColor)
@@ -318,11 +228,19 @@ private fun BrandRowItem(
                         size = 14.sp,
                     )
                 }
-                IconButton(onClick = onDelete) {
+                // This brand's transactions. Editing is the row tap; deleting moved into the
+                // editor. Offset so the glyph lands on the card's content edge — an IconButton
+                // centres its icon in a 48dp target, which would otherwise inset it past the
+                // padding the leading tile sits on.
+                IconButton(
+                    onClick = onViewTransactions,
+                    modifier = Modifier.offset(x = IconButtonInset),
+                ) {
                     Icon(
-                        imageVector = HugeIcons.DeleteOutline,
-                        contentDescription = stringResource(Res.string.common_delete_named, row.name),
+                        imageVector = HugeIcons.ReceiptLong,
+                        contentDescription = stringResource(Res.string.action_view_transactions),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(Sizing.iconSm),
                     )
                 }
             }
@@ -330,3 +248,10 @@ private fun BrandRowItem(
         onClick = onEdit,
     )
 }
+
+
+/**
+ * Half the gap between an IconButton's 48dp touch target and its glyph — pulls the icon back onto
+ * the card's content padding so it lines up with the leading tile on the other side.
+ */
+private val IconButtonInset = 12.dp

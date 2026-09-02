@@ -10,6 +10,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun CategoryListRoute(
     onAdd: () -> Unit,
     onEdit: (CategoryId) -> Unit,
+    onViewTransactions: (CategoryId) -> Unit,
     showHeader: Boolean = true,
     viewModel: CategoryListViewModel = koinViewModel(),
 ) {
@@ -19,9 +20,9 @@ fun CategoryListRoute(
         state = state,
         onSearchChange = { viewModel.onIntent(CategoryListIntent.SearchChanged(it)) },
         onTypeFilterChange = { viewModel.onIntent(CategoryListIntent.TypeFilterChanged(it)) },
-        onDelete = { viewModel.onIntent(CategoryListIntent.Delete(it)) },
         onAdd = onAdd,
         onEdit = onEdit,
+        onViewTransactions = onViewTransactions,
         showHeader = showHeader,
     )
 }

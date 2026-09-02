@@ -60,6 +60,7 @@ import com.hisabak.core.domain.backup.BackupError
 import com.hisabak.ui.components.ButtonVariant
 import com.hisabak.ui.components.HisabakButton
 import com.hisabak.ui.components.SurfaceCard
+import com.hisabak.ui.components.dismissKeyboardOnGesture
 import com.hisabak.ui.theme.Motion
 import com.hisabak.ui.theme.Spacing
 
@@ -524,7 +525,11 @@ private fun PassphraseSheet(onDismiss: () -> Unit, onSave: (String) -> Unit) {
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
+            // Built here, inside the sheet's own composition: a sheet is a separate window with
+            // its own focus owner, so a modifier constructed at the call site would clear focus
+            // on the parent window instead and do nothing.
             modifier = Modifier
+                .dismissKeyboardOnGesture()
                 .fillMaxWidth()
                 .padding(horizontal = Spacing.pageMargin)
                 .padding(bottom = Spacing.sectionGap),
@@ -576,7 +581,11 @@ private fun PeriodSheet(
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
+            // Built here, inside the sheet's own composition: a sheet is a separate window with
+            // its own focus owner, so a modifier constructed at the call site would clear focus
+            // on the parent window instead and do nothing.
             modifier = Modifier
+                .dismissKeyboardOnGesture()
                 .fillMaxWidth()
                 .padding(bottom = Spacing.sectionGap),
         ) {

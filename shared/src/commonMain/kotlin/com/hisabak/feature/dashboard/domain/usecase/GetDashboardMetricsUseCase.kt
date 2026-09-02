@@ -180,7 +180,7 @@ class GetDashboardMetricsUseCase(
         val uncategorizedTxs = periodTxs.filter { typeOf(it) == null }
         val categoryOptions = categories
             .sortedBy { it.name.lowercase() }
-            .map { CategoryOption(id = it.id, name = it.name, color = it.color, type = it.type) }
+            .map { CategoryOption(id = it.id, name = it.name, color = it.color, icon = it.icon, type = it.type) }
 
         return DashboardSnapshot(
             netWorth = Money(netWorth, currency),

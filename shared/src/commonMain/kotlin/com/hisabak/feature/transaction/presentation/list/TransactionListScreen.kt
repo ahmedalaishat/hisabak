@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -65,6 +66,7 @@ import com.hisabak.ui.components.SearchField
 import com.hisabak.ui.components.SurfaceCard
 import com.hisabak.ui.components.iconForKey
 import com.hisabak.ui.components.tintPairForColor
+import com.hisabak.ui.components.dismissKeyboardOnGesture
 import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.PillShape
 import com.hisabak.ui.theme.Sizing
@@ -80,6 +82,7 @@ import kotlinx.datetime.todayIn
 import kotlinx.datetime.toLocalDateTime
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import com.hisabak.feature.transaction.domain.savingsRate
 
 @Composable
 fun TransactionListScreen(
@@ -154,7 +157,7 @@ fun TransactionListScreen(
                         modifier = Modifier.weight(1f).fillMaxHeight(),
                     )
                 }
-                IncomeRatioBar(
+                SavingsRateBar(
                     incomeMinor = state.summaryIncome,
                     expensesMinor = state.summaryExpenses,
                 )
@@ -201,6 +204,32 @@ fun TransactionListScreen(
                             .padding(horizontal = Spacing.s2, vertical = Spacing.s2),
                     )
                 }
+            }
+        }
+
+        // Sits above the list, not beside "Summary": the summary is period-scoped while the list
+        // has its own filters, so a count up there would contradict the rows underneath it.
+        if (state.rows.isNotEmpty()) {
+            item {
+                val filtered = state.hasActiveFilters || state.search.isNotBlank()
+                Text(
+                    text = if (filtered) {
+                        pluralStringResource(
+                            Res.plurals.transaction_count_filtered,
+                            state.totalCount,
+                            localizedFormatArg(state.rows.size),
+                            localizedFormatArg(state.totalCount),
+                        )
+                    } else {
+                        pluralStringResource(
+                            Res.plurals.common_transaction_count,
+                            state.rows.size,
+                            localizedFormatArg(state.rows.size),
+                        )
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
 
@@ -251,14 +280,14 @@ fun TransactionListScreen(
     when (openFilter) {
         FilterTarget.CATEGORY -> FilterSelectSheet(
             title = stringResource(Res.string.transaction_filter_category),
-            entries = state.categoryOptions.map { FilterEntry(it.id.value, it.name, it.color) },
+            entries = state.categoryOptions.map { FilterEntry(it.id.value, it.name, it.color, it.icon) },
             selectedId = state.categoryFilter?.value,
             onSelect = { id -> onCategoryFilterChange(id?.let(::CategoryId)); openFilter = null },
             onDismiss = { openFilter = null },
         )
         FilterTarget.BRAND -> FilterSelectSheet(
             title = stringResource(Res.string.transaction_filter_brand),
-            entries = state.brandOptions.map { FilterEntry(it.id.value, it.name, null) },
+            entries = state.brandOptions.map { FilterEntry(it.id.value, it.name, it.categoryColor, it.categoryIcon) },
             selectedId = state.brandFilter?.value,
             onSelect = { id -> onBrandFilterChange(id?.let(::BrandId)); openFilter = null },
             onDismiss = { openFilter = null },
@@ -282,7 +311,12 @@ fun TransactionListScreen(
 
 private enum class FilterTarget { CATEGORY, BRAND, DATE }
 
-private data class FilterEntry(val id: String, val label: String, val color: String?)
+private data class FilterEntry(
+    val id: String,
+    val label: String,
+    val color: String?,
+    val icon: String? = null,
+)
 
 @Composable
 private fun FilterPill(label: String, active: Boolean, onClick: () -> Unit) {
@@ -319,7 +353,9 @@ private fun FilterSelectSheet(
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
+            // Built inside the sheet's composition — see CategoryIconPickerSheet.
             Modifier
+                .dismissKeyboardOnGesture()
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = Spacing.s7),
@@ -330,11 +366,12 @@ private fun FilterSelectSheet(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = Spacing.pageMargin, vertical = Spacing.s4),
             )
-            FilterSheetRow(label = allLabel, colorKey = null, selected = selectedId == null) { onSelect(null) }
+            FilterSheetRow(label = allLabel, colorKey = null, iconKey = null, selected = selectedId == null) { onSelect(null) }
             entries.forEach { entry ->
                 FilterSheetRow(
                     label = entry.label,
                     colorKey = entry.color,
+                    iconKey = entry.icon,
                     selected = selectedId == entry.id,
                 ) { onSelect(entry.id) }
             }
@@ -346,6 +383,7 @@ private fun FilterSelectSheet(
 private fun FilterSheetRow(
     label: String,
     colorKey: String?,
+    iconKey: String?,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
@@ -358,7 +396,16 @@ private fun FilterSheetRow(
         horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
     ) {
         if (colorKey != null) {
-            Box(Modifier.size(10.dp).background(CategoryStyle.color(colorKey), CircleShape))
+            if (iconKey != null) {
+                Icon(
+                    imageVector = iconForKey(iconKey),
+                    contentDescription = null,
+                    tint = CategoryStyle.color(colorKey),
+                    modifier = Modifier.size(Sizing.iconSm),
+                )
+            } else {
+                Box(Modifier.size(10.dp).background(CategoryStyle.color(colorKey), CircleShape))
+            }
         }
         Text(
             text = label,
@@ -381,15 +428,36 @@ private fun FilterSheetRow(
 
 /** A slim bar visualising the period's income share of total money flow. */
 @Composable
-private fun IncomeRatioBar(incomeMinor: Long, expensesMinor: Long) {
-    val total = incomeMinor + expensesMinor
-    if (total <= 0L) return
-    val ratio = (incomeMinor.toDouble() / total.toDouble()).toFloat()
-    val pct = (ratio * 100).roundToInt()
+private fun SavingsRateBar(incomeMinor: Long, expensesMinor: Long) {
+    // Null means there is no income to measure against — before payday a rate would be a lie,
+    // so say so rather than drawing an empty bar at 0%.
+    val rate = savingsRate(incomeMinor, expensesMinor)
+    if (rate == null) {
+        if (expensesMinor > 0L) {
+            Text(
+                text = stringResource(Res.string.transaction_savings_rate_none),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        return
+    }
+
+    val overspent = rate < 0.0
+    val pct = (abs(rate) * 100).roundToInt()
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-        ProgressBar(progress = ratio, color = HisabakTheme.colors.income)
+        ProgressBar(
+            // Overspending fills the bar with how far past income the period went, so a deficit
+            // reads as a red bar growing rather than a green one shrinking toward zero.
+            progress = abs(rate).toFloat(),
+            color = if (overspent) HisabakTheme.colors.expense else HisabakTheme.colors.income,
+        )
         Text(
-            text = stringResource(Res.string.transaction_income_ratio, localizedFormatArg(pct)),
+            text = stringResource(
+                if (overspent) Res.string.transaction_savings_rate_over
+                else Res.string.transaction_savings_rate,
+                localizedFormatArg(pct),
+            ),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

@@ -25,12 +25,20 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.Test
+import com.hisabak.testutil.FakeTransactionRepository
+import com.hisabak.feature.transaction.domain.usecase.ReassignBrandTransactionsUseCase
+import com.hisabak.feature.transaction.domain.usecase.ObserveTransactionsUseCase
+import com.hisabak.feature.brand.domain.usecase.ObserveBrandsUseCase
+import com.hisabak.feature.brand.domain.usecase.DeleteBrandUseCase
+import kotlin.test.assertNotNull
+import com.hisabak.feature.category.domain.CategoryColor
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class BrandEditViewModelTest : MainDispatcherTest() {
 
     private val clock = TestClock()
     private val brandRepo = FakeBrandRepository()
+    private val txRepo = FakeTransactionRepository()
     private val catRepo = FakeCategoryRepository(listOf(category(id = "c1", name = "Food")))
     private val analytics = FakeAnalytics()
     private val categoryCreatedBus = CategoryCreatedBus()
@@ -42,6 +50,10 @@ class BrandEditViewModelTest : MainDispatcherTest() {
         observeCategories = ObserveCategoriesUseCase(catRepo),
         createBrand = CreateBrandUseCase(brandRepo),
         updateBrand = UpdateBrandUseCase(brandRepo),
+        deleteBrand = DeleteBrandUseCase(brandRepo),
+        reassignBrandTransactions = ReassignBrandTransactionsUseCase(txRepo),
+        observeBrands = ObserveBrandsUseCase(brandRepo),
+        observeTransactions = ObserveTransactionsUseCase(txRepo),
         categoryCreatedBus = categoryCreatedBus,
         suggestCategory = SuggestBrandCategoryUseCase(suggester, catRepo, analytics),
         analytics = analytics,
@@ -117,7 +129,7 @@ class BrandEditViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `a settled name yields a suggestion after the debounce`() = runTest {
-        suggester.result = AiRawCategorySuggestion("Food", null, null, null, null)
+        suggester.result = AiRawCategorySuggestion("Food", null, null, null)
         val vm = viewModel()
         advanceUntilIdle()
 
@@ -132,7 +144,7 @@ class BrandEditViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `rapid typing runs one inference for the final name`() = runTest {
-        suggester.result = AiRawCategorySuggestion("Food", null, null, null, null)
+        suggester.result = AiRawCategorySuggestion("Food", null, null, null)
         val vm = viewModel()
         advanceUntilIdle()
 
@@ -146,7 +158,7 @@ class BrandEditViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `no suggestion when the model is unavailable or a category is selected`() = runTest {
-        suggester.result = AiRawCategorySuggestion("Food", null, null, null, null)
+        suggester.result = AiRawCategorySuggestion("Food", null, null, null)
         val vm = viewModel()
         advanceUntilIdle()
 
@@ -165,7 +177,7 @@ class BrandEditViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `accepting an existing suggestion selects it`() = runTest {
-        suggester.result = AiRawCategorySuggestion("Food", null, null, null, null)
+        suggester.result = AiRawCategorySuggestion("Food", null, null, null)
         val vm = viewModel()
         advanceUntilIdle()
         vm.onIntent(BrandEditIntent.NameChanged("Carrefour"))
@@ -179,7 +191,7 @@ class BrandEditViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `accepting a new suggestion opens the prefilled category editor`() = runTest {
-        suggester.result = AiRawCategorySuggestion(null, "Pharmacy", "expenses", "teal", "heart")
+        suggester.result = AiRawCategorySuggestion(null, "Pharmacy", "expenses", "heart")
         val vm = viewModel()
         advanceUntilIdle()
         vm.onIntent(BrandEditIntent.NameChanged("Life Pharmacy"))
@@ -189,7 +201,7 @@ class BrandEditViewModelTest : MainDispatcherTest() {
 
         val effect = vm.effect.value as BrandEditEffect.OpenCategoryEditor
         assertEquals("Pharmacy", effect.prefill.name)
-        assertEquals("teal", effect.prefill.color)
+        assertNotNull(CategoryColor.hueOf(effect.prefill.color), "the prefill carries a derived hue")
         // The chip stays until the created category comes back through the bus.
         assertTrue(vm.state.value.suggestion is CategorySuggestion.New)
 
@@ -201,7 +213,7 @@ class BrandEditViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `opening an uncategorized brand suggests without editing the name`() = runTest {
-        suggester.result = AiRawCategorySuggestion("Food", null, null, null, null)
+        suggester.result = AiRawCategorySuggestion("Food", null, null, null)
         brandRepo.emit(listOf(brand(id = "b1", name = "Carrefour", categoryId = null)))
 
         val vm = viewModel(BrandId("b1"))
@@ -213,7 +225,7 @@ class BrandEditViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `opening a categorized brand never suggests`() = runTest {
-        suggester.result = AiRawCategorySuggestion("Food", null, null, null, null)
+        suggester.result = AiRawCategorySuggestion("Food", null, null, null)
         brandRepo.emit(listOf(brand(id = "b1", name = "Carrefour", categoryId = CategoryId("c1"))))
 
         val vm = viewModel(BrandId("b1"))
@@ -225,7 +237,7 @@ class BrandEditViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `editing the name clears a stale suggestion`() = runTest {
-        suggester.result = AiRawCategorySuggestion("Food", null, null, null, null)
+        suggester.result = AiRawCategorySuggestion("Food", null, null, null)
         val vm = viewModel()
         advanceUntilIdle()
         vm.onIntent(BrandEditIntent.NameChanged("Carrefour"))

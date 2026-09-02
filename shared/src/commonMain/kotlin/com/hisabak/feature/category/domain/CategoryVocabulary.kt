@@ -10,7 +10,15 @@ object CategoryVocabulary {
         "green", "blue", "orange", "red", "teal", "purple", "pink", "gray",
     )
 
-    val icons: List<String> = listOf(
+    /** Every icon the picker offers — and everything a stored key is validated against. */
+    val icons: List<String> = CategoryIconCatalog.keys
+
+    /**
+     * The subset the on-device models are asked to choose from. Deliberately small: the icon list
+     * is inlined into the prompt, and a 144-way choice both bloats it and costs accuracy on a
+     * model this size. Users reach the rest through the picker.
+     */
+    val aiIcons: List<String> = listOf(
         "wallet", "cart", "briefcase", "car", "utensils", "piggy-bank",
         "home", "film", "book", "heart", "gift", "plane",
     )

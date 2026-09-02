@@ -13,6 +13,10 @@ import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.graphics.vector.VectorGroup
 import androidx.compose.ui.graphics.vector.VectorPath
 import com.hisabak.ui.components.iconForKey
+import com.hisabak.ui.theme.hueTintOpaque
+import com.hisabak.ui.theme.hueForegroundLight
+import com.hisabak.feature.category.domain.CategoryColor
+import androidx.compose.ui.graphics.toArgb
 
 /**
  * Renders a category's Material glyph (the same [ImageVector] the in-app tiles use, via
@@ -80,8 +84,19 @@ private fun drawVectorGroup(group: VectorGroup, canvas: Canvas, paint: Paint) {
     canvas.restore()
 }
 
-/** Light tile background + readable foreground per the design's category palette (CLAUDE.md). */
-private fun notificationTileColors(colorKey: String?): Pair<Int, Int> = when (colorKey) {
+/**
+ * Light tile background + readable foreground per the design's category palette (CLAUDE.md).
+ * Notifications are always drawn on the system's light tile, so a custom hue derives its shades
+ * from the light-theme rules rather than following the in-app theme.
+ */
+private fun notificationTileColors(colorKey: String?): Pair<Int, Int> {
+    CategoryColor.hueOf(colorKey)?.let { hue ->
+        return hueTintOpaque(hue).toArgb() to hueForegroundLight(hue).toArgb()
+    }
+    return namedTileColors(colorKey)
+}
+
+private fun namedTileColors(colorKey: String?): Pair<Int, Int> = when (colorKey) {
     "green" -> AndroidColor.parseColor("#D1FAE5") to AndroidColor.parseColor("#047857")
     "blue" -> AndroidColor.parseColor("#DBEAFE") to AndroidColor.parseColor("#2563EB")
     "orange" -> AndroidColor.parseColor("#FFEDD5") to AndroidColor.parseColor("#EA580C")

@@ -6,6 +6,33 @@ All notable changes to Hisabak are documented here. Format based on
 
 ## [Unreleased]
 
+### Added
+- **A real icon library for categories** — 144 icons across 11 groups (food, transport,
+  shopping, home and bills, health, travel, work, money, leisure, tech, other) replace the
+  original 12. Tap the icon tile in the category editor to open a picker with search; it
+  matches English and Arabic terms whichever language the app is in, and Arabic matches
+  without hamza or diacritics, so "اكل" finds the restaurant icon. Naming a category picks its
+  icon for you — the picker opens on matches for the name you typed, and an AI-suggested
+  category arrives with a fitting glyph and a colour that doesn't clash with the ones you
+  already use.
+- **Any color you like for a category** — alongside the eight preset swatches there's now a
+  custom hue picker. You choose the hue; the app works out the exact shades, so the color stays
+  readable in light mode, dark mode, and on notification tiles. The picker previews both themes
+  side by side, shows the colors your other categories already use, and tells you when your pick
+  is too close to one of them — the dashboard donut colors its slices by category, so
+  near-duplicates are genuinely hard to read. New categories now start on the color furthest
+  from the ones you already have.
+
+### Changed
+- **The transactions summary now shows a savings rate** instead of an "income ratio". It reads
+  what share of the period's income you kept — break-even is 0%, and overspending shows as a
+  red bar rather than a shorter green one. The old measure put break-even at 50% and could
+  never show a deficit as a loss. Periods with no income yet say so rather than reading 0%.
+- **Long chip rows wrap instead of scrolling forever** — the brand picker in the transaction
+  sheet, the category picker in the brand editor, and the category filter on the Brands
+  screen now split into two rows past four chips and three past eight, still scrolling
+  sideways. Short lists stay a single row.
+
 ## [2.1.0] — 2026-09-01
 
 ### Highlights
