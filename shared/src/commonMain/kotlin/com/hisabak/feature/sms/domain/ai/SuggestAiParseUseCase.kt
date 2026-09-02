@@ -74,9 +74,14 @@ class SuggestAiParseUseCase(
         analytics.log(AnalyticsEvent.AiParseSucceeded(source, suggestion.amount!!))
         // Derived here rather than on confirm because it needs the model's *raw* merchant string:
         // sanitize canonicalizes the brand to an existing one, which often isn't the text the
-        // message actually contains. Free text is excluded — "lunch 45 yesterday" is a note, not
-        // a bank format, and would yield a rule that matches nothing useful.
-        val candidatePattern = if (freeText) null else derivePattern(message.body, raw, suggestion)
+        // message actually contains.
+        //
+        // Derived for free text too: the inbox takes pasted bank SMS and typed notes through the
+        // same field, so the source can't say which this is — and on iOS, where there is no SMS
+        // API, pasting is how bank messages arrive. Whether it earns a template is
+        // SynthesizeTemplateUseCase's call; a note like "lunch 45 yesterday" leaves too little
+        // literal anchor to pass its gate.
+        val candidatePattern = derivePattern(message.body, raw, suggestion)
         val updated = message.copy(suggested = suggestion, suggestedPattern = candidatePattern)
         return smsRepository.upsert(updated).map { updated }
     }

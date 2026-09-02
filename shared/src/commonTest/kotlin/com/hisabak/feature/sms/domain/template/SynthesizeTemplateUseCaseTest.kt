@@ -69,6 +69,19 @@ class SynthesizeTemplateUseCaseTest {
     }
 
     @Test
+    fun `a typed note leaves too little anchor to become a rule`() = runTest {
+        // The safety property that lets the paste path derive patterns at all: notes and bank
+        // SMS share one input field, so the gate — not the source — has to tell them apart.
+        val note = "lunch 45 yesterday"
+        val spans = assertNotNull(deriveAiSpans(note, "lunch", 45_00))
+
+        val result = synthesize()(note, deriveTemplatePattern(note, spans))
+
+        assertNull((result as DomainResult.Success).value)
+        assertTrue(templateRepo.current.isEmpty())
+    }
+
+    @Test
     fun `an already stored pattern is not installed twice`() = runTest {
         templateRepo.upsert(parserTemplate(id = "existing", pattern = pattern))
 
