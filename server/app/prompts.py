@@ -11,9 +11,17 @@ _BASE = """You extract structured transaction data from text. Reply only with th
 Rules:
 - amount_minor is the transaction amount in MINOR units: 12.50 -> 1250, 1,255.00 -> 125500, 400 -> 40000.
 - Never use the account balance, available limit, card number, or a reference number as the amount.
+- When the message states the same purchase in two currencies - a foreign amount and the amount
+  actually billed to the account - the BILLED amount is the transaction, and its currency is the
+  one to report. "USD 42.10 (AED 154.62) at AMAZON" is 15462 AED, not 4210 USD. The billed amount
+  is the one in the account's own currency, usually second and in brackets or after "converted".
 - currency is an ISO-4217 code (AED, USD, SAR). Map local spellings: "Dhs", "د.إ", "AED" -> AED.
 - brand is the merchant or counterparty, cleaned of branch codes and terminal ids
   ("CARREFOUR MOE-4471" -> "CARREFOUR MOE"). Not the bank's own name.
+- Money credited TO the account is a transaction too - salary, a transfer in, a refund, a
+  deposit. These often name no merchant; use the kind of credit as the brand ("Salary of AED
+  12,500 credited" -> brand "Salary", brand_text "Salary"). Do not return null just because
+  there is no shop involved.
 - brand_text and amount_text must be copied VERBATIM from the message, character for character.
   They are checked against the original text, so a cleaned or reformatted value fails the check.
   brand_text stays as written even when brand is set to one of the known brands below.
