@@ -5,8 +5,9 @@ because the app learns a regex template from each successful parse, this is call
 bank *format* rather than once per message — so capability per call matters far less than it would
 in a chat workload. Set HISABAK_MODEL to move up.
 
-The system prompt is cached: it is identical for every request with the same brand list, and
-cache reads bill at ~0.1x.
+No prompt caching: the system prompt is ~370 tokens and Haiku 4.5 will not cache a prefix under
+4096, so a cache_control marker would be silently inert. It would not pay off here anyway —
+parses are minutes or hours apart and the cache TTL is five minutes.
 """
 
 import os
@@ -35,17 +36,11 @@ class AnthropicProvider:
         response = await self._client.messages.parse(
             model=self._model,
             max_tokens=256,
-            system=[
-                {
-                    "type": "text",
-                    "text": build(
-                        free_text=request.free_text,
-                        today=request.today_iso,
-                        known_brands=request.known_brands,
-                    ),
-                    "cache_control": {"type": "ephemeral"},
-                }
-            ],
+            system=build(
+                free_text=request.free_text,
+                today=request.today_iso,
+                known_brands=request.known_brands,
+            ),
             messages=[{"role": "user", "content": request.text}],
             output_format=ParsedSms,
         )

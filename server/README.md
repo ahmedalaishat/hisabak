@@ -8,10 +8,26 @@ real devices. This service covers the rest.
 ## Why it costs almost nothing to run
 
 The app turns each successful parse into a regex template (`SynthesizeTemplateUseCase`), so the
-service is called roughly **once per bank format**, not once per message. At Haiku 4.5 rates a
-call is ~700 input + ~80 output tokens ≈ **$0.0011**. Thirty-odd UAE bank formats across your users
-is well under a dollar in total; even the pathological case where template synthesis never works
-and every unmatched message hits the API lands around **$0.55/month** for a handful of users.
+service is called roughly **once per bank format**, not once per message.
+
+Measured against the real prompt: ~371 system tokens (with 50 known brands) + ~25 for the message,
+~40 out. At Haiku 4.5 rates ($1/$5 per MTok) that is **$0.0006 per call — about 1,700 calls per
+dollar**.
+
+| Scenario | calls/user/mo | 1 user | 10 users | 100 users |
+|---|---:|---:|---:|---:|
+| Design intent — one call per bank format¹ | 10 | $0.006 | $0.06 | $0.60 |
+| Synthesis fails half the time, 30 unmatched/mo | 30 | $0.018 | $0.18 | $1.80 |
+| Worst case — every unmatched message, heavy user | 100 | $0.060 | $0.60 | $6.00 |
+
+¹ One-off per format, not recurring: it stops once the formats a user's banks send are learned.
+
+The VPS costs more than the API does. Self-hosting a model to avoid this spend would need 8–16 GB
+of RAM to save roughly a dollar a year, and would extract worse. Don't.
+
+**No prompt caching.** Haiku 4.5 will not cache a prefix under 4096 tokens and this one is ~371, so
+a `cache_control` marker is silently inert. It would not help regardless — parses are minutes or
+hours apart and the cache TTL is five minutes.
 
 Self-hosting a model to avoid that spend would need 8–16 GB of RAM to save roughly a dollar a
 year, and would extract worse. Don't.
