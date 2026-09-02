@@ -43,6 +43,7 @@ data class CategoryOption(
     val id: CategoryId,
     val name: String,
     val color: String,
+    val icon: String,
     val type: CategoryType,
 )
 

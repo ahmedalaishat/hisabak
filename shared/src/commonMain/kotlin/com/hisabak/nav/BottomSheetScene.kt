@@ -4,7 +4,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import com.hisabak.ui.components.dismissKeyboardOnGesture
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,8 +56,13 @@ internal data class BottomSheetScene<T : Any>(
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             properties = modalBottomSheetProperties,
         ) {
-            CompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
-                entry.Content()
+            // The sheet is its own window, so the app shell's tap/scroll keyboard handlers never
+            // reach it. This has to be built *inside* the sheet content: as a call-site argument
+            // it would capture the parent window's focus manager and clear nothing.
+            Box(Modifier.dismissKeyboardOnGesture()) {
+                CompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
+                    entry.Content()
+                }
             }
         }
     }

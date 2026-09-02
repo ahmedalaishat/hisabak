@@ -37,7 +37,6 @@ final class FoundationModelsCategorySuggester: AiCategoryBridge {
                     existingName: suggested.existing,
                     newName: suggested.name,
                     newType: suggested.type,
-                    newColor: suggested.color,
                     newIcon: suggested.icon
                 ))
             } catch {
@@ -54,7 +53,7 @@ final class FoundationModelsCategorySuggester: AiCategoryBridge {
             You pick a budget category for a merchant or brand name, in English or Arabic. \
             If one of the user's categories fits the brand, set existing to that category's name \
             exactly as listed and leave every other field empty. Otherwise propose a new category: \
-            a short name (1-2 words, same language as the brand) with the best fitting type, color, \
+            a short name (1-2 words, same language as the brand) with the best fitting type \
             and icon. If the brand name is meaningless or you cannot tell what it sells, leave \
             every field empty.
             """
@@ -78,8 +77,6 @@ private struct SuggestedCategory {
     @Guide(description: "The proposed category type: one of income, expenses, savings, investment.")
     var type: String?
 
-    @Guide(description: "The proposed color: one of green, blue, orange, red, teal, purple, pink, gray.")
-    var color: String?
 
     @Guide(description: "The proposed icon: one of wallet, cart, briefcase, car, utensils, piggy-bank, home, film, book, heart, gift, plane.")
     var icon: String?

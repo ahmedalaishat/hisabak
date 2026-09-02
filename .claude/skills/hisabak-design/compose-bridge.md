@@ -65,6 +65,7 @@ figure in place for a few seconds — so render money through `MoneyText` / `Amo
 |---|---|
 | `Button` | `HisabakButton`, `PrimaryPillButton`, `CreateActionButton` (FAB/primary) |
 | `Chip` / `SegmentedControl` | `FilterPill`, `ColoredFilterChip`, `LeadingIconChip`, `PeriodChipRow` |
+| _(chip row layout)_ | `ChipLaneGrid` — wraps long chip rows into lanes, still scrolling sideways |
 | `Badge` / `StatusChip` | `Badge` / `StatusChip` |
 | `Avatar` | `Avatar` |
 | `ProgressBar` | `ProgressBar` |

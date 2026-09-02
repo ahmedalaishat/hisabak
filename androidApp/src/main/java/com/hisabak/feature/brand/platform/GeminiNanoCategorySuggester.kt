@@ -54,10 +54,9 @@ class GeminiNanoCategorySuggester(private val appScope: CoroutineScope) : AiCate
             {"existing": string or null, "name": string or null, "type": string or null, "color": string or null, "icon": string or null}
             Rules:
             - If one of the user's categories fits the brand, set "existing" to that category's name exactly as listed and every other field to null.
-            - Otherwise propose a new category: "name" is a short category name (1-2 words, same language as the brand), with the best fitting "type", "color", and "icon" from the lists below.
+            - Otherwise propose a new category: "name" is a short category name (1-2 words, same language as the brand), with the best fitting "type" and "icon" from the lists below.
             - type: one of income, expenses, savings, investment.
-            - color: one of ${CategoryVocabulary.colors.joinToString(", ")}.
-            - icon: one of ${CategoryVocabulary.icons.joinToString(", ")}.
+            - icon: one of ${CategoryVocabulary.aiIcons.joinToString(", ")}.
             - If the brand name is meaningless or you cannot tell what it sells, use null for every field.
             """.trimIndent(),
         )
@@ -83,7 +82,6 @@ class GeminiNanoCategorySuggester(private val appScope: CoroutineScope) : AiCate
             existingName = string("existing"),
             newName = string("name"),
             newType = string("type"),
-            newColor = string("color"),
             newIcon = string("icon"),
         )
     }

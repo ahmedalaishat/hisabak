@@ -27,6 +27,9 @@ hisabak-finance-tracking-*.json
 # Play listing push tool deps
 scripts/play/node_modules/
 
+# Icon generator deps (tools/gen-hugeicons.mjs: npm i --no-save @hugeicons/core-free-icons)
+node_modules/
+
 # Note: app/google-services.json IS committed. It is not a secret — it ships inside the APK
 # and the google-services/Crashlytics Gradle plugins need it for every build (incl. CI).
 

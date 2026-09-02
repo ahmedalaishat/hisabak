@@ -331,8 +331,12 @@ Pattern: `List` → tap row or FAB → push `Edit(id?)` destination → Save/Can
 ### Category
 - `id`, `name`, `type: CategoryType`, `color: String`, `icon: String`
 - `CategoryType`: INCOME | EXPENSES | SAVINGS | INVESTMENT
-- `color` options: green, blue, orange, red, teal, purple, pink, gray
-- `icon` options: wallet, cart, briefcase, car, utensils, piggy-bank, home, film, book, heart, gift, plane
+- `color` options: the 8 named palette keys (green, blue, orange, red, teal, purple, pink, gray)
+  **or a custom hue** — `h<0-359>`, e.g. `h210`. See Color below; parsing lives in
+  `CategoryColor` (domain), so validation never needs presentation.
+- `icon` options: 144 keys across 11 groups — see `CategoryVocabulary.icons` (generated from
+  `tools/category-icons.mjs`). Keys are persisted, so they are **append-only**: never rename or
+  remove one, or existing rows and restored backups lose their glyph.
 
 ### Budget
 - `id`, `name`, `amount: Money`, `startAt`, `endAt?`, `saving`, `period`, `reoccurrence`, `categoryIds`
@@ -406,6 +410,23 @@ Category dots/tiles use the 8 `cat*` colors.
 | pink | `#FCE7F3` | `#DB2777` |
 | gray | `#F3F4F6` | `#4B5563` |
 
+**Custom hues.** A category may also store `h<0-359>` instead of a palette key — the user picks
+a hue and **the app derives the shades**. Only the hue is persisted: a hex would have one value,
+and every surface needs a different one per theme. The derivation is `ui/theme/HueColor.kt`
+(pure, commonMain) in **OKLCH, not HSL** — HSL lightness isn't perceptual, so a fixed-lightness
+rule would make yellow glare and blue vanish; out-of-gamut results drop chroma rather than clip
+channels, which would shift the chosen hue. Foreground L is 0.55 light / 0.78 dark at C 0.15;
+tiles use that at 15% alpha, and `hueTintOpaque` gives the opaque version notification tiles need.
+`HueColorTest` asserts ≥3:1 contrast on both surfaces for every hue — **keep it green if you
+retune the constants**. Resolution runs through `tintPairForColor` / `CategoryStyle.color`
+(both read `HisabakTheme.isDark`) and `CategoryGlyphIcon.notificationTileColors` on Android.
+The AI suggester stays on **named keys only** (`CategoryVocabulary.colors`).
+
+New categories default to `CategoryColor.mostDistinctHue(...)` — the hue in the widest gap
+between those already used — because the dashboard donut colors its slices by category color,
+so two categories on one color become two indistinguishable slices. The picker also warns when
+a hue lands within `COLLISION_DEGREES` of an existing category.
+
 ### Icons
 
 **Hugeicons** (free, MIT) — a single-weight **stroke** set (1.5, round caps/joins), vendored as
@@ -416,6 +437,27 @@ reads via color + the selected pill indicator** (bottom nav active tab = green),
 Directional icons (`ArrowBack`, chevrons, `List`, `Message`) set `autoMirror` so they flip in RTL.
 Category icons sit on a tinted rounded-square tile in the category color (the notification large-icon
 rasterizer in `CategoryGlyphIcon.kt` strokes the same vector).
+
+**Category icon catalogue.** The 144 pickable category icons are curated in
+`tools/category-icons.mjs` — key, group, glyph source, and English + Arabic search keywords —
+and the generator emits three files from it: the vectors into `HugeIcons.kt`, the picker data
+into `ui/icons/CategoryIconCatalog.kt`, and the key list into
+`feature/category/domain/CategoryIconKeys.kt` (which `CategoryVocabulary.icons` re-exports, so
+domain validation never reaches into presentation). To add an icon, add a row there and re-run
+`node tools/gen-hugeicons.mjs` — never hand-edit the generated files. `iconForKey` resolves a
+stored key through the catalogue and falls back to a plain circle for unknown keys, which is what
+a backup from a newer build restores as. Search is the pure `searchCategoryIcons` (Arabic is
+normalized — hamza forms, taa marbuta, alef maqsura, diacritics — so unpointed typing matches).
+
+**The AI proposes a name and type; the app decides how it looks.** `sanitizeCategorySuggestion`
+derives the **icon** from the suggested name (`iconForCategoryName`, matching the catalogue's own
+keywords) and the **colour** from `CategoryColor.mostDistinctHue` over the categories already in
+use — the model's colour was removed from both prompts entirely, since distinctness is something
+only the app can know. `CategoryVocabulary.aiIcons` holds only the original 12, because the
+on-device prompts inline that list (`GeminiNanoCategorySuggester.kt`,
+`FoundationModelsCategorySuggester.swift`) and a 144-way choice both bloats the prompt and costs
+accuracy — it is a fallback for when the name matches nothing. Suggestions are still *validated*
+against the full set.
 
 ### Voice & Copy
 
@@ -448,8 +490,17 @@ Each component has a `.prompt.md` (what/when + usage) and `.d.ts` (props) — re
 
 `HisabakTopBar`, `HisabakBottomNav`, `CreateActionButton`, `PrimaryPillButton`,
 `SurfaceCard`, `IconTile`, `CircleIconTile`, `ListRow`, `ListRowContent`, `StatCard`, `SearchField`,
-`SectionHeader`, `FilterChipRow`, `GradientBanner`, `DarkPromoBanner`, `MostUsedCard`,
+`SectionHeader`, `FilterChipRow`, `ChipLaneGrid`, `GradientBanner`, `DarkPromoBanner`, `MostUsedCard`,
 `EmptyStatePanel`, `NoticeCard`, `ProgressBar`, `AreaLineChart`, `BarSparkline`, `DonutChart`
+
+Long chip rows (brands, categories) use **`ChipLaneGrid`**, not a bare `LazyRow`: it wraps into
+`chipLaneCount` lanes — one row up to 4 chips, two to 8, three beyond — and still scrolls
+sideways. It sizes its band from the type scale, so it grows with the user's font setting.
+
+A category dot is a **glyph** wherever the colour identifies rather than references: chips, filter
+rows, and the Manage/Categories cards all show `iconForKey`. The dashboard's **donut legends keep
+plain dots** — there the colour is a key matching a row to its arc, and a stroke glyph carries
+less colour to match with.
 
 ---
 

@@ -17,8 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -62,6 +61,7 @@ import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.ui.components.BadgeTone
 import com.hisabak.ui.components.ButtonVariant
+import com.hisabak.ui.components.ChipLaneGrid
 import com.hisabak.ui.components.ColoredFilterChip
 import com.hisabak.ui.components.DirhamGlyph
 import com.hisabak.ui.components.HisabakButton
@@ -189,16 +189,14 @@ fun TransactionEditScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
-                contentPadding = PaddingValues(0.dp),
-            ) {
+            ChipLaneGrid(chipCount = state.brandOptions.size + 1) {
                 items(state.brandOptions, key = { it.id.value }) { option ->
                     ColoredFilterChip(
                         label = option.name,
                         colorKey = option.categoryColor,
                         selected = option.id == state.selectedBrandId,
                         onClick = { onBrandSelected(option.id) },
+                        iconKey = option.categoryIcon,
                     )
                 }
                 item {

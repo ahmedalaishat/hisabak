@@ -55,6 +55,7 @@ import com.hisabak.ui.components.IconTile
 import com.hisabak.ui.components.SegmentOption
 import com.hisabak.ui.components.SegmentedControl
 import com.hisabak.ui.components.SurfaceCard
+import com.hisabak.ui.components.dismissKeyboardOnGesture
 import com.hisabak.ui.theme.Spacing
 
 const val LANGUAGE_ENGLISH = "en"
@@ -239,7 +240,11 @@ private fun PassphraseVerifySheet(
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
+            // Built here, inside the sheet's own composition: a sheet is a separate window with
+            // its own focus owner, so a modifier constructed at the call site would clear focus
+            // on the parent window instead and do nothing.
             modifier = Modifier
+                .dismissKeyboardOnGesture()
                 .fillMaxWidth()
                 .padding(horizontal = Spacing.pageMargin)
                 .padding(bottom = Spacing.sectionGap),

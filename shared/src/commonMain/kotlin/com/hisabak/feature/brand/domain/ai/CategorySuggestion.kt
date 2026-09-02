@@ -2,7 +2,9 @@ package com.hisabak.feature.brand.domain.ai
 
 import com.hisabak.feature.category.domain.Category
 import com.hisabak.feature.category.domain.CategoryType
+import com.hisabak.feature.category.domain.CategoryColor
 import com.hisabak.feature.category.domain.CategoryVocabulary
+import com.hisabak.feature.category.domain.iconForCategoryName
 
 /** A sanitized, ready-to-apply suggestion — always confirm-first, never auto-applied. */
 sealed interface CategorySuggestion {
@@ -39,9 +41,19 @@ fun sanitizeCategorySuggestion(
         name = name,
         type = CategoryType.entries.firstOrNull { it.name.equals(raw.newType, ignoreCase = true) }
             ?: CategoryType.EXPENSES,
-        color = raw.newColor?.lowercase()?.takeIf { it in CategoryVocabulary.colors }
-            ?: Category.DEFAULT_COLOR,
-        icon = raw.newIcon?.lowercase()?.takeIf { it in CategoryVocabulary.icons }
+        // Distinctness is something only the app can know, so the model's colour is ignored
+        // outright: a new category takes the hue furthest from the ones already in use, exactly
+        // as a hand-made one does. Otherwise an accepted suggestion could land on a colour that
+        // is already a slice of the same donut.
+        color = CategoryColor.customKey(
+            CategoryColor.mostDistinctHue(categories.mapNotNull { CategoryColor.hueFor(it.color) }),
+        ),
+        // The model only picks from the 12 icons its prompt lists, but the catalogue holds 144.
+        // Matching the name it just produced against the catalogue's own keywords gets a far
+        // better glyph for free — no prompt growth, no extra inference, deterministic. The
+        // model's own choice is the fallback when the name matches nothing.
+        icon = iconForCategoryName(name)
+            ?: raw.newIcon?.lowercase()?.takeIf { it in CategoryVocabulary.icons }
             ?: Category.DEFAULT_ICON,
     )
 }

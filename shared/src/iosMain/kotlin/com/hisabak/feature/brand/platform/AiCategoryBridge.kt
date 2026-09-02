@@ -19,6 +19,5 @@ class AiCategoryBridgeResult(
     val existingName: String?,
     val newName: String?,
     val newType: String?,
-    val newColor: String?,
     val newIcon: String?,
 )

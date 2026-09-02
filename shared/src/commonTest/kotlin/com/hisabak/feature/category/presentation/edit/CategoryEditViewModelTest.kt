@@ -23,6 +23,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.Test
 import kotlinx.datetime.YearMonth
+import com.hisabak.feature.category.domain.usecase.DeleteCategoryUseCase
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CategoryEditViewModelTest : MainDispatcherTest() {
@@ -41,6 +43,7 @@ class CategoryEditViewModelTest : MainDispatcherTest() {
         categoryRepository = catRepo,
         createCategory = CreateCategoryUseCase(catRepo),
         updateCategory = UpdateCategoryUseCase(catRepo),
+        deleteCategory = DeleteCategoryUseCase(catRepo),
         observeCategoryLimits = ObserveCategoryLimitsUseCase(limitRepo),
         setCategoryLimit = SetCategoryLimitUseCase(limitRepo, clock),
         currency = Currency.AED,
@@ -143,5 +146,29 @@ class CategoryEditViewModelTest : MainDispatcherTest() {
 
         assertTrue(vm.state.value.limitError != null)
         assertTrue(catRepo.current.isEmpty())
+    }
+
+    @Test
+    fun `deleting an existing category reports it so the caller can leave`() = runTest {
+        catRepo.upsert(category(id = "c1", name = "Dining"))
+        val vm = viewModel(CategoryId("c1"))
+        advanceUntilIdle()
+
+        vm.onIntent(CategoryEditIntent.Delete)
+        advanceUntilIdle()
+
+        assertEquals(CategoryEditEffect.Deleted, vm.effect.value)
+        assertTrue(catRepo.observeAll().first().none { it.id.value == "c1" })
+    }
+
+    @Test
+    fun `a new category has nothing to delete`() = runTest {
+        val vm = viewModel(null)
+        advanceUntilIdle()
+
+        vm.onIntent(CategoryEditIntent.Delete)
+        advanceUntilIdle()
+
+        assertEquals(null, vm.effect.value, "delete is not offered for an unsaved category")
     }
 }

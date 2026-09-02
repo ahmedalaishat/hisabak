@@ -33,6 +33,7 @@ data class TransactionEditUiState(
         val id: BrandId,
         val name: String,
         val categoryColor: String?,
+        val categoryIcon: String?,
     )
 
     val canSave: Boolean

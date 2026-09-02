@@ -58,6 +58,24 @@ class TransactionListViewModel(
                     search = "",
                 )
             }
+            // Arriving from a brand or category row: clear every other filter, or the list could
+            // land empty for reasons the user set on a different screen and can no longer see.
+            is TransactionListFilterRequest.ByBrand -> setState {
+                copy(
+                    brandFilter = request.id,
+                    categoryFilter = null,
+                    dateRange = DateRangeFilter.ALL,
+                    search = "",
+                )
+            }
+            is TransactionListFilterRequest.ByCategory -> setState {
+                copy(
+                    categoryFilter = request.id,
+                    brandFilter = null,
+                    dateRange = DateRangeFilter.ALL,
+                    search = "",
+                )
+            }
         }
     }
 
@@ -70,7 +88,16 @@ class TransactionListViewModel(
             is TransactionListIntent.BrandFilterChanged ->
                 setState { copy(brandFilter = intent.id) }
             is TransactionListIntent.CategoryFilterChanged ->
-                setState { copy(categoryFilter = intent.id) }
+                // Choosing a category re-scopes the brand list, so a brand held over from the old
+                // scope would usually filter everything away — an empty list with two pills lit
+                // and no obvious culprit. Clearing to "All brands" is the predictable reading of
+                // "show me this category". Widening back to All keeps whatever brand was set.
+                setState {
+                    copy(
+                        categoryFilter = intent.id,
+                        brandFilter = if (intent.id == null) brandFilter else null,
+                    )
+                }
             is TransactionListIntent.DateRangeChanged ->
                 setState { copy(dateRange = intent.range) }
             TransactionListIntent.ClearFilters ->
@@ -92,6 +119,7 @@ class TransactionListViewModel(
         val rows: List<TransactionRow>,
         val summaryIncome: Long,
         val summaryExpenses: Long,
+        val totalCount: Int,
         val brandOptions: List<BrandFilterOption>,
         val categoryOptions: List<CategoryFilterOption>,
     )
@@ -122,6 +150,7 @@ class TransactionListViewModel(
                         rows = derived.rows,
                         summaryIncome = derived.summaryIncome,
                         summaryExpenses = derived.summaryExpenses,
+                        totalCount = derived.totalCount,
                         brandOptions = derived.brandOptions,
                         categoryOptions = derived.categoryOptions,
                         isLoading = false,
@@ -161,15 +190,12 @@ class TransactionListViewModel(
 
         // List: search + brand + category + rolling date range.
         val list = filters.list
+
         val from = list.dateRange.days?.let { now - it.days }
         val listTxs = txs
             .filter { tx ->
                 val brand = brandsById[tx.brandId]
-                val matchesCategory = when (list.categoryFilter) {
-                    null -> true
-                    UncategorizedCategoryId -> brand?.categoryId == null
-                    else -> brand?.categoryId == list.categoryFilter
-                }
+                val matchesCategory = brand != null && brandMatchesCategory(brand, list.categoryFilter)
                 (list.brandFilter == null || tx.brandId == list.brandFilter) &&
                     matchesCategory &&
                     (from == null || tx.occurredAt >= from) &&
@@ -181,9 +207,9 @@ class TransactionListViewModel(
 
         val categoryOptions = buildList {
             categories.sortedBy { it.name.lowercase() }
-                .forEach { add(CategoryFilterOption(it.id, it.name, it.color)) }
+                .forEach { add(CategoryFilterOption(it.id, it.name, it.color, it.icon)) }
             if (txs.any { categoryOf(it) == null }) {
-                add(CategoryFilterOption(UncategorizedCategoryId, "Uncategorized", "gray"))
+                add(CategoryFilterOption(UncategorizedCategoryId, "Uncategorized", "gray", null))
             }
         }
 
@@ -191,10 +217,27 @@ class TransactionListViewModel(
             rows = buildRows(listTxs, brandsById, categoriesById),
             summaryIncome = income,
             summaryExpenses = expenses,
-            brandOptions = brands.sortedBy { it.name.lowercase() }.map { BrandFilterOption(it.id, it.name) },
+            totalCount = txs.size,
+            // Cascade: with a category chosen, only its brands are offerable — every other brand
+            // would filter to an empty list. Not the reverse (a brand has one category, so
+            // scoping categories to it would collapse that list to a single row).
+            brandOptions = brands
+                .filter { brandMatchesCategory(it, list.categoryFilter) }
+                .sortedBy { it.name.lowercase() }
+                .map { brand ->
+                    val category = brand.categoryId?.let(categoriesById::get)
+                    BrandFilterOption(brand.id, brand.name, category?.color, category?.icon)
+                },
             categoryOptions = categoryOptions,
         )
     }
+
+    private fun brandMatchesCategory(brand: Brand, categoryFilter: CategoryId?): Boolean =
+        when (categoryFilter) {
+            null -> true
+            UncategorizedCategoryId -> brand.categoryId == null
+            else -> brand.categoryId == categoryFilter
+        }
 
     private fun buildRows(
         txs: List<Transaction>,

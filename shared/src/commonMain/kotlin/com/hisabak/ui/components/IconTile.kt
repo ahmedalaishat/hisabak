@@ -15,8 +15,12 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.hisabak.feature.category.domain.CategoryColor
+import com.hisabak.ui.icons.categoryIconVector
 import com.hisabak.ui.icons.HugeIcons
 import com.hisabak.ui.theme.HisabakTheme
+import com.hisabak.ui.theme.hueForegroundDark
+import com.hisabak.ui.theme.hueForegroundLight
 import com.hisabak.ui.theme.Sizing
 import com.hisabak.ui.theme.Spacing
 
@@ -77,6 +81,10 @@ fun CircleIconTile(
 @Composable
 fun tintPairForColor(key: String?): Pair<Color, Color> {
     val c = HisabakTheme.colors
+    CategoryColor.hueOf(key)?.let { hue ->
+        val fg = if (HisabakTheme.isDark) hueForegroundDark(hue) else hueForegroundLight(hue)
+        return fg.copy(alpha = 0.15f) to fg
+    }
     return when (key) {
         "green"  -> c.incomeSoft to c.income
         "blue"   -> c.savingsSoft to c.savings
@@ -89,19 +97,9 @@ fun tintPairForColor(key: String?): Pair<Color, Color> {
     }
 }
 
-/** Maps category icon keys (persisted as short strings) to Hugeicons vectors. */
-fun iconForKey(key: String?): ImageVector = when (key) {
-    "wallet"    -> HugeIcons.Wallet
-    "cart"      -> HugeIcons.Cart
-    "briefcase" -> HugeIcons.Briefcase
-    "car"       -> HugeIcons.Car
-    "utensils"  -> HugeIcons.Utensils
-    "piggy-bank"-> HugeIcons.PiggyBank
-    "home"      -> HugeIcons.Home
-    "film"      -> HugeIcons.Film
-    "book"      -> HugeIcons.Book
-    "heart"     -> HugeIcons.Heart
-    "gift"      -> HugeIcons.Gift
-    "plane"     -> HugeIcons.Plane
-    else        -> HugeIcons.Circle
-}
+/**
+ * Maps category icon keys (persisted as short strings) to Hugeicons vectors. An unknown key —
+ * a category restored from a backup written by a newer build — falls back to a plain circle.
+ */
+fun iconForKey(key: String?): ImageVector =
+    categoryIconVector(key) ?: HugeIcons.Circle
