@@ -3,6 +3,7 @@ package com.hisabak.feature.insights
 import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.feature.insights.data.RoomNarrativeCache
 import com.hisabak.feature.insights.domain.ai.AiInsights
+import com.hisabak.feature.insights.domain.ai.AskInsightUseCase
 import com.hisabak.feature.insights.domain.ai.GenerateNarrativeUseCase
 import com.hisabak.feature.insights.domain.ai.NarrativeCache
 import com.hisabak.feature.insights.domain.ai.RemoteAiInsights
@@ -17,11 +18,13 @@ val insightsModule = module {
     single<AiInsights> { RemoteAiInsights(client = get(), currency = get()) }
     single<NarrativeCache> { RoomNarrativeCache(dao = get()) }
     factory { GenerateNarrativeUseCase(aiInsights = get(), cache = get(), clock = get(), analytics = get()) }
+    factory { AskInsightUseCase(client = get(), preferences = get(), currency = get(), clock = get(), analytics = get()) }
 
     viewModel { (period: SummaryPeriod, language: String) ->
         InsightsViewModel(
             getMetrics = get(),
             generateNarrative = get(),
+            askInsight = get(),
             appConfig = get(),
             analytics = get(),
             period = period,

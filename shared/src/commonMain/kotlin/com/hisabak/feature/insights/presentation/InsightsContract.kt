@@ -6,7 +6,9 @@ import com.hisabak.core.presentation.ViewIntent
 import com.hisabak.core.presentation.ViewState
 import com.hisabak.feature.insights.domain.Insight
 import com.hisabak.feature.insights.domain.InsightsSummary
+import com.hisabak.feature.insights.domain.ai.AskTurn
 import com.hisabak.feature.insights.domain.ai.NarrativeInsight
+import com.hisabak.feature.insights.domain.ai.SuggestedQuestion
 
 /** The AI layer's place on the screen. The deterministic [InsightsUiState.insights] never depends on it. */
 sealed interface NarrativeUi {
@@ -24,6 +26,19 @@ sealed interface NarrativeUi {
     data object Unavailable : NarrativeUi
 }
 
+/** The Ask sheet. [turns] live for the sheet's life only; nothing here is persisted. */
+data class AskUi(
+    val open: Boolean = false,
+    val turns: List<AskTurn> = emptyList(),
+    val draft: String = "",
+    val busy: Boolean = false,
+    /** Questions left today; null until the service is known to be available. */
+    val remaining: Int? = null,
+    val notice: AskNotice? = null,
+)
+
+enum class AskNotice { NoQuestionsLeft, Unavailable }
+
 data class InsightsUiState(
     val period: SummaryPeriod,
     val insights: List<Insight> = emptyList(),
@@ -32,6 +47,9 @@ data class InsightsUiState(
     val summary: InsightsSummary? = null,
     val narrative: NarrativeUi = NarrativeUi.Hidden,
     val showShared: Boolean = false,
+    /** Chips derived from the findings; empty when the build has no service. */
+    val suggestedQuestions: List<SuggestedQuestion> = emptyList(),
+    val ask: AskUi = AskUi(),
 ) : ViewState
 
 sealed interface InsightsIntent : ViewIntent {
@@ -52,6 +70,16 @@ sealed interface InsightsIntent : ViewIntent {
     data object ShowShared : InsightsIntent
 
     data object HideShared : InsightsIntent
+
+    /** Opens the Ask sheet; with a [question] it also sends it (a chip tap). */
+    data class OpenAsk(val question: String? = null) : InsightsIntent
+
+    data object CloseAsk : InsightsIntent
+
+    data class AskDraftChanged(val value: String) : InsightsIntent
+
+    /** Sends the draft. Consent is this tap. */
+    data object AskSubmitted : InsightsIntent
 }
 
 sealed interface InsightsEffect : ViewEffect

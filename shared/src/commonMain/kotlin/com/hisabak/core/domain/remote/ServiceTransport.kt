@@ -15,7 +15,7 @@ interface ServiceTransport {
     /** True when the build has a base URL and token configured — not that the service is reachable. */
     val isConfigured: Boolean
 
-    suspend fun postJson(path: String, body: String, timeoutMs: Int): String?
+    suspend fun postJson(path: String, body: String, timeoutMs: Int, headers: Map<String, String> = emptyMap()): String?
 }
 
 /** Where the service lives. A blank url or token disables every remote feature. */

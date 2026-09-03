@@ -14,8 +14,8 @@ import os
 
 import anthropic
 
-from app.prompts import build, build_insights
-from app.schema import InsightsRequest, Narrative, ParsedSms, ParseRequest
+from app.prompts import build, build_ask, build_insights
+from app.schema import AskAnswer, AskRequest, InsightsRequest, Narrative, ParsedSms, ParseRequest
 
 DEFAULT_MODEL = "claude-haiku-4-5"
 
@@ -71,3 +71,15 @@ class AnthropicProvider:
             output_format=Narrative,
         )
         return response.parsed_output or Narrative(items=[])
+
+    async def ask(self, request: AskRequest) -> AskAnswer:
+        system, messages = build_ask(request)
+        # 120 words is ~200 tokens; the ceiling leaves room for Arabic and the JSON envelope.
+        response = await self._client.messages.parse(
+            model=self._model,
+            max_tokens=400,
+            system=system,
+            messages=messages,
+            output_format=AskAnswer,
+        )
+        return response.parsed_output or AskAnswer(answer="", on_topic=False)

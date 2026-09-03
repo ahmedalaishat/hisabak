@@ -15,6 +15,10 @@ All notable changes to Hisabak are documented here. Format based on
   **See what's shared** beside it shows the exact figures first. There is no switch to leave on; the
   answer is kept on your phone for as long as those exact figures stand, and if the service can't
   answer the review below is complete on its own.
+- **Ask about a period.** Under the review you can now put a question to the AI — tap one of the
+  suggested questions ("Why is Dining up?", "What should I focus on?") or type your own. It sends
+  the same totals as the explanation plus your question, never your transactions, and the service
+  stores nothing. You get ten questions a day and the screen shows how many are left.
 - **A review on the dashboard.** Under the cash, savings and investment figures, Hisabak now points out what changed
   and what needs attention for the period you're viewing: a category over or near its limit, a
   category up or down sharply on last time, your largest expense, your savings rate and how it

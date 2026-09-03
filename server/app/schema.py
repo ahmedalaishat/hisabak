@@ -139,3 +139,43 @@ class Narrative(BaseModel):
 
 class InsightsResponse(Narrative):
     model: str
+
+
+# ── Ask ───────────────────────────────────────────────────────────────────────
+
+# The one free-text field the service accepts. Short by design: a question about one's own
+# spending fits, an essay request does not, and every character is prompt tokens.
+MAX_QUESTION = 500
+MAX_HISTORY_TURNS = 6
+MAX_TURN_TEXT = 1200
+
+
+class AskTurn(BaseModel):
+    role: Literal["user", "assistant"]
+    text: str = Field(min_length=1, max_length=MAX_TURN_TEXT)
+
+
+class AskRequest(BaseModel):
+    """A question about the same summary the narrative uses — the summary *is* the whole context,
+    so nothing beyond it (no rows, no notes) can be asked about, let alone answered."""
+
+    summary: InsightsRequest
+    question: str = Field(min_length=1, max_length=MAX_QUESTION)
+    # The last few turns of this conversation, oldest first, so a follow-up ("and fuel?") resolves.
+    history: list[AskTurn] = Field(default_factory=list, max_length=MAX_HISTORY_TURNS)
+
+
+class AskAnswer(BaseModel):
+    answer: str = Field(
+        description="The reply, in the requested language. Plain text, at most 120 words, no markdown."
+    )
+    on_topic: bool = Field(
+        description=(
+            "True when the question was about this person's finances as given in the figures. "
+            "False when it was something else and the reply is a brief refusal."
+        )
+    )
+
+
+class AskResponse(AskAnswer):
+    model: str

@@ -12,6 +12,9 @@ interface RemoteInsightsClient {
     val isConfigured: Boolean
 
     suspend fun narrate(request: InsightsRequestDto): InsightsResponseDto?
+
+    /** [installId] rides as `X-Install-Id`: the anonymous, per-install key of the fair daily allowance. */
+    suspend fun ask(request: AskRequestDto, installId: String): AskResponseDto?
 }
 
 class ServiceRemoteInsightsClient(
@@ -31,7 +34,20 @@ class ServiceRemoteInsightsClient(
         return runCatching { json.decodeFromString(InsightsResponseDto.serializer(), body) }.getOrNull()
     }
 
+    override suspend fun ask(request: AskRequestDto, installId: String): AskResponseDto? {
+        if (!isConfigured) return null
+        val payload = json.encodeToString(AskRequestDto.serializer(), request)
+        val body = transport.postJson(
+            "/v1/insights/ask",
+            payload,
+            timeoutMs = TIMEOUT_MS,
+            headers = mapOf(INSTALL_ID_HEADER to installId),
+        ) ?: return null
+        return runCatching { json.decodeFromString(AskResponseDto.serializer(), body) }.getOrNull()
+    }
+
     private companion object {
         const val TIMEOUT_MS = 40_000
+        const val INSTALL_ID_HEADER = "X-Install-Id"
     }
 }

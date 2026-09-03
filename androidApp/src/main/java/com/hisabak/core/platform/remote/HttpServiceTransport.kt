@@ -20,13 +20,13 @@ class HttpServiceTransport(
 
     override val isConfigured: Boolean get() = config.isConfigured
 
-    override suspend fun postJson(path: String, body: String, timeoutMs: Int): String? =
+    override suspend fun postJson(path: String, body: String, timeoutMs: Int, headers: Map<String, String>): String? =
         withContext(Dispatchers.IO) {
             if (!isConfigured) return@withContext null
-            runCatching { post(path, body, timeoutMs) }.getOrNull()
+            runCatching { post(path, body, timeoutMs, headers) }.getOrNull()
         }
 
-    private fun post(path: String, body: String, timeoutMs: Int): String? {
+    private fun post(path: String, body: String, timeoutMs: Int, headers: Map<String, String>): String? {
         val connection = (URL("${config.baseUrl.trimEnd('/')}$path").openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = timeoutMs
@@ -34,6 +34,7 @@ class HttpServiceTransport(
             doOutput = true
             setRequestProperty("Authorization", "Bearer ${config.token}")
             setRequestProperty("Content-Type", "application/json")
+            headers.forEach { (name, value) -> setRequestProperty(name, value) }
         }
         try {
             connection.outputStream.use { it.write(body.toByteArray()) }

@@ -9,10 +9,10 @@ class FakeServiceTransport(
     val responses = mutableMapOf<String, String?>()
     val posts = mutableListOf<Post>()
 
-    data class Post(val path: String, val body: String, val timeoutMs: Int)
+    data class Post(val path: String, val body: String, val timeoutMs: Int, val headers: Map<String, String>)
 
-    override suspend fun postJson(path: String, body: String, timeoutMs: Int): String? {
-        posts += Post(path, body, timeoutMs)
+    override suspend fun postJson(path: String, body: String, timeoutMs: Int, headers: Map<String, String>): String? {
+        posts += Post(path, body, timeoutMs, headers)
         return responses[path]
     }
 }

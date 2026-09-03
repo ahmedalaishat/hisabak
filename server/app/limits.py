@@ -92,3 +92,44 @@ class Limiter:
         stale = [k for k, w in self._windows.items() if not w or now - w[-1] > self.window_seconds]
         for key in stale:
             del self._windows[key]
+
+
+class InstallQuota:
+    """A fair daily allowance per install for `/v1/insights/ask`.
+
+    The install id is a client-asserted UUID, so this is **fairness, not enforcement**: anyone
+    holding the bearer token can mint a new id per call. It exists so an honest phone gets a
+    visible, predictable share. Two things stop the rotation trick from mattering: the IP tiers in
+    [Limiter], which the caller cannot choose, and [new_ids_per_ip] here — an address presenting
+    more than a handful of never-seen ids in a day is throttled, while an honest phone presents
+    exactly one. A request without an id is keyed on its address instead.
+    """
+
+    def __init__(self, per_install_daily: int, new_ids_per_ip_daily: int) -> None:
+        self.per_install_daily = per_install_daily
+        self.new_ids_per_ip_daily = new_ids_per_ip_daily
+        self._used: dict[str, int] = {}
+        self._ids_by_ip: dict[str, set[str]] = {}
+        self._day: date = Limiter._today()
+
+    def check(self, install_id: str | None, caller: str) -> int:
+        """Records one question and returns how many remain today; raises when none do."""
+        self._roll_day()
+        key = install_id or f"ip:{caller}"
+        seen = self._ids_by_ip.setdefault(caller, set())
+        if install_id and install_id not in seen:
+            if len(seen) >= self.new_ids_per_ip_daily:
+                raise RateLimitExceeded("new_ids_per_ip")
+            seen.add(install_id)
+        used = self._used.get(key, 0)
+        if used >= self.per_install_daily:
+            raise RateLimitExceeded("install_daily")
+        self._used[key] = used + 1
+        return self.per_install_daily - used - 1
+
+    def _roll_day(self) -> None:
+        today = Limiter._today()
+        if today != self._day:
+            self._day = today
+            self._used.clear()
+            self._ids_by_ip.clear()

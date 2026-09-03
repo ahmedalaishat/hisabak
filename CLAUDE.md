@@ -204,6 +204,21 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   limit" opens the category editor with `CategoryEditKey.prefillLimitMinor` in the field and Save is
   the confirmation. `server/evals/run_insights.py` checks properties (over-limit leads, no invented
   category, a hostile category name is not obeyed, Arabic in Arabic) against the shipped prompt.
+- **Ask (AI, layer 3):** a question about the same summary, `/v1/insights/ask` →
+  `AskInsightUseCase` (`feature/insights/domain/ai/`). **The entry point is a finding, never a blank
+  box:** `suggestedQuestions(insights)` derives up to four chips from the review (one per category,
+  the general "what should I focus on" always last), and the capped free-text field (500 chars,
+  `MAX_QUESTION_LENGTH`) lives in the sheet behind them. Consent is the tap, like the narrative.
+  **Limits are layered:** a visible per-install allowance (`ASK_DAILY_ALLOWANCE` 10/day, counted on
+  the phone in `AppPreferences.askTally` so the sheet can say "n of 10 left" and refuse before a
+  round trip) over the server's `InstallQuota` (same allowance keyed on the anonymous `installId`
+  UUID sent as `X-Install-Id`, plus a **new-IDs-per-IP** guard that throttles id rotation from one
+  address), over the existing IP tiers and the global daily budget — the id is *fairness*, the tiers
+  and budget are what bound the bill. The conversation is in-memory for the sheet's life only; the
+  last `ASK_HISTORY_TURNS` (6) ride with each question, and the model returns an `on_topic` flag it
+  sets false when it refuses. `insights_ask(source=chip|free, on_topic)` is the measurement behind
+  whether the free-text box earns its cost. The sheet is `// TODO: design` — it reuses existing
+  components rather than inventing a chat UI.
 - **Learn-once template synthesis:** a confirmed AI parse also **teaches the regex engine**, so
   the next message of that bank format parses offline on any device — including the majority
   that have no on-device model at all. No extra model call: `deriveAiSpans`
