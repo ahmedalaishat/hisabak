@@ -63,10 +63,12 @@
     <p class="meta">Last updated: 18 June 2026</p>
 
     <p class="lead">
-      Hisabak is a personal finance tracker for Android. It is built to keep your financial data
-      entirely on your device. We never collect, transmit, sell, or share your transactions, brands,
-      categories, or budgets. The only data that ever leaves your device is anonymous crash
-      diagnostics and anonymous usage analytics, described below — never your financial information.
+      Hisabak is a personal finance tracker for Android and iOS. It is built to keep your financial
+      data on your device. We never collect, transmit, sell, or share your transactions, brands,
+      categories, or budgets. The data that leaves your device is anonymous crash diagnostics and
+      anonymous usage analytics — and, only if you switch it on yourself, the text of a bank message
+      that none of your parsing templates recognise, so it can be read for you. Both are described
+      below.
     </p>
 
     <div class="card">
@@ -137,10 +139,33 @@
     <ul>
       <li>SMS messages are read and parsed <strong>locally on your device only</strong>, to extract
         the amount and merchant.</li>
-      <li>Message content is <strong>never transmitted off your device</strong> and is not shared
-        with us or any third party.</li>
+      <li>Message content is <strong>not transmitted off your device</strong> unless you turn on
+        <em>Parse with the online model</em> yourself (Settings &rarr; SMS parsing). That setting is
+        off by default.</li>
       <li>The feature requires your explicit Android permission and can be left disabled.</li>
     </ul>
+    <h2>Online parsing (optional, off by default)</h2>
+    <p>
+      Most phones cannot run an on-device AI model. If you turn on <em>Parse with the online
+      model</em>, a message that none of your parsing templates recognise is sent to Hisabak's
+      parsing service so its amount, merchant, and date can be read. This is the only feature that
+      sends message content off your device, and it does nothing until you enable it.
+    </p>
+    <ul>
+      <li><strong>Only unrecognised messages are sent.</strong> Anything a template already parses
+        is handled entirely on your device and never transmitted.</li>
+      <li><strong>Nothing is stored.</strong> The service does not log or retain message text; it
+        reads the message, returns the fields, and keeps nothing.</li>
+      <li><strong>Your transactions, brands, categories, budgets, and balances are never sent</strong>
+        &mdash; only the text of the message being parsed, plus the names of your existing brands so
+        the merchant can be matched to one.</li>
+      <li>The message text is processed by <a href="https://www.anthropic.com/">Anthropic</a> to
+        perform the parsing, and is not used to train models.</li>
+      <li>Once a message is parsed, Hisabak learns a template from it, so future messages in that
+        format are read on your device and are not sent.</li>
+      <li>Turning the setting off stops all sending immediately.</li>
+    </ul>
+
     <p>
       The <strong>Google Play version of Hisabak does not access SMS at all.</strong> In that
       version you add transactions by sharing a bank SMS to the app, selecting its text, or pasting

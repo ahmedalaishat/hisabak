@@ -10,6 +10,7 @@ val databaseModule = module {
     single { get<HisabakDatabase>().categoryDao() }
     single { get<HisabakDatabase>().categoryLimitDao() }
     single { get<HisabakDatabase>().brandDao() }
+    single { get<HisabakDatabase>().brandAliasDao() }
     single { get<HisabakDatabase>().transactionDao() }
     single { get<HisabakDatabase>().smsDao() }
     single { get<HisabakDatabase>().smsTemplateDao() }

@@ -8,9 +8,22 @@ package com.hisabak.feature.sms.domain.template
  * become `{ignore}` rather than literals) is [suggestSpans]' heuristic, and only the amount and
  * brand spans are overridden with what the model actually extracted.
  */
-fun deriveAiSpans(body: String, rawBrand: String, amountMinor: Long): List<TagSpan>? {
-    val amount = locateAmount(body, amountMinor) ?: return null
-    val brand = locateBrand(body, rawBrand) ?: return null
+fun deriveAiSpans(
+    body: String,
+    rawBrand: String,
+    amountMinor: Long,
+    brandText: String? = null,
+    amountText: String? = null,
+): List<TagSpan>? {
+    // Verbatim evidence wins when the engine supplied it: it says which characters to replace,
+    // rather than leaving us to infer them. Falling back matters — the on-device parsers report
+    // no evidence, and inference is what covered every shipped bank format before this existed.
+    val amount = amountText?.let { locateLiteral(body, it, TagRole.AMOUNT) }
+        ?: locateAmount(body, amountMinor)
+        ?: return null
+    val brand = brandText?.let { locateLiteral(body, it, TagRole.BRAND) }
+        ?: locateBrand(body, rawBrand)
+        ?: return null
     if (amount.overlaps(brand)) return null
 
     // The heuristic pass owns everything the model didn't tell us about. Its own amount/brand
@@ -49,6 +62,14 @@ private fun locateAmount(body: String, amountMinor: Long): TagSpan? {
         .map { TagSpan(TagRole.AMOUNT, it.range.first, it.range.last + 1) }
         .toList()
     return candidates.firstOrNull { body.hasCurrencyMarkerBefore(it.start) } ?: candidates.firstOrNull()
+}
+
+/** A span for text the engine claims it read, verified to actually be there. */
+private fun locateLiteral(body: String, literal: String, role: TagRole): TagSpan? {
+    val needle = literal.trim()
+    if (needle.isEmpty()) return null
+    val start = body.indexOf(needle, ignoreCase = true)
+    return if (start < 0) null else TagSpan(role, start, start + needle.length)
 }
 
 /**

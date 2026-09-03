@@ -23,6 +23,7 @@ val backupModule = module {
             categoryDao = get(),
             categoryLimitDao = get(),
             brandDao = get(),
+            brandAliasDao = get(),
             transactionDao = get(),
             smsDao = get(),
             smsTemplateDao = get(),

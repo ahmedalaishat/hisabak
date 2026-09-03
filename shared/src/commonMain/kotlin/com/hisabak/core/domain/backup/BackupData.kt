@@ -14,6 +14,7 @@ data class BackupData(
     val categories: List<CategoryRecord> = emptyList(),
     val categoryLimits: List<CategoryLimitRecord> = emptyList(),
     val brands: List<BrandRecord> = emptyList(),
+    val brandAliases: List<BrandAliasRecord> = emptyList(),
     val transactions: List<TransactionRecord> = emptyList(),
     val smsMessages: List<SmsMessageRecord> = emptyList(),
     val smsTemplates: List<SmsTemplateRecord> = emptyList(),
@@ -25,6 +26,17 @@ data class BackupData(
         get() = categories.size + categoryLimits.size + brands.size + transactions.size +
             smsMessages.size
 }
+
+/**
+ * A learned merchant-string → brand mapping. Backed up unlike the AI provenance flags: those
+ * describe one device's history, this is knowledge the user's other devices need to avoid
+ * re-creating duplicate brands from the same bank formats.
+ */
+@Serializable
+data class BrandAliasRecord(
+    val alias: String,
+    val brandId: String,
+)
 
 @Serializable
 data class CategoryRecord(

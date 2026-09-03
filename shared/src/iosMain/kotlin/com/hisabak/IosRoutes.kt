@@ -2,6 +2,8 @@ package com.hisabak
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import org.koin.compose.koinInject
+import com.hisabak.core.common.AppConfig
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -91,6 +93,7 @@ internal fun IosSmsInboxRoute(
         state = state,
         onCreateTemplate = { onCreateTemplate(it.value) },
         onReviewTransaction = onReviewTransaction,
+        onMarkReviewed = { viewModel.onIntent(SmsInboxIntent.MarkReviewed(it)) },
         onImportParsed = { viewModel.onIntent(SmsInboxIntent.ImportParsed(it)) },
         snackbarHostState = snackbarHostState,
         autoImportAvailable = false,
@@ -103,6 +106,9 @@ internal fun IosSmsInboxRoute(
         onSuggestParse = { viewModel.onIntent(SmsInboxIntent.SuggestParse(it)) },
         onConfirmSuggestion = { viewModel.onIntent(SmsInboxIntent.ConfirmSuggestion(it)) },
         onDismissSuggestion = { viewModel.onIntent(SmsInboxIntent.DismissSuggestion(it)) },
+        onPromptAccept = { viewModel.onIntent(SmsInboxIntent.AcceptPrompt(it)) },
+        onPromptLater = { viewModel.onIntent(SmsInboxIntent.DismissPrompt(it)) },
+        onPromptNever = { viewModel.onIntent(SmsInboxIntent.SuppressPrompt(it)) },
     )
 }
 
@@ -119,6 +125,9 @@ internal fun IosSettingsRoute(
 ) {
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
     val appLockEnabled by viewModel.appLockEnabled.collectAsStateWithLifecycle(initialValue = false)
+    val remoteParseEnabled by viewModel.remoteParseEnabled.collectAsStateWithLifecycle(initialValue = false)
+    val autoConfirmEnabled by viewModel.autoConfirmEnabled.collectAsStateWithLifecycle(initialValue = false)
+    val appConfig: AppConfig = koinInject()
     val passphraseReminderVisible by viewModel.passphraseReminderVisible.collectAsStateWithLifecycle(initialValue = false)
 
     val authenticator = remember { IosBiometricAuthenticator() }
@@ -132,6 +141,14 @@ internal fun IosSettingsRoute(
         themeMode = themeMode,
         language = language,
         appLockEnabled = appLockEnabled,
+        remoteParseEnabled = remoteParseEnabled,
+        // No service configured in this build -> the row stays hidden rather than offering
+        // an opt-in that would do nothing.
+        remoteParseSupported = appConfig.parseServiceUrl.isNotBlank() &&
+            appConfig.parseServiceToken.isNotBlank(),
+        onRemoteParseChange = viewModel::setRemoteParseEnabled,
+        autoConfirmEnabled = autoConfirmEnabled,
+        onAutoConfirmChange = viewModel::setAutoConfirmEnabled,
         appLockSupported = appLockSupported,
         onThemeChange = viewModel::setThemeMode,
         onLanguageChange = { tag ->

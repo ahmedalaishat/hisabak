@@ -67,9 +67,14 @@ fun SettingsScreen(
     language: String,
     appLockEnabled: Boolean,
     appLockSupported: Boolean,
+    remoteParseEnabled: Boolean,
+    remoteParseSupported: Boolean,
+    autoConfirmEnabled: Boolean,
     onThemeChange: (ThemeMode) -> Unit,
     onLanguageChange: (String) -> Unit,
     onAppLockChange: (Boolean) -> Unit,
+    onRemoteParseChange: (Boolean) -> Unit,
+    onAutoConfirmChange: (Boolean) -> Unit,
     onOpenBackup: () -> Unit,
     onOpenSmsTemplates: () -> Unit,
     passphraseReminderVisible: Boolean,
@@ -116,6 +121,12 @@ fun SettingsScreen(
                     )
                 },
             )
+        }
+
+        // Its own group: these three answer one question each and build on each other — which
+        // formats are recognised, whether an unrecognised one may be sent away to be read, and
+        // whether the answer may be acted on without asking.
+        SettingsGroup(title = stringResource(Res.string.settings_group_sms_parsing)) {
             SettingCard(
                 icon = HugeIcons.Message,
                 title = stringResource(Res.string.settings_sms_templates),
@@ -127,6 +138,27 @@ fun SettingsScreen(
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                },
+            )
+            // Hidden unless the build actually has a service configured — offering to send
+            // messages somewhere that doesn't exist would be a promise the build can't keep.
+            if (remoteParseSupported) {
+                SettingCard(
+                    // Not CloudSync: that is the Backup icon, and this is not a sync.
+                    icon = HugeIcons.Brain,
+                    title = stringResource(Res.string.settings_remote_parse),
+                    hint = stringResource(Res.string.settings_remote_parse_hint),
+                    trailing = {
+                        Switch(checked = remoteParseEnabled, onCheckedChange = onRemoteParseChange)
+                    },
+                )
+            }
+            SettingCard(
+                icon = HugeIcons.CheckCircle,
+                title = stringResource(Res.string.settings_auto_confirm),
+                hint = stringResource(Res.string.settings_auto_confirm_hint),
+                trailing = {
+                    Switch(checked = autoConfirmEnabled, onCheckedChange = onAutoConfirmChange)
                 },
             )
         }

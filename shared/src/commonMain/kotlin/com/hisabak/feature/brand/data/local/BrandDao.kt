@@ -32,6 +32,9 @@ interface BrandDao {
     )
     suspend fun findByNameLike(name: String): BrandEntity?
 
+    @Query("SELECT * FROM brands WHERE name = :name COLLATE NOCASE LIMIT 1")
+    suspend fun findByExactName(name: String): BrandEntity?
+
     @Query("SELECT COUNT(*) FROM brands")
     suspend fun count(): Int
 

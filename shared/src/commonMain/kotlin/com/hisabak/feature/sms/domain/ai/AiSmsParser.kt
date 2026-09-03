@@ -43,6 +43,17 @@ data class AiParsedSms(
     val amountMinor: Long?,
     val currencyCode: String?,
     val occurredAtEpochMillis: Long?,
+    /**
+     * The merchant and amount **exactly as written in the message**, when the engine reports them.
+     *
+     * These are evidence, not decoration. [brandName] may have been snapped to an existing brand
+     * ("Talabat" for a message that says "TALABAT-DXB-991"), so it is the wrong thing to locate in
+     * the body: template synthesis would replace only the matching prefix and bake "-DXB-991" into
+     * the pattern as a literal. Null from engines that do not supply it — the value-matching
+     * fallback in `deriveAiSpans` still applies.
+     */
+    val brandText: String? = null,
+    val amountText: String? = null,
 )
 
 /**

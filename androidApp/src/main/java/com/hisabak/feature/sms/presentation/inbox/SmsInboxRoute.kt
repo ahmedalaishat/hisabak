@@ -85,6 +85,7 @@ fun SmsInboxRoute(
         state = state,
         onCreateTemplate = { onCreateTemplate(it.value) },
         onReviewTransaction = onReviewTransaction,
+        onMarkReviewed = { viewModel.onIntent(SmsInboxIntent.MarkReviewed(it)) },
         onImportParsed = { viewModel.onIntent(SmsInboxIntent.ImportParsed(it)) },
         snackbarHostState = snackbarHostState,
         autoImportAvailable = BuildConfig.SMS_AUTO_CAPTURE,
@@ -96,6 +97,9 @@ fun SmsInboxRoute(
         modifier = modifier,
         onSuggestParse = { viewModel.onIntent(SmsInboxIntent.SuggestParse(it)) },
         onConfirmSuggestion = { viewModel.onIntent(SmsInboxIntent.ConfirmSuggestion(it)) },
+        onPromptAccept = { viewModel.onIntent(SmsInboxIntent.AcceptPrompt(it)) },
+        onPromptLater = { viewModel.onIntent(SmsInboxIntent.DismissPrompt(it)) },
+        onPromptNever = { viewModel.onIntent(SmsInboxIntent.SuppressPrompt(it)) },
         onDismissSuggestion = { viewModel.onIntent(SmsInboxIntent.DismissSuggestion(it)) },
     )
 }

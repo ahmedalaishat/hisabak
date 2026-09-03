@@ -49,6 +49,7 @@
     <string name="transaction_delete_action">Delete transaction</string>
     <string name="transaction_deleting">Deleting…</string>
     <string name="settings_group_backup_security">Backup &amp; security</string>
+    <string name="settings_group_sms_parsing">SMS parsing</string>
     <string name="settings_group_preferences">Preferences</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_appearance">Appearance</string>
@@ -234,6 +235,10 @@
     <string name="transaction_direction_withdrawal">Withdrawal</string>
     <string name="settings_sms_templates">SMS parsing</string>
     <string name="settings_sms_templates_hint">Teach the app your bank's message formats</string>
+    <string name="settings_remote_parse">Parse with the online model</string>
+    <string name="settings_remote_parse_hint">Messages no template recognises are sent to Hisabak's parsing service to be read. Only those messages are sent, only when this is on, and they are not stored.</string>
+    <string name="settings_auto_confirm">Confirm automatically</string>
+    <string name="settings_auto_confirm_hint">Save a transaction without asking, when the amount and the shop were both found in the message and the shop is one you already have. Messages you paste yourself are always confirmed by you.</string>
     <string name="sms_templates_title">SMS parsing</string>
     <string name="sms_templates_hint">Templates turn bank messages into transactions automatically. The most specific template wins; ones you create take priority over the built-ins.</string>
     <string name="sms_template_new">New template</string>
@@ -316,6 +321,12 @@
     <string name="dashboard_over_limit">· over limit</string>
     <string name="sms_search_placeholder">Search messages</string>
     <string name="sms_recent_section">Recent SMS</string>
+    <string name="sms_prompt_online">Messages your templates don't recognise can be read by the online model, so they still become transactions. Only those messages are sent, and they are not stored.</string>
+    <string name="sms_prompt_online_accept">Turn on</string>
+    <string name="sms_prompt_auto_confirm">Hisabak can save a transaction without asking, when the amount and the shop were both found in the message and the shop is one you already have.</string>
+    <string name="sms_prompt_auto_confirm_accept">Turn on</string>
+    <string name="sms_prompt_later">Not now</string>
+    <string name="sms_prompt_never">Don't ask again</string>
     <string name="sms_empty_title">No SMS messages</string>
     <string name="sms_empty_auto">Enable auto-import to capture bank messages automatically.</string>
     <string name="sms_empty_manual">Share a bank SMS into Hisabak, select its text, or paste it below.</string>
@@ -420,5 +431,9 @@
     <string name="sms_ai_dismiss">Dismiss</string>
     <string name="sms_ai_parse_failed">Couldn't read this message with AI</string>
     <string name="sms_ai_parsed">AI parsed</string>
+    <string name="sms_status_linked">Linked</string>
+    <string name="sms_status_unreviewed">Unreviewed</string>
+    <string name="sms_status_parsed">Parsed</string>
+    <string name="sms_status_unparsed">Unparsed</string>
     <string name="sms_review_transaction">Review transaction</string>
 </resources>

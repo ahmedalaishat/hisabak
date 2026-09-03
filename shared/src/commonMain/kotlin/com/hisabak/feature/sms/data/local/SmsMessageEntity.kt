@@ -23,4 +23,7 @@ data class SmsMessageEntity(
     @ColumnInfo(defaultValue = "NULL") val suggestedCurrency: String? = null,
     @ColumnInfo(defaultValue = "NULL") val suggestedOccurredAtMillis: Long? = null,
     @ColumnInfo(defaultValue = "NULL") val suggestedPattern: String? = null,
+    @ColumnInfo(defaultValue = "NULL") val suggestedBrandRaw: String? = null,
+    @ColumnInfo(defaultValue = "0") val autoConfirmed: Boolean = false,
+    @ColumnInfo(defaultValue = "0") val reviewed: Boolean = false,
 )

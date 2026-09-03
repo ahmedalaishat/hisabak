@@ -51,4 +51,34 @@ interface AppPreferences {
     val lastBackupAt: Flow<Long>
 
     suspend fun setLastBackupAt(value: Long)
+
+    /**
+     * Whether unmatched message text may be sent to the parse service; defaults to `false`.
+     *
+     * This is the consent gate for the only feature that transmits message content off the device,
+     * so it is opt-in and nothing reaches the network while it is false.
+     */
+    val remoteParseEnabled: Flow<Boolean>
+
+    suspend fun setRemoteParseEnabled(value: Boolean)
+
+    /**
+     * Whether a verified AI suggestion may become a transaction without a tap; defaults to `false`.
+     *
+     * Separate from [remoteParseEnabled] on purpose: one decides whether text leaves the phone,
+     * this decides whether the app acts unattended. Wanting the second does not imply the first.
+     */
+    val autoConfirmEnabled: Flow<Boolean>
+
+    suspend fun setAutoConfirmEnabled(value: Boolean)
+
+    /**
+     * "Don't ask again" for the SMS-inbox offers, one flag per offer.
+     *
+     * Only the permanent choice is stored. "Not now" is deliberately in-memory: the user said not
+     * now, not never, and a launch is the natural moment to ask once more.
+     */
+    val suppressedInboxPrompts: Flow<Set<String>>
+
+    suspend fun suppressInboxPrompt(name: String)
 }

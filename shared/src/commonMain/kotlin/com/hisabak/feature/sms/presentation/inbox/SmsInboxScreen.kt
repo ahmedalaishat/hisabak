@@ -60,6 +60,13 @@ import com.hisabak.ui.components.HisabakButton
 import com.hisabak.ui.components.ButtonVariant
 import com.hisabak.ui.components.PrimaryPillButton
 import com.hisabak.ui.components.SearchField
+import androidx.compose.material3.TextButton
+import com.hisabak.shared.resources.sms_prompt_online
+import com.hisabak.shared.resources.sms_prompt_online_accept
+import com.hisabak.shared.resources.sms_prompt_auto_confirm
+import com.hisabak.shared.resources.sms_prompt_auto_confirm_accept
+import com.hisabak.shared.resources.sms_prompt_later
+import com.hisabak.shared.resources.sms_prompt_never
 import com.hisabak.ui.components.SectionHeader
 import com.hisabak.ui.components.SmsStatus
 import com.hisabak.ui.components.StatusChip
@@ -87,7 +94,11 @@ fun SmsInboxScreen(
     onDismissSuggestion: (SmsMessageId) -> Unit = {},
     onCreateTemplate: (SmsMessageId) -> Unit = {},
     onReviewTransaction: (String) -> Unit = {},
+    onMarkReviewed: (SmsMessageId) -> Unit = {},
     onImportParsed: (SmsMessageId) -> Unit = {},
+    onPromptAccept: (InboxPrompt) -> Unit = {},
+    onPromptLater: (InboxPrompt) -> Unit = {},
+    onPromptNever: (InboxPrompt) -> Unit = {},
 ) {
     // Semantic dismissal point: Import means typing is done — the result appears where the
     // keyboard was. (Buttons consume their taps, so the global tap-outside can't cover this.)
@@ -104,6 +115,18 @@ fun SmsInboxScreen(
         ) {
             if (autoImportAvailable) {
                 item { AutoImportBanner(granted = state.autoImportGranted, onEnable = onEnableAutoImport) }
+            }
+            // Above the paste box on purpose: this is where an unrecognised message ends up, so
+            // it is where the offer to read it is worth making.
+            state.prompt?.let { prompt ->
+                item {
+                    InboxPromptCard(
+                        prompt = prompt,
+                        onAccept = { onPromptAccept(prompt) },
+                        onLater = { onPromptLater(prompt) },
+                        onNever = { onPromptNever(prompt) },
+                    )
+                }
             }
             item { PasteParseCard(draft = state.draftBody, preview = state.draftPreview, isProcessing = state.isProcessing, onDraftChange = onDraftChange, onIngest = ingestAndDismiss) }
             item {
@@ -141,7 +164,12 @@ fun SmsInboxScreen(
                         onConfirmSuggestion = { onConfirmSuggestion(row.id) },
                         onDismissSuggestion = { onDismissSuggestion(row.id) },
                         onCreateTemplate = { onCreateTemplate(row.id) },
-                        onReviewTransaction = { row.transactionId?.let { onReviewTransaction(it.value) } },
+                        onReviewTransaction = {
+                            // Seeing the amount and brand is the review, so the tag is discharged
+                            // on the way out rather than on return — there is no result to wait for.
+                            onMarkReviewed(row.id)
+                            row.transactionId?.let { onReviewTransaction(it.value) }
+                        },
                         modifier = Modifier.animateItem(),
                     )
                 }
@@ -287,6 +315,12 @@ private fun SmsRowCard(
     modifier: Modifier = Modifier,
 ) {
     val status = when {
+        // Distinct from Linked because the gate verifies evidence, not meaning: it cannot catch
+        // a misreading (an FX line quoting two amounts passes every check). These are the rows
+        // worth spot-checking, so the chip says "unreviewed" rather than merely "automatic" —
+        // a template match is automatic too, and deterministic, so it stays Linked. Opening the
+        // transaction discharges it, or the tag would accumulate until it marked everything.
+        row.isLinked && row.autoConfirmed && !row.reviewed -> SmsStatus.Unreviewed
         row.isLinked -> SmsStatus.Linked
         row.parsedAmount != null -> SmsStatus.Parsed
         else -> SmsStatus.Unparsed
@@ -449,7 +483,8 @@ private fun SmsRowCard(
             ) {
                 if (row.isLinked) {
                     if (row.suggestedBrand != null) {
-                        // Provenance: this linked transaction came from a confirmed AI parse.
+                        // Provenance: this linked transaction came from an AI parse. Who approved
+                        // it - the user or the auto-confirm gate - is on the status chip.
                         Badge(
                             label = stringResource(Res.string.sms_ai_parsed),
                             tone = BadgeTone.Info,
@@ -551,3 +586,65 @@ fun formatMoney(money: Money): String {
 @Composable
 internal fun formatDate(instant: kotlin.time.Instant): String =
     LocalDateFormatter.current.dateTime(instant)
+
+/**
+ * An offer with three answers, because two is not enough: "not now" and "never" mean different
+ * things and collapsing them either nags the user forever or hides a feature after one glance.
+ */
+@Composable
+private fun InboxPromptCard(
+    prompt: InboxPrompt,
+    onAccept: () -> Unit,
+    onLater: () -> Unit,
+    onNever: () -> Unit,
+) {
+    // Same icon as the matching Settings row, so the card and the switch read as one thing.
+    val (body, acceptLabel) = when (prompt) {
+        InboxPrompt.OnlineParsing ->
+            Res.string.sms_prompt_online to Res.string.sms_prompt_online_accept
+        InboxPrompt.AutoConfirm ->
+            Res.string.sms_prompt_auto_confirm to Res.string.sms_prompt_auto_confirm_accept
+    }
+    val icon = when (prompt) {
+        InboxPrompt.OnlineParsing -> HugeIcons.Brain
+        InboxPrompt.AutoConfirm -> HugeIcons.CheckCircle
+    }
+    SurfaceCard(
+        modifier = Modifier.fillMaxWidth(),
+        backgroundColor = HisabakTheme.colors.infoSoft,
+        borderColor = Color.Transparent,
+    ) {
+        Column(
+            Modifier.padding(Spacing.s4),
+            verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = HisabakTheme.colors.info,
+                    modifier = Modifier.size(Sizing.iconSm),
+                )
+                Text(
+                    text = stringResource(body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s1),
+            ) {
+                TextButton(onClick = onAccept) { Text(stringResource(acceptLabel)) }
+                TextButton(onClick = onLater) { Text(stringResource(Res.string.sms_prompt_later)) }
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = onNever) {
+                    Text(
+                        text = stringResource(Res.string.sms_prompt_never),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}

@@ -81,9 +81,11 @@ Everything below is built and shipping today:
   features, ending with an SMS-permission primer.
 - [x] 💬 **SMS capture** — parse bank SMS into transactions automatically (with permission), or
   capture one on demand by sharing it into Hisabak, selecting its text → Hisabak, or pasting it.
-  Messages no template recognizes fall back to **on-device AI** (Gemini Nano / Apple
-  Intelligence, where supported): the parse is suggested on the message and you confirm it with
-  one tap — nothing ever leaves your device.
+  Messages no template recognizes fall back to **AI** — on-device (Gemini Nano / Apple
+  Intelligence) where the phone supports it, nothing leaving the device; and on the many phones
+  that don't, an **optional** parsing service you host and switch on yourself. Either way the parse
+  is suggested on the message and you confirm it with one tap, and Hisabak learns a template from
+  it so that bank format is read locally from then on.
 - [x] 🔔 **Budgets with alerts** — set a monthly limit per category and get notified at **50% /
   80% / 100%**. Alerts arrive as a system notification *and* an in-app entry; tapping one opens
   the dashboard with that category expanded.
@@ -111,7 +113,8 @@ Everything below is built and shipping today:
   edited, deleted, or undone on the spot.
 - [x] ✨ **Smart capture** — the SMS inbox takes anything: auto-captured bank SMS, pasted
   messages, or plain notes ("lunch 45 yesterday"). Known formats import instantly; everything
-  else gets an on-device AI suggestion you confirm with one tap. Fully on-device.
+  else gets an AI suggestion you confirm with one tap — on-device where supported, otherwise via
+  the optional parsing service (off by default).
 - [x] 📱 **iOS app** — the same app, natively on iPhone from the shared Kotlin Multiplatform
   codebase: every screen, Arabic/RTL, App Lock (Face ID), Drive backup, templates, and on-device
   AI parsing (Apple Intelligence). iOS has no SMS access by design, so capture goes through a
@@ -165,8 +168,10 @@ What's next, roughly in order:
 - **Async:** Coroutines + Flow
 - **State:** ViewModel + `collectAsStateWithLifecycle`
 - **Charts:** Vico (multiplatform)
-- **On-device AI:** Gemini Nano via the ML Kit GenAI Prompt API (Android) / Apple Foundation
-  Models (iOS) — inference never leaves the device
+- **AI parsing:** Gemini Nano via the ML Kit GenAI Prompt API (Android) / Apple Foundation Models
+  (iOS) — on-device, nothing transmitted; plus an optional self-hosted parse service (`server/`,
+  FastAPI + Docker) for the majority of phones that have no on-device model — opt-in, and it stores
+  nothing
 - **Crash reporting & analytics:** Firebase Crashlytics + Analytics (release builds only;
   disabled in debug; analytics events carry no personal or financial data)
 
