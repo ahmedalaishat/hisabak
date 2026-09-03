@@ -39,7 +39,7 @@ import com.hisabak.feature.transaction.data.local.TransactionEntity
         CategoryLimitAlertEntity::class,
         NarrativeEntity::class,
     ],
-    version = HisabakDatabase.SCHEMA_VERSION, // v10: insight_narratives cache
+    version = HisabakDatabase.SCHEMA_VERSION, // v11: insight_narratives keyed by digest
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 2, to = 3, spec = DropSyncColumnsSpec::class),
@@ -69,7 +69,7 @@ abstract class HisabakDatabase : RoomDatabase() {
         const val NAME = "hisabak.db"
 
         /** Single source of truth for the Room schema version; also stamped into backup files. */
-        const val SCHEMA_VERSION = 10
+        const val SCHEMA_VERSION = 11
     }
 }
 

@@ -176,15 +176,10 @@ private fun LazyListScope.narrativeItems(
             item(key = "ai:loading") { NarrativeLoadingCards() }
         }
         is NarrativeUi.Ready -> narrativeCards(narrative.items, onNarrativeClick, onSuggestionClick, onIntent)
-        is NarrativeUi.Unavailable -> {
-            val stale = narrative.stale
-            if (stale.isNullOrEmpty()) {
-                narrativeHeader(onIntent)
-                item(key = "ai:unavailable") {
-                    NoticeCard(text = stringResource(Res.string.insights_narrative_unavailable), tone = NoticeTone.Info)
-                }
-            } else {
-                narrativeCards(stale, onNarrativeClick, onSuggestionClick, onIntent)
+        NarrativeUi.Unavailable -> {
+            narrativeHeader(onIntent)
+            item(key = "ai:unavailable") {
+                NoticeCard(text = stringResource(Res.string.insights_narrative_unavailable), tone = NoticeTone.Info)
             }
         }
     }

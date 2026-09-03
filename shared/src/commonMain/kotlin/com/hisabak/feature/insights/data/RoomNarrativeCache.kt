@@ -1,6 +1,5 @@
 package com.hisabak.feature.insights.data
 
-import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.insights.data.local.NarrativeDao
 import com.hisabak.feature.insights.data.local.NarrativeEntity
@@ -8,6 +7,7 @@ import com.hisabak.feature.insights.domain.InsightCategory
 import com.hisabak.feature.insights.domain.ai.CachedNarrative
 import com.hisabak.feature.insights.domain.ai.NarrativeCache
 import com.hisabak.feature.insights.domain.ai.NarrativeInsight
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -18,12 +18,11 @@ class RoomNarrativeCache(private val dao: NarrativeDao) : NarrativeCache {
     private val json = Json { ignoreUnknownKeys = true }
     private val serializer = ListSerializer(CachedItem.serializer())
 
-    override suspend fun get(period: SummaryPeriod): CachedNarrative? {
-        val row = dao.get(period.name) ?: return null
+    override suspend fun get(key: String): CachedNarrative? {
+        val row = dao.get(key) ?: return null
         // A row this build can't read (an older shape) is a miss, not a crash: it regenerates.
         val items = runCatching { json.decodeFromString(serializer, row.payload) }.getOrNull() ?: return null
         return CachedNarrative(
-            period = period,
             key = row.narrativeKey,
             items = items.map { it.toDomain() },
             createdAt = Instant.fromEpochMilliseconds(row.createdAtMillis),
@@ -33,12 +32,17 @@ class RoomNarrativeCache(private val dao: NarrativeDao) : NarrativeCache {
     override suspend fun put(narrative: CachedNarrative) {
         dao.upsert(
             NarrativeEntity(
-                period = narrative.period.name,
                 narrativeKey = narrative.key,
                 payload = json.encodeToString(serializer, narrative.items.map(::CachedItem)),
                 createdAtMillis = narrative.createdAt.toEpochMilliseconds(),
             ),
         )
+        // Rows are keyed by what they explain, so nothing overwrites them; age is the only pruning.
+        dao.deleteOlderThan((narrative.createdAt - RETENTION).toEpochMilliseconds())
+    }
+
+    private companion object {
+        val RETENTION = 180.days
     }
 
     @Serializable

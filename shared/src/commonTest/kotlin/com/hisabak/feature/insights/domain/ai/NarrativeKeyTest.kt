@@ -1,5 +1,6 @@
 package com.hisabak.feature.insights.domain.ai
 
+import com.hisabak.core.common.SummaryPeriod
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -37,6 +38,27 @@ class NarrativeKeyTest {
         val b = summary(income = 13_000_00)
 
         assertNotEquals(narrativeKey(a, "en"), narrativeKey(b, "en"))
+    }
+
+    @Test
+    fun `the period's window is part of the key even when the figures coincide`() {
+        // Every transaction in the current month: this month and this year read the same.
+        val month = summary(period = SummaryPeriod.CURRENT_MONTH)
+        val year = summary(period = SummaryPeriod.CURRENT_YEAR)
+        val all = summary(period = SummaryPeriod.ALL)
+
+        assertNotEquals(narrativeKey(month, "en"), narrativeKey(year, "en"))
+        assertNotEquals(narrativeKey(year, "en"), narrativeKey(all, "en"))
+    }
+
+    @Test
+    fun `the key is a fixed-width digest`() {
+        val key = narrativeKey(summary(), "en")
+
+        assertEquals(16, key.length)
+        assertEquals(key, narrativeKey(summary(), "en"))
+        assertEquals("cbf29ce484222325", fnv1a64(""))
+        assertEquals("af63dc4c8601ec8c", fnv1a64("a"))
     }
 
     @Test

@@ -110,6 +110,6 @@ class InsightsViewModel(
     private fun NarrativeResult.toUi(): NarrativeUi = when (this) {
         NarrativeResult.Disabled -> NarrativeUi.Hidden
         is NarrativeResult.Ready -> NarrativeUi.Ready(items)
-        is NarrativeResult.Unavailable -> NarrativeUi.Unavailable(stale)
+        NarrativeResult.Unavailable -> NarrativeUi.Unavailable
     }
 }

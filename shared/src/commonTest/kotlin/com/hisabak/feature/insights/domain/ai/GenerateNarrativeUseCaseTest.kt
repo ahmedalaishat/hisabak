@@ -1,6 +1,5 @@
 package com.hisabak.feature.insights.domain.ai
 
-import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.feature.insights.domain.InsightsSummary
 import com.hisabak.testutil.FakeAnalytics
@@ -71,7 +70,7 @@ class GenerateNarrativeUseCaseTest {
         val ready = assertIs<NarrativeResult.Ready>(result)
         assertTrue(ready.fresh)
         assertEquals(listOf("dining"), ready.items.map { it.category?.id?.value })
-        assertEquals(1, cache.entries[SummaryPeriod.CURRENT_MONTH]!!.items.size)
+        assertEquals(1, cache.entries.values.single().items.size)
         val event = analytics.logged.filterIsInstance<AnalyticsEvent.InsightsNarrativeGenerated>().single()
         assertEquals(1, event.params["count"])
         assertEquals(1, event.params["dropped"])
@@ -97,16 +96,17 @@ class GenerateNarrativeUseCaseTest {
     }
 
     @Test
-    fun `an outage returns the stale narrative when there is one and nothing when there is not`() = runTest {
+    fun `an outage is unavailable and leaves earlier answers in place`() = runTest {
         ai.reply = null
-        assertNull(assertIs<NarrativeResult.Unavailable>(useCase(summary(), "en")).stale)
+        assertEquals(NarrativeResult.Unavailable, useCase(summary(), "en"))
 
         ai.reply = listOf(raw())
         useCase(summary(), "en")
         ai.reply = null
 
-        val stale = assertIs<NarrativeResult.Unavailable>(useCase(summary(income = 20_000_00), "en")).stale
-        assertEquals(1, stale!!.size)
+        assertEquals(NarrativeResult.Unavailable, useCase(summary(income = 20_000_00), "en"))
+        // The figures change back: the earlier answer is still there, no send needed.
+        assertEquals(false, assertIs<NarrativeResult.Ready>(useCase(summary(), "en")).fresh)
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.insights.domain.CategorySpend
 import com.hisabak.feature.insights.domain.InsightsSummary
+import kotlinx.datetime.LocalDate
 
 internal fun spend(
     id: String,
@@ -35,6 +36,8 @@ internal fun summary(
     period: SummaryPeriod = SummaryPeriod.CURRENT_MONTH,
 ) = InsightsSummary(
     period = period,
+    windowStart = period.dateRange(TODAY)?.first,
+    windowEnd = period.dateRange(TODAY)?.second,
     incomeMinor = income,
     expenseMinor = categories.sumOf { it.spentMinor } + uncategorized,
     priorIncomeMinor = priorIncome,
@@ -43,6 +46,9 @@ internal fun summary(
     uncategorizedMinor = uncategorized,
     uncategorizedCount = uncategorizedCount,
 )
+
+/** Matches TestClock: 2026-06-17. */
+internal val TODAY = LocalDate(2026, 6, 17)
 
 internal fun raw(
     categoryId: String? = "dining",

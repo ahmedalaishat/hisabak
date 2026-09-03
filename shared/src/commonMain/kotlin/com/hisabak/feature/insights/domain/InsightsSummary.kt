@@ -6,6 +6,7 @@ import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.dashboard.domain.DashboardSnapshot
 import com.hisabak.feature.dashboard.domain.periodLimit
 import kotlin.math.roundToLong
+import kotlinx.datetime.LocalDate
 
 /** One expense category's figures for the period. [priorMinor] is null when no prior period exists. */
 data class CategorySpend(
@@ -31,6 +32,9 @@ data class CategorySpend(
  */
 data class InsightsSummary(
     val period: SummaryPeriod,
+    /** The period's concrete [start, end) window — what identifies "this period" over time; null for all time. */
+    val windowStart: LocalDate? = null,
+    val windowEnd: LocalDate? = null,
     val incomeMinor: Long,
     val expenseMinor: Long,
     val priorIncomeMinor: Long?,
@@ -68,6 +72,8 @@ data class InsightsSummary(
                 }
             return InsightsSummary(
                 period = period,
+                windowStart = snapshot.periodRange?.first,
+                windowEnd = snapshot.periodRange?.second,
                 incomeMinor = snapshot.income.amountMinor,
                 expenseMinor = expense,
                 priorIncomeMinor = priorFromTrend(snapshot.income.amountMinor, snapshot.incomeTrendPct),

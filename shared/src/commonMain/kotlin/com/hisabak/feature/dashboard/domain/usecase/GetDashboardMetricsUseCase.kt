@@ -183,6 +183,7 @@ class GetDashboardMetricsUseCase(
             .map { CategoryOption(id = it.id, name = it.name, color = it.color, icon = it.icon, type = it.type) }
 
         return DashboardSnapshot(
+            periodRange = period.dateRange(today),
             netWorth = Money(netWorth, currency),
             netWorthSeries = netWorthSeries,
             netWorthTrendPct = netWorthTrendPct,

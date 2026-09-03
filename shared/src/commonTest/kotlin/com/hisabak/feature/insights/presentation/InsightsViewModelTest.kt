@@ -158,6 +158,23 @@ class InsightsViewModelTest : MainDispatcherTest() {
         assertEquals(1, ai.calls)
     }
 
+    @Test
+    fun `a period with the same figures still gets its own answer`() = runTest {
+        // Every transaction is in June, so "this month" and "this year" have identical totals and
+        // findings. The month's answer must not stand in for the year's.
+        val vm = viewModel(ledger, service = true)
+        advanceUntilIdle()
+        vm.onIntent(InsightsIntent.RequestNarrative)
+        advanceUntilIdle()
+        assertIs<NarrativeUi.Ready>(vm.state.value.narrative)
+
+        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.CURRENT_YEAR))
+        advanceUntilIdle()
+
+        assertEquals(NarrativeUi.Ask, vm.state.value.narrative)
+        assertEquals(1, ai.calls)
+    }
+
     // ── Layer 2: the narrative ────────────────────────────────────────────────
 
     @Test
