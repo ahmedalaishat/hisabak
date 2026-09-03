@@ -7,6 +7,14 @@ All notable changes to Hisabak are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **An AI explanation of the review, if you want one.** On the insights screen Hisabak can now
+  explain what changed and suggest what to do — "Dining is over its limit by 300; a 1,600 cap would
+  hold next month" — with a tap to set that limit, which opens the category editor prefilled so you
+  still confirm it. It is **off by default** and has its own switch (Settings → Insights): turning
+  it on sends only your totals by category for the period — never transactions, notes, brands, or
+  messages — and **See what's shared** shows you the exact figures before anything is sent. The
+  explanation is fetched once and kept until your numbers materially change, and if the service
+  can't answer the review below is complete on its own.
 - **A review on the dashboard.** Under the cash, savings and investment figures, Hisabak now points out what changed
   and what needs attention for the period you're viewing: a category over or near its limit, a
   category up or down sharply on last time, your largest expense, your savings rate and how it

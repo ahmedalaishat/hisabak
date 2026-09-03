@@ -1,13 +1,13 @@
-"""Wire contract shared with the Kotlin client (`RemoteAiSmsParser`).
+"""Wire contract shared with the Kotlin client (`RemoteAiSmsParser`, `RemoteAiInsights`).
 
-Field names and semantics mirror `AiParsedSms` in commonMain so the client is a thin mapping:
+Field names and semantics mirror the commonMain types so the client is a thin mapping:
 amounts in **minor units**, currency as an ISO-4217 code or null, date as an ISO-8601 string.
-Every field is nullable — "this isn't a transaction" is a valid answer, and the client's shared
-`sanitize` step is what decides whether a partial result is usable.
+Every parse field is nullable — "this isn't a transaction" is a valid answer, and the client's
+shared `sanitize` step is what decides whether a partial result is usable.
 """
 
 import re
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
@@ -78,4 +78,64 @@ class ParsedSms(BaseModel):
 
 
 class ParseResponse(ParsedSms):
+    model: str
+
+
+# ── Insights ──────────────────────────────────────────────────────────────────
+
+# Mirrors the client's cap when it builds the request. A ledger with more expense categories than
+# this sends its largest; the rest are immaterial to a review and every row is prompt tokens.
+MAX_CATEGORIES = 60
+CategoryName = Annotated[str, StringConstraints(min_length=1, max_length=60)]
+Minor = Annotated[int, Field(ge=0, le=10**13)]
+
+
+class CategoryFigures(BaseModel):
+    id: str = Field(min_length=1, max_length=64)
+    name: CategoryName
+    spent_minor: Minor
+    prior_minor: Minor | None = None
+    limit_minor: Minor | None = None
+
+
+class InsightsRequest(BaseModel):
+    """The `InsightsSummary` from the phone: aggregates only. This shape **is** the privacy boundary
+    — there is no field for a transaction, a note, a brand, or a message, so none can arrive."""
+
+    period: str = Field(min_length=1, max_length=32)
+    currency: str = Field(min_length=1, max_length=8)
+    language: Literal["en", "ar"] = "en"
+    income_minor: Minor
+    expense_minor: Minor
+    prior_income_minor: Minor | None = None
+    prior_expense_minor: Minor | None = None
+    categories: list[CategoryFigures] = Field(default_factory=list, max_length=MAX_CATEGORIES)
+    uncategorized_minor: Minor = 0
+    uncategorized_count: int = Field(default=0, ge=0, le=100_000)
+
+
+class NarrativeItem(BaseModel):
+    category_id: str | None = Field(
+        description=(
+            "The id of the category this is about, exactly as listed in the figures. Null when "
+            "the item is about the period as a whole (savings, uncategorized spend)."
+        )
+    )
+    headline: str = Field(description="One plain sentence stating what happened. At most 60 characters.")
+    detail: str = Field(
+        description="Why it matters and what to do, addressed to the reader as 'you'. At most 200 characters."
+    )
+    suggested_limit_minor: int | None = Field(
+        description=(
+            "A monthly spending cap to propose for this category, in minor units, or null. Only "
+            "for an expense category that has no limit or is over its limit."
+        )
+    )
+
+
+class Narrative(BaseModel):
+    items: list[NarrativeItem] = Field(description="Two to five items, most important first.")
+
+
+class InsightsResponse(Narrative):
     model: str

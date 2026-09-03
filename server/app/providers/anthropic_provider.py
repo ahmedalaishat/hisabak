@@ -1,4 +1,4 @@
-"""Anthropic-backed extraction.
+"""Anthropic-backed extraction and narration.
 
 Model is env-configurable and defaults to Haiku 4.5: the task is short structured extraction, and
 because the app learns a regex template from each successful parse, this is called roughly once per
@@ -14,8 +14,8 @@ import os
 
 import anthropic
 
-from app.prompts import build
-from app.schema import ParsedSms, ParseRequest
+from app.prompts import build, build_insights
+from app.schema import InsightsRequest, Narrative, ParsedSms, ParseRequest
 
 DEFAULT_MODEL = "claude-haiku-4-5"
 
@@ -58,3 +58,16 @@ class AnthropicProvider:
             brand=None, brand_text=None, amount_minor=None,
             amount_text=None, currency=None, date_iso=None,
         )
+
+    async def narrate(self, request: InsightsRequest) -> Narrative:
+        system, summary = build_insights(request)
+        # Larger output than a parse - five short items in Arabic run to a few hundred tokens - but
+        # still a hard ceiling, so the cost of a call is a constant.
+        response = await self._client.messages.parse(
+            model=self._model,
+            max_tokens=1024,
+            system=system,
+            messages=[{"role": "user", "content": summary}],
+            output_format=Narrative,
+        )
+        return response.parsed_output or Narrative(items=[])

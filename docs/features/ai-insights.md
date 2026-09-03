@@ -126,6 +126,32 @@ picture off the phone by default.
   allowance, the new-IDs-per-IP heuristic, and the visible counter landing together, since the
   free-text box is what makes them necessary.
 
+## Landed
+- **PR 1 (2026-09-03):** layer 1 — `InsightsSummary`, `deriveInsights`, the Review card and the
+  insights screen. No server, no opt-in.
+- **PR 2 (2026-09-03):** layer 2 — `/v1/insights` + `InsightsProvider`, `AiInsights` /
+  `RemoteAiInsights`, `sanitizeNarrative`, the `insight_narratives` cache (schema 9→10), the
+  `insightsEnabled` opt-in in Settings and as an offer on the screen, "See what's shared", the
+  privacy section, confirm-first "Set a limit" chips, property evals. Decisions made while building:
+  - **"Material change" is defined by the deterministic layer**, not by a hash of the summary: the
+    cache key is the sorted finding ids + income/expense/uncategorized rounded to two significant
+    digits + language. Hashing the summary would have regenerated per transaction; this regenerates
+    when the review would read differently. An empty reply is cached too.
+  - **Language rides the request** (`en`|`ar`) and is part of the key; the text is rendered as-is,
+    so an Arabic user must get Arabic. The eval asserts the script.
+  - **Unknown category → drop the item**, not demote it: its text is about something the user
+    can't see. Period-wide items are not collapsed (savings rate and uncategorized are distinct).
+  - **Suggestion bounds:** within 3× of max(spent, prior, limit), positive, ≠ current limit, rounded
+    to whole units. The chip opens the editor prefilled; Save is the confirmation. Nothing is written
+    by a reply.
+  - **The offer has two answers plus a look at the payload** (Turn on / Not now / See what's
+    shared). "Not now" is per visit (ViewModel-held). No "don't ask again": the screen is one the
+    user opens deliberately, and Settings has the switch.
+  - **One transport per platform** (`ServiceTransport`) replaced the per-endpoint HTTP clients so
+    parsing and insights share the wire code and the contract stays in commonMain.
+  - **Not done:** prompt caching (Haiku's 4096-token floor makes it inert at this payload size),
+    the per-install quota and the visible counter (PR 3, where free text makes them necessary).
+
 ## Risks
 The deterministic layer may already deliver most of the perceived value, which would make the
 narrative layer hard to justify against its privacy cost — that is a good outcome, and PR 1

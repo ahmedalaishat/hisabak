@@ -22,9 +22,11 @@ fun CategoryEditRoute(
     onCancel: () -> Unit,
     onDeleted: () -> Unit = onCancel,
     prefill: CategoryEditPrefill? = null,
+    /** A proposed monthly cap (from a narrative suggestion) shown in the limit field, unsaved until Save. */
+    proposedLimitMinor: Long? = null,
     viewModel: CategoryEditViewModel = koinViewModel(
         key = categoryId?.value ?: "new",
-        parameters = { parametersOf(categoryId, prefill) },
+        parameters = { parametersOf(categoryId, prefill, proposedLimitMinor) },
     ),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()

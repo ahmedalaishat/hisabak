@@ -13,6 +13,8 @@ import com.hisabak.feature.category.data.local.CategoryDao
 import com.hisabak.feature.category.data.local.CategoryEntity
 import com.hisabak.feature.category.data.local.CategoryLimitDao
 import com.hisabak.feature.category.data.local.CategoryLimitEntity
+import com.hisabak.feature.insights.data.local.NarrativeDao
+import com.hisabak.feature.insights.data.local.NarrativeEntity
 import com.hisabak.feature.notification.data.local.CategoryLimitAlertDao
 import com.hisabak.feature.notification.data.local.CategoryLimitAlertEntity
 import com.hisabak.feature.notification.data.local.NotificationDao
@@ -35,8 +37,9 @@ import com.hisabak.feature.transaction.data.local.TransactionEntity
         SmsTemplateEntity::class,
         NotificationEntity::class,
         CategoryLimitAlertEntity::class,
+        NarrativeEntity::class,
     ],
-    version = HisabakDatabase.SCHEMA_VERSION, // v9: brand_aliases + suggestedBrandRaw
+    version = HisabakDatabase.SCHEMA_VERSION, // v10: insight_narratives cache
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 2, to = 3, spec = DropSyncColumnsSpec::class),
@@ -46,6 +49,7 @@ import com.hisabak.feature.transaction.data.local.TransactionEntity
         AutoMigration(from = 6, to = 7),
         AutoMigration(from = 7, to = 8),
         AutoMigration(from = 8, to = 9),
+        AutoMigration(from = 9, to = 10),
     ],
 )
 @ConstructedBy(HisabakDatabaseConstructor::class)
@@ -59,12 +63,13 @@ abstract class HisabakDatabase : RoomDatabase() {
     abstract fun smsTemplateDao(): SmsTemplateDao
     abstract fun notificationDao(): NotificationDao
     abstract fun categoryLimitAlertDao(): CategoryLimitAlertDao
+    abstract fun narrativeDao(): NarrativeDao
 
     companion object {
         const val NAME = "hisabak.db"
 
         /** Single source of truth for the Room schema version; also stamped into backup files. */
-        const val SCHEMA_VERSION = 9
+        const val SCHEMA_VERSION = 10
     }
 }
 

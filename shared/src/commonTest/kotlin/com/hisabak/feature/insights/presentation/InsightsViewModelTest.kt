@@ -9,7 +9,14 @@ import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.category.domain.usecase.ObserveCategoriesUseCase
 import com.hisabak.feature.category.domain.usecase.ObserveCategoryLimitsUseCase
 import com.hisabak.feature.dashboard.domain.usecase.GetDashboardMetricsUseCase
+import com.hisabak.core.common.AppConfig
 import com.hisabak.feature.insights.domain.InsightType
+import com.hisabak.feature.insights.domain.InsightsSummary
+import com.hisabak.feature.insights.domain.ai.AiInsights
+import com.hisabak.feature.insights.domain.ai.GenerateNarrativeUseCase
+import com.hisabak.feature.insights.domain.ai.RawNarrativeInsight
+import com.hisabak.testutil.FakeAppPreferences
+import com.hisabak.testutil.FakeNarrativeCache
 import com.hisabak.feature.transaction.domain.usecase.ObserveTransactionsUseCase
 import com.hisabak.testutil.FakeAnalytics
 import com.hisabak.testutil.FakeBrandRepository
@@ -24,8 +31,10 @@ import com.hisabak.testutil.transaction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.time.Instant
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 
@@ -33,6 +42,46 @@ class InsightsViewModelTest : MainDispatcherTest() {
 
     private val june = Instant.parse("2026-06-10T10:00:00Z")
     private val analytics = FakeAnalytics()
+    private val prefs = FakeAppPreferences()
+
+    private class ScriptedAiInsights(var reply: List<RawNarrativeInsight>?) : AiInsights {
+        var calls = 0
+        override suspend fun isEnabled() = true
+        override suspend fun narrate(summary: InsightsSummary, language: String): List<RawNarrativeInsight>? {
+            calls++
+            return reply
+        }
+    }
+
+    private val ai = ScriptedAiInsights(reply = listOf(RawNarrativeInsight("dining", "Dining leads", "Most of it.", null)))
+
+    private fun config(service: Boolean) = AppConfig(
+        seedData = false,
+        smsAutoCapture = false,
+        isDebug = true,
+        versionCode = 1,
+        flavor = "prod",
+        parseServiceUrl = if (service) "https://parse.example" else "",
+        parseServiceToken = if (service) "t" else "",
+    )
+
+    private fun viewModel(
+        transactions: List<com.hisabak.feature.transaction.domain.Transaction>,
+        service: Boolean = false,
+    ) = InsightsViewModel(
+        getMetrics = metrics(transactions),
+        generateNarrative = GenerateNarrativeUseCase(ai, FakeNarrativeCache(), TestClock(), analytics),
+        preferences = prefs,
+        appConfig = config(service),
+        analytics = analytics,
+        period = SummaryPeriod.CURRENT_MONTH,
+        language = "en",
+    )
+
+    private val ledger get() = listOf(
+        transaction(id = "s", amountMinor = 1_000_00, brandId = "salary", occurredAt = june),
+        transaction(id = "d", amountMinor = 300_00, brandId = "cafe", occurredAt = june),
+    )
 
     private fun metrics(transactions: List<com.hisabak.feature.transaction.domain.Transaction>) =
         GetDashboardMetricsUseCase(
@@ -60,16 +109,7 @@ class InsightsViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `derives the review for the period it was opened with`() = runTest {
-        val vm = InsightsViewModel(
-            getMetrics = metrics(
-                listOf(
-                    transaction(id = "s", amountMinor = 1_000_00, brandId = "salary", occurredAt = june),
-                    transaction(id = "d", amountMinor = 300_00, brandId = "cafe", occurredAt = june),
-                ),
-            ),
-            analytics = analytics,
-            period = SummaryPeriod.CURRENT_MONTH,
-        )
+        val vm = viewModel(ledger)
         advanceUntilIdle()
 
         val state = vm.state.value
@@ -81,7 +121,7 @@ class InsightsViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `an empty period loads to an empty review rather than a loading spinner`() = runTest {
-        val vm = InsightsViewModel(metrics(emptyList()), analytics, SummaryPeriod.CURRENT_MONTH)
+        val vm = viewModel(emptyList())
         advanceUntilIdle()
 
         assertFalse(vm.state.value.isLoading)
@@ -90,11 +130,7 @@ class InsightsViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `logs one opened event with the count and a tap with its type`() = runTest {
-        val vm = InsightsViewModel(
-            getMetrics = metrics(listOf(transaction(id = "d", amountMinor = 300_00, brandId = "cafe", occurredAt = june))),
-            analytics = analytics,
-            period = SummaryPeriod.CURRENT_MONTH,
-        )
+        val vm = viewModel(listOf(transaction(id = "d", amountMinor = 300_00, brandId = "cafe", occurredAt = june)))
         advanceUntilIdle()
 
         val opened = analytics.logged.filterIsInstance<AnalyticsEvent.InsightsOpened>()
@@ -107,5 +143,74 @@ class InsightsViewModelTest : MainDispatcherTest() {
         vm.onIntent(InsightsIntent.Tapped(first))
         val tapped = analytics.logged.filterIsInstance<AnalyticsEvent.InsightTapped>().single()
         assertEquals(first.type.name.lowercase(), tapped.params["type"])
+    }
+
+    // ── Layer 2: the narrative ────────────────────────────────────────────────
+
+    @Test
+    fun `without a service the screen shows no AI at all`() = runTest {
+        val vm = viewModel(ledger, service = false)
+        advanceUntilIdle()
+
+        assertEquals(NarrativeUi.Hidden, vm.state.value.narrative)
+        assertEquals(0, ai.calls)
+    }
+
+    @Test
+    fun `with a service but no opt-in the screen offers it and sends nothing`() = runTest {
+        val vm = viewModel(ledger, service = true)
+        advanceUntilIdle()
+
+        assertEquals(NarrativeUi.Offer, vm.state.value.narrative)
+        assertEquals(0, ai.calls)
+    }
+
+    @Test
+    fun `not now hides the offer for this visit only`() = runTest {
+        val vm = viewModel(ledger, service = true)
+        advanceUntilIdle()
+
+        vm.onIntent(InsightsIntent.DismissOffer)
+
+        assertEquals(NarrativeUi.Hidden, vm.state.value.narrative)
+        assertEquals(false, prefs.insightsEnabled.first())
+    }
+
+    @Test
+    fun `turning it on from the offer records consent and fetches the narrative`() = runTest {
+        val vm = viewModel(ledger, service = true)
+        advanceUntilIdle()
+
+        vm.onIntent(InsightsIntent.EnableNarrative)
+        advanceUntilIdle()
+
+        val ready = assertIs<NarrativeUi.Ready>(vm.state.value.narrative)
+        assertEquals("Dining leads", ready.items.single().headline)
+        assertEquals(1, ai.calls)
+        assertTrue(analytics.logged.filterIsInstance<AnalyticsEvent.InsightsToggled>().single().params["enabled"] == true)
+    }
+
+    @Test
+    fun `an outage leaves the deterministic review intact`() = runTest {
+        prefs.setInsightsEnabled(true)
+        ai.reply = null
+        val vm = viewModel(ledger, service = true)
+        advanceUntilIdle()
+
+        assertIs<NarrativeUi.Unavailable>(vm.state.value.narrative)
+        assertTrue(vm.state.value.insights.isNotEmpty())
+    }
+
+    @Test
+    fun `see what's shared exposes the exact summary`() = runTest {
+        val vm = viewModel(ledger, service = true)
+        advanceUntilIdle()
+
+        vm.onIntent(InsightsIntent.ShowShared)
+
+        assertTrue(vm.state.value.showShared)
+        assertEquals(1_000_00, vm.state.value.summary!!.incomeMinor)
+        vm.onIntent(InsightsIntent.HideShared)
+        assertFalse(vm.state.value.showShared)
     }
 }

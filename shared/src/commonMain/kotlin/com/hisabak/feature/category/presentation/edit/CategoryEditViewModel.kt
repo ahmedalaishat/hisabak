@@ -26,6 +26,7 @@ import kotlinx.datetime.yearMonth
 class CategoryEditViewModel(
     private val categoryId: CategoryId?,
     prefill: CategoryEditPrefill?,
+    private val proposedLimitMinor: Long?,
     private val categoryRepository: CategoryRepository,
     private val createCategory: CreateCategoryUseCase,
     private val deleteCategory: DeleteCategoryUseCase,
@@ -110,7 +111,8 @@ class CategoryEditViewModel(
                             type = c.type,
                             color = c.color,
                             icon = c.icon,
-                            limitInput = limit?.let { majorString(it.amountMinor) } ?: "",
+                            // A proposed cap is confirm-first: it fills the field, and Save is the confirmation.
+                            limitInput = (proposedLimitMinor ?: limit?.amountMinor)?.let { majorString(it) } ?: "",
                         )
                     }
                 }

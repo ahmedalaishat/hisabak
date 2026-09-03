@@ -440,6 +440,9 @@ private fun HisabakNav(slots: PlatformSlots) {
                         filterBus.request(TransactionListFilterRequest.Uncategorized)
                         navigator.navigate(TransactionsKey)
                     },
+                    onSetLimit = { id, amountMinor ->
+                        navigator.navigate(CategoryEditKey(id = id.value, prefillLimitMinor = amountMinor))
+                    },
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -512,6 +515,7 @@ private fun HisabakNav(slots: PlatformSlots) {
                             icon = key.prefillIcon ?: Category.DEFAULT_ICON,
                         )
                     },
+                    proposedLimitMinor = key.prefillLimitMinor,
                     onDone = { id ->
                         if (key.forPick) categoryCreatedBus.publish(id)
                         navigator.goBack()

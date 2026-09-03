@@ -134,6 +134,31 @@ regex templates; a parse failure never costs a capture.
 
 `GET /health` needs no token and doubles as an uptime check.
 
+### Insights
+
+```
+POST /v1/insights       Authorization: Bearer <HISABAK_API_TOKEN>
+{ "period": "CURRENT_MONTH", "currency": "AED", "language": "en",
+  "income_minor": 1250000, "expense_minor": 824010,
+  "prior_income_minor": 1250000, "prior_expense_minor": 690000,
+  "categories": [ { "id": "…", "name": "Dining", "spent_minor": 180000, "prior_minor": 120000, "limit_minor": 150000 } ],
+  "uncategorized_minor": 34000, "uncategorized_count": 3 }
+→ { "items": [ { "category_id": "…", "headline": "Dining is over its limit by 300",
+                 "detail": "…", "suggested_limit_minor": 160000 } ], "model": "…" }
+```
+
+The opt-in narrative over the app's deterministic review. **The request schema is the privacy
+boundary:** it has no field for a transaction, a note, a brand, or a message, so a client cannot
+send one even by mistake (unknown fields are dropped, not forwarded). Category names are the only
+user text in the prompt and the prompt treats them as data. Every reply is validated on the
+client (`sanitizeNarrative`): an item naming a category not in the summary is dropped, and a
+suggested cap must be within reach of the figures.
+
+It shares the parse limiter and budget. Cost per call is ~$0.002 (≈600 tokens in, ≈300 out) and
+the client regenerates only when its review **materially** changes — a finding appears or
+disappears, or a total moves in its second significant digit — so this runs roughly once per
+user per period, not per transaction. Property evals: `python -m evals.run_insights`.
+
 ## Abuse and spend control
 
 **The bearer token is not a secret.** It is compiled into a distributed app, so anyone with the
@@ -196,7 +221,7 @@ Exit code is non-zero when a decided case fails, so this can gate a deploy.
 
 ## Privacy
 
-**Message text is never logged or persisted.** Access logging is off (`--no-access-log`), no handler
+**Message text and financial figures are never logged or persisted.** Access logging is off (`--no-access-log`), no handler
 writes `text` anywhere, and the error path logs only the provider name — a traceback could carry
 the prompt. Verify after any change:
 

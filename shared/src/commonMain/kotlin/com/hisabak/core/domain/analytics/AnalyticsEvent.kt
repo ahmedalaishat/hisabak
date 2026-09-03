@@ -212,6 +212,27 @@ sealed class AnalyticsEvent(
         params = mapOf("count" to count),
     )
 
+    /** The AI narrative opt-in was flipped — from Settings or the offer on the insights screen. */
+    class InsightsToggled(enabled: Boolean) : AnalyticsEvent(
+        name = "insights_toggled",
+        params = mapOf("enabled" to enabled),
+    )
+
+    /**
+     * One `/v1/insights` call produced a narrative. [dropped] is how many items `sanitizeNarrative`
+     * refused — a rising count means the prompt is drifting, never the user's figures.
+     */
+    class InsightsNarrativeGenerated(count: Int, dropped: Int) : AnalyticsEvent(
+        name = "insights_narrative_generated",
+        params = mapOf("count" to count, "dropped" to dropped),
+    )
+
+    /** A narrative's suggestion chip was accepted; [type] names the suggestion kind ("set_limit"). */
+    class InsightsSuggestionAccepted(type: String) : AnalyticsEvent(
+        name = "insights_suggestion_accepted",
+        params = mapOf("type" to type),
+    )
+
     /** An insight card was tapped through to its transactions. [type] is the lower-cased InsightType. */
     class InsightTapped(type: String) : AnalyticsEvent(
         name = "insight_tapped",

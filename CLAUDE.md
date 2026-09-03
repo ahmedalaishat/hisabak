@@ -175,9 +175,27 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   (`NEAR_LIMIT_RATIO` 0.8, `CHANGE_THRESHOLD_PCT` 25, `MATERIAL_SHARE` 0.05). `Insight` carries
   figures, never copy — `InsightRow` renders text from `type` + fields via `insights_*` strings, so
   the rules test without resources and Arabic gets the same treatment. `InsightsSummary` is also
-  the exact payload the opt-in AI layers will send later: its shape *is* the privacy boundary (no
-  rows, no notes). Both the dashboard and `InsightsViewModel` recompute it — one pure pass beats a
-  bus or a fat nav key.
+  the exact payload the opt-in AI layer sends: its shape *is* the privacy boundary (no rows, no
+  notes). Both the dashboard and `InsightsViewModel` recompute it — one pure pass beats a bus or a
+  fat nav key.
+- **Insights narrative (AI, opt-in, layer 2):** the insights screen adds the model's explanation
+  **above** the deterministic findings, never instead of them. `AiInsights` port
+  (`feature/insights/domain/ai/`) → `RemoteAiInsights` over `/v1/insights` (same service, same
+  token, same `Limiter`; `InsightsProvider` beside `ParseProvider` server-side). **Its own consent**
+  — `insightsEnabled`, distinct from `remoteParseEnabled`, because parsing sends one bank message
+  and this sends a picture of the user's finances; re-checked per call. `sanitizeNarrative` owns
+  acceptance (an unknown category **drops the item**, text is bounded, a suggested cap must be within
+  3× of what the category has done and differ from the current limit; one item per category, five
+  max). **Cost is bounded by the cache key, not the summary:** `narrativeKey` = the deterministic
+  finding ids + totals rounded to two significant digits + language, so a narrative regenerates only
+  when the review would read differently (`insight_narratives` Room table, `SCHEMA_VERSION` 9→10
+  additive, not in the backup envelope — a restored ledger misses and regenerates; an empty reply is
+  cached too). The screen offers the opt-in where it applies (Turn on / Not now — in-memory, per
+  visit — / **See what's shared**, which renders the exact payload) and stays silent when the build
+  has no service (`AppConfig.hasParseService`). Suggestions are **confirm-first chips**: "Set a X
+  limit" opens the category editor with `CategoryEditKey.prefillLimitMinor` in the field and Save is
+  the confirmation. `server/evals/run_insights.py` checks properties (over-limit leads, no invented
+  category, a hostile category name is not obeyed, Arabic in Arabic) against the shipped prompt.
 - **Learn-once template synthesis:** a confirmed AI parse also **teaches the regex engine**, so
   the next message of that bank format parses offline on any device — including the majority
   that have no on-device model at all. No extra model call: `deriveAiSpans`
@@ -211,10 +229,12 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   that have one. Nothing is transmitted until the opt-in, and the fallback runs both ways, so a
   phone with a local model still parses when the service is unreachable (offline, an outage, a
   spent daily budget). Transport
-  follows the `BackupRemote` pattern rather than adding an HTTP dependency —
-  `RemoteParseClient` in commonMain, `HttpRemoteParseClient` (androidApp, `HttpURLConnection`) and
-  `IosRemoteParseClient` (iosMain, `NSURLSession`); every failure is `null`, so an outage degrades
-  to the regex templates. **Strictly opt-in:** the `remoteParseEnabled` pref gates it, is re-checked
+  follows the `BackupRemote` pattern rather than adding an HTTP dependency — **one seam per
+  platform**, `ServiceTransport` (`core/domain/remote/`, a JSON POST to a path), implemented by
+  `HttpServiceTransport` (androidApp, `HttpURLConnection`) and `IosServiceTransport` (iosMain,
+  `NSURLSession`); every endpoint client (`ServiceRemoteParseClient`, `ServiceRemoteInsightsClient`)
+  is common code over it, so the wire contract cannot drift between platforms. Every failure is
+  `null`, so an outage degrades to the regex templates. **Strictly opt-in:** the `remoteParseEnabled` pref gates it, is re-checked
   per call so revocation is immediate, and the Settings row only appears when the build actually has
   a service configured (`AppConfig.parseServiceUrl`/`parseServiceToken` — Android BuildConfig from
   gradle properties, iOS Info.plist). The service never logs or stores message text, and

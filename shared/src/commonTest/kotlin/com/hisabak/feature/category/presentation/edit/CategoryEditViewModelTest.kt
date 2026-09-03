@@ -37,9 +37,11 @@ class CategoryEditViewModelTest : MainDispatcherTest() {
     private fun viewModel(
         categoryId: CategoryId? = null,
         prefill: CategoryEditPrefill? = null,
+        proposedLimitMinor: Long? = null,
     ) = CategoryEditViewModel(
         categoryId = categoryId,
         prefill = prefill,
+        proposedLimitMinor = proposedLimitMinor,
         categoryRepository = catRepo,
         createCategory = CreateCategoryUseCase(catRepo),
         updateCategory = UpdateCategoryUseCase(catRepo),
@@ -170,5 +172,15 @@ class CategoryEditViewModelTest : MainDispatcherTest() {
         advanceUntilIdle()
 
         assertEquals(null, vm.effect.value, "delete is not offered for an unsaved category")
+    }
+
+    @Test
+    fun `a proposed limit fills the field but is not saved until Save`() = runTest {
+        catRepo.upsert(category(id = "dining", type = CategoryType.EXPENSES))
+        val vm = viewModel(categoryId = CategoryId("dining"), proposedLimitMinor = 1_600_00)
+        advanceUntilIdle()
+
+        assertEquals("1600", vm.state.value.limitInput)
+        assertTrue(limitRepo.observeAll().first().isEmpty())
     }
 }
