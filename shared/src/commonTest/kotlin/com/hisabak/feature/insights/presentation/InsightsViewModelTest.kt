@@ -193,7 +193,7 @@ class InsightsViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `every visit starts at the ask - a tap for unchanged figures is answered without a send`() = runTest {
+    fun `an answer saved for unchanged figures is shown on reopen without a send`() = runTest {
         val first = viewModel(ledger, service = true)
         advanceUntilIdle()
         first.onIntent(InsightsIntent.RequestNarrative)
@@ -201,11 +201,23 @@ class InsightsViewModelTest : MainDispatcherTest() {
 
         val second = viewModel(ledger, service = true)
         advanceUntilIdle()
-        assertEquals(NarrativeUi.Ask, second.state.value.narrative)
 
-        second.onIntent(InsightsIntent.RequestNarrative)
-        advanceUntilIdle()
         assertIs<NarrativeUi.Ready>(second.state.value.narrative)
+        assertEquals(1, ai.calls)
+    }
+
+    @Test
+    fun `changed figures ask again instead of showing a stale answer`() = runTest {
+        val first = viewModel(ledger, service = true)
+        advanceUntilIdle()
+        first.onIntent(InsightsIntent.RequestNarrative)
+        advanceUntilIdle()
+
+        val bigger = ledger + transaction(id = "x", amountMinor = 5_000_00, brandId = "cafe", occurredAt = june)
+        val second = viewModel(bigger, service = true)
+        advanceUntilIdle()
+
+        assertEquals(NarrativeUi.Ask, second.state.value.narrative)
         assertEquals(1, ai.calls)
     }
 

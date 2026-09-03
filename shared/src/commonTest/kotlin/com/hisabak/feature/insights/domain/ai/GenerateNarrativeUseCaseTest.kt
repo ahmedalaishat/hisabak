@@ -42,6 +42,17 @@ class GenerateNarrativeUseCaseTest {
     }
 
     @Test
+    fun `cached never calls - it answers only for exactly these figures`() = runTest {
+        assertNull(useCase.cached(summary(), "en"))
+        useCase(summary(), "en")
+
+        assertEquals(1, useCase.cached(summary(uncategorized = 341_00), "en")!!.size)   // same key
+        assertNull(useCase.cached(summary(income = 20_000_00), "en"))                   // material change
+        assertNull(useCase.cached(summary(), "ar"))                                     // other language
+        assertEquals(1, ai.calls)
+    }
+
+    @Test
     fun `a request is counted separately from a generation`() = runTest {
         useCase(summary(), "en")
         ai.reply = null
