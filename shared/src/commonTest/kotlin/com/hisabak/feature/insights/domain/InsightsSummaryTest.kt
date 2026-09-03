@@ -114,6 +114,24 @@ class InsightsSummaryTest {
     }
 
     @Test
+    fun `a yearly period carries the months' caps summed - what the Categories tab shows`() = runTest {
+        val limits = FakeCategoryLimitRepository(
+            listOf(
+                CategoryLimit(CategoryId("dining"), aed(500_00), YearMonth(2026, 1)),
+                CategoryLimit(CategoryId("dining"), aed(800_00), YearMonth(2026, 4)),
+            ),
+        )
+        val summary = summaryFor(
+            FakeTransactionRepository(listOf(transaction(id = "d1", amountMinor = 50_00, brandId = "cafe", occurredAt = june))),
+            limits,
+            period = SummaryPeriod.CURRENT_YEAR,
+        )
+        // The year's buckets run to today (June): Jan–Mar at 500, Apr–Jun at 800 — the budget so
+        // far, which is what the spend so far is measured against.
+        assertEquals(3 * 500_00L + 3 * 800_00L, summary.categories.single { it.id == CategoryId("dining") }.limitMinor)
+    }
+
+    @Test
     fun `uncategorized spend is carried as a total and a count`() = runTest {
         val summary = summaryFor(
             FakeTransactionRepository(

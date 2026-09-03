@@ -1,5 +1,6 @@
 package com.hisabak.feature.insights.domain.ai
 
+import com.hisabak.feature.dashboard.domain.isSingleMonth
 import com.hisabak.feature.insights.domain.InsightCategory
 import com.hisabak.feature.insights.domain.InsightsSummary
 
@@ -30,7 +31,9 @@ const val MAX_SUGGESTION_MULTIPLE = 3
  *   items (savings rate, uncategorized spend) are distinct remarks and are not collapsed;
  * - a suggestion needs a category, must be positive, must differ from the current limit, and must
  *   sit within [MAX_SUGGESTION_MULTIPLE] of the largest figure the category has (spent, prior,
- *   limit); it is rounded to whole major units, since a cap of 1,600.37 reads as a mistake;
+ *   limit); it is rounded to whole major units, since a cap of 1,600.37 reads as a mistake. A
+ *   suggestion is a **monthly** cap and the editor sets a monthly limit, so it is only kept for a
+ *   single-month period — against a year's figures the model would propose a year's number;
  * - at most [MAX_NARRATIVE_ITEMS] items.
  */
 fun sanitizeNarrative(items: List<RawNarrativeInsight>, summary: InsightsSummary): List<NarrativeInsight> {
@@ -43,7 +46,7 @@ fun sanitizeNarrative(items: List<RawNarrativeInsight>, summary: InsightsSummary
         if (headline.isEmpty()) continue
         val spend = raw.categoryId?.let { id -> byId[id] ?: continue }
         if (spend != null && !seen.add(spend.id.value)) continue
-        val suggestion = raw.suggestedLimitMinor?.takeIf { spend != null }?.let { proposed ->
+        val suggestion = raw.suggestedLimitMinor?.takeIf { spend != null && summary.period.isSingleMonth }?.let { proposed ->
             val ceiling = MAX_SUGGESTION_MULTIPLE * maxOf(spend!!.spentMinor, spend.priorMinor ?: 0L, spend.limitMinor ?: 0L)
             val rounded = proposed / 100 * 100
             rounded.takeIf { it > 0 && it <= ceiling && it != spend.limitMinor }
