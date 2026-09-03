@@ -37,8 +37,20 @@ awk -v limit="$limit" '
       gsub(/`/, "", b); gsub(/\*\*/, "", b); gsub(/[[:space:]]+/, " ", b)
       sub(/^ /, "", b); sub(/ $/, "", b)
       cand = (out == "" ? "• " b : out "\n• " b)
-      if (length(cand) > limit) break
+      # Skip rather than stop: bailing on the first over-long bullet dropped every shorter
+      # one after it, and an over-long *first* bullet emptied the file entirely -- which the
+      # Play upload would have accepted in silence.
+      if (length(cand) > limit) continue
       out = cand
+    }
+    # Last resort: every bullet exceeds the limit alone. A truncated headline still beats a
+    # blank storefront note.
+    if (out == "" && n > 0) {
+      b = bullets[1]
+      gsub(/`/, "", b); gsub(/\*\*/, "", b); gsub(/[[:space:]]+/, " ", b)
+      t = substr(b, 1, limit - 4)
+      if (match(t, / [^ ]*$/)) t = substr(t, 1, RSTART - 1)
+      out = "• " t "\xe2\x80\xa6"
     }
     print out
   }
