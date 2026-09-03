@@ -15,7 +15,9 @@ import androidx.compose.ui.unit.sp
 import com.hisabak.ui.components.compactAmount
 import com.hisabak.ui.components.rememberIsArabic
 import com.patrykandpatrick.vico.multiplatform.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.multiplatform.cartesian.axis.Axis
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.HorizontalAxis
+import com.patrykandpatrick.vico.multiplatform.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.rememberAxisLabelComponent
 import com.patrykandpatrick.vico.multiplatform.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.multiplatform.cartesian.data.CartesianValueFormatter
@@ -145,6 +147,31 @@ fun AreaLineChart(
  * without this a bar has a date at best and never its amount — which is the number the user came
  * for. Multi-series charts show every column at that x, in series order.
  */
+/**
+ * The value scale on the leading edge. [count] is the number of gridlines: three on a full-height
+ * chart, two on the 64dp sparkline, where a third label would sit almost on top of its neighbours.
+ * Labels are bare compact figures — an axis label is plain text, so it cannot carry the dirham
+ * glyph, which is the convention for charts anyway. The marker still gives a bar's exact amount.
+ */
+@Composable
+private fun rememberAmountAxis(arabic: Boolean, count: Int): VerticalAxis<Axis.Position.Vertical.Start> =
+    VerticalAxis.rememberStart(
+        label = rememberAxisLabelComponent(
+            style = TextStyle(
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 10.sp,
+            ),
+        ),
+        line = null,
+        tick = null,
+        guideline = rememberLineComponent(
+            fill = Fill(MaterialTheme.colorScheme.outlineVariant),
+            thickness = 1.dp,
+        ),
+        itemPlacer = VerticalAxis.ItemPlacer.count({ count }, shiftTopLines = false),
+        valueFormatter = CartesianValueFormatter { _, value, _ -> compactAmount(value, arabic) },
+    )
+
 @Composable
 private fun rememberColumnMarker(xLabels: List<String>, arabic: Boolean): CartesianMarker? {
     if (xLabels.isEmpty()) return null
@@ -189,6 +216,7 @@ fun BarSparkline(
         LineComponent(fill = Fill(barColor), thickness = 4.dp)
     }
 
+    val arabic = rememberIsArabic()
     val labelStep = if (xLabels.size <= 1) 1 else maxOf(1, (xLabels.size - 1) / 4)
     val bottomAxis = if (xLabels.isNotEmpty()) {
         HorizontalAxis.rememberBottom(
@@ -213,8 +241,9 @@ fun BarSparkline(
             rememberColumnCartesianLayer(
                 columnProvider = ColumnCartesianLayer.ColumnProvider.series(column),
             ),
+            startAxis = rememberAmountAxis(arabic, count = 2),
             bottomAxis = bottomAxis,
-            marker = rememberColumnMarker(xLabels, rememberIsArabic()),
+            marker = rememberColumnMarker(xLabels, arabic),
         ),
         modelProducer = producer,
         modifier = modifier.height(heightDp),
@@ -249,6 +278,7 @@ fun GroupedBarChart(
         LineComponent(fill = Fill(expenseColor), thickness = 5.dp)
     }
 
+    val arabic = rememberIsArabic()
     val labelStep = if (xLabels.size <= 1) 1 else maxOf(1, (xLabels.size - 1) / 4)
     val bottomAxis = if (xLabels.isNotEmpty()) {
         HorizontalAxis.rememberBottom(
@@ -273,9 +303,10 @@ fun GroupedBarChart(
             rememberColumnCartesianLayer(
                 columnProvider = ColumnCartesianLayer.ColumnProvider.series(incomeCol, expenseCol),
             ),
+            startAxis = rememberAmountAxis(arabic, count = 3),
             bottomAxis = bottomAxis,
             // Both series at that bucket, income first — the legend above says which is which.
-            marker = rememberColumnMarker(xLabels, rememberIsArabic()),
+            marker = rememberColumnMarker(xLabels, arabic),
         ),
         modelProducer = producer,
         modifier = modifier.height(heightDp),
