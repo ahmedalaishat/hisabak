@@ -4,10 +4,21 @@ import androidx.navigation3.runtime.NavKey
 
 // Top-level destinations — one per bottom-nav tab. Each owns its own back stack.
 data object DashboardKey : NavKey
+
+// The ledger: the transaction list and the SMS inbox as two sub-tabs of one destination. They are
+// one subject — what was spent, and the messages it was captured from — and merging them freed the
+// fifth tab for the review.
 data object TransactionsKey : NavKey
-data object SmsKey : NavKey
+
+// The review: findings, the AI explanation, and Ask. Promoted from a child of the dashboard when
+// the SMS tab merged into Transactions.
+data object InsightsKey : NavKey
+
 data object ManageKey : NavKey
 data object SettingsKey : NavKey
+
+/** Which sub-tab of [TransactionsKey] is showing. */
+enum class LedgerTab { Transactions, Sms }
 
 // Child destinations. IDs are carried as raw strings so the keys stay plain data
 // classes; the value-class wrappers are rebuilt at the entry call site.
@@ -32,10 +43,6 @@ data class CategoryEditKey(
 
 // Full-screen child opened from the top-bar bell.
 data object NotificationsKey : NavKey
-
-// Full-screen child opened from the dashboard's Review card. Carries the SummaryPeriod name so
-// the screen reviews the period the dashboard was showing; a raw string keeps the key plain data.
-data class InsightsKey(val period: String) : NavKey
 
 // Full-screen child opened from Settings → Data.
 data object BackupKey : NavKey
