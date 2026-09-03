@@ -137,10 +137,14 @@ picture off the phone by default.
   already saved on the phone for exactly these figures is shown on open without a send (briefly
   changed to always-ask when that read as an automatic send; reverted once the cache was explained —
   he wants the saved answer shown directly). Decisions made while building:
-  - **"Material change" is defined by the deterministic layer**, not by a hash of the summary: the
-    cache key is the sorted finding ids + income/expense/uncategorized rounded to two significant
-    digits + language. Hashing the summary would have regenerated per transaction; this regenerates
-    when the review would read differently. An empty reply is cached too.
+  - **"Material change" is defined by the deterministic layer**, not by a hash of the raw summary:
+    the cache key is a digest of the period's date window + language + the sorted finding ids +
+    income/expense/uncategorized rounded to two significant digits. Hashing the raw summary would
+    have regenerated per transaction; this regenerates when the review would read differently. An
+    empty reply is cached too. **Revised 2026-09-03 evening:** the key first omitted the period
+    (rows were per period name) and the in-memory check let "this month" stand in for "this year"
+    when their figures coincided; the window is now in the digest and the digest is the row key, so
+    windows never overwrite each other and a custom range later needs no new rule.
   - **Language rides the request** (`en`|`ar`) and is part of the key; the text is rendered as-is,
     so an Arabic user must get Arabic. The eval asserts the script.
   - **Unknown category → drop the item**, not demote it: its text is about something the user

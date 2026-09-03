@@ -1,15 +1,14 @@
 package com.hisabak.testutil
 
-import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.feature.insights.domain.ai.CachedNarrative
 import com.hisabak.feature.insights.domain.ai.NarrativeCache
 
 class FakeNarrativeCache : NarrativeCache {
-    val entries = mutableMapOf<SummaryPeriod, CachedNarrative>()
+    val entries = mutableMapOf<String, CachedNarrative>()
 
-    override suspend fun get(period: SummaryPeriod): CachedNarrative? = entries[period]
+    override suspend fun get(key: String): CachedNarrative? = entries[key]
 
     override suspend fun put(narrative: CachedNarrative) {
-        entries[narrative.period] = narrative
+        entries[narrative.key] = narrative
     }
 }

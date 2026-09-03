@@ -4,13 +4,13 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * The cached narrative for one period. [payload] is the sanitized items as JSON — a cache row, so a
- * schema for its contents would only be a second place to keep the item shape.
+ * One cached narrative, keyed by the digest of what it explained (`narrativeKey`). [payload] is
+ * the sanitized items as JSON — a cache row, so a schema for its contents would only be a second
+ * place to keep the item shape.
  */
 @Entity(tableName = "insight_narratives")
 data class NarrativeEntity(
-    @PrimaryKey val period: String,
-    val narrativeKey: String,
+    @PrimaryKey val narrativeKey: String,
     val payload: String,
     val createdAtMillis: Long,
 )

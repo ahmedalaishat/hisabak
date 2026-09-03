@@ -20,8 +20,8 @@ sealed interface NarrativeUi {
 
     data class Ready(val items: List<NarrativeInsight>) : NarrativeUi
 
-    /** The service did not answer. [stale] is the previous narrative for this period, if any. */
-    data class Unavailable(val stale: List<NarrativeInsight>?) : NarrativeUi
+    /** The service did not answer; the findings below stand on their own. */
+    data object Unavailable : NarrativeUi
 }
 
 data class InsightsUiState(

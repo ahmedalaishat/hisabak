@@ -7,6 +7,8 @@ import com.hisabak.feature.category.domain.CategoryType
 import kotlinx.datetime.LocalDate
 
 data class DashboardSnapshot(
+    /** The period's [start, end) dates, or null for all time. */
+    val periodRange: Pair<LocalDate, LocalDate>?,
     val netWorth: Money,
     val netWorthSeries: List<MonthPoint>,
     val netWorthTrendPct: Double?,

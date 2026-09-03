@@ -45,7 +45,8 @@ class InsightsViewModelTest : MainDispatcherTest() {
         override fun isAvailable() = true
         override suspend fun narrate(summary: InsightsSummary, language: String): List<RawNarrativeInsight>? {
             calls++
-            return reply
+            // Stamp the period so a test can tell whose answer is on screen.
+            return reply?.map { it.copy(headline = "${it.headline} (${summary.period.name})") }
         }
     }
 
@@ -158,6 +159,46 @@ class InsightsViewModelTest : MainDispatcherTest() {
         assertEquals(1, ai.calls)
     }
 
+    @Test
+    fun `a period with the same figures still gets its own answer`() = runTest {
+        // Every transaction is in June, so "this month" and "this year" have identical totals and
+        // findings. The month's answer must not stand in for the year's.
+        val vm = viewModel(ledger, service = true)
+        advanceUntilIdle()
+        vm.onIntent(InsightsIntent.RequestNarrative)
+        advanceUntilIdle()
+        assertIs<NarrativeUi.Ready>(vm.state.value.narrative)
+
+        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.CURRENT_YEAR))
+        advanceUntilIdle()
+
+        assertEquals(NarrativeUi.Ask, vm.state.value.narrative)
+        assertEquals(1, ai.calls)
+    }
+
+    @Test
+    fun `each period shows its own saved answer when switching back and forth`() = runTest {
+        val vm = viewModel(ledger, service = true)
+        advanceUntilIdle()
+        vm.onIntent(InsightsIntent.RequestNarrative)
+        advanceUntilIdle()
+
+        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.CURRENT_YEAR))
+        advanceUntilIdle()
+        vm.onIntent(InsightsIntent.RequestNarrative)
+        advanceUntilIdle()
+        assertEquals("Dining leads (CURRENT_YEAR)", assertIs<NarrativeUi.Ready>(vm.state.value.narrative).items.single().headline)
+
+        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.CURRENT_MONTH))
+        advanceUntilIdle()
+        assertEquals("Dining leads (CURRENT_MONTH)", assertIs<NarrativeUi.Ready>(vm.state.value.narrative).items.single().headline)
+
+        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.CURRENT_YEAR))
+        advanceUntilIdle()
+        assertEquals("Dining leads (CURRENT_YEAR)", assertIs<NarrativeUi.Ready>(vm.state.value.narrative).items.single().headline)
+        assertEquals(2, ai.calls)
+    }
+
     // ── Layer 2: the narrative ────────────────────────────────────────────────
 
     @Test
@@ -187,7 +228,7 @@ class InsightsViewModelTest : MainDispatcherTest() {
         advanceUntilIdle()
 
         val ready = assertIs<NarrativeUi.Ready>(vm.state.value.narrative)
-        assertEquals("Dining leads", ready.items.single().headline)
+        assertEquals("Dining leads (CURRENT_MONTH)", ready.items.single().headline)
         assertEquals(1, ai.calls)
         assertTrue(analytics.logged.any { it is AnalyticsEvent.InsightsNarrativeRequested })
     }

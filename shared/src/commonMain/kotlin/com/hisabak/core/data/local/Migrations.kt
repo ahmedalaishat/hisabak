@@ -70,3 +70,21 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
 @DeleteColumn(tableName = "sms_messages", columnName = "serverId")
 @DeleteColumn(tableName = "sms_messages", columnName = "version")
 class DropSyncColumnsSpec : AutoMigrationSpec
+
+/**
+ * v10 → v11: `insight_narratives` is re-keyed from the period name to the digest of what was
+ * explained. It is a cache — rows are regenerated on the next tap — so the table is rebuilt empty
+ * rather than migrated. Manual because Room's AutoMigration cannot change a primary key.
+ */
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("DROP TABLE IF EXISTS `insight_narratives`")
+        connection.execSQL(
+            "CREATE TABLE IF NOT EXISTS `insight_narratives` (" +
+                "`narrativeKey` TEXT NOT NULL, " +
+                "`payload` TEXT NOT NULL, " +
+                "`createdAtMillis` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`narrativeKey`))",
+        )
+    }
+}

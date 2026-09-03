@@ -188,11 +188,14 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   the phone only when they just asked. `sanitizeNarrative` owns
   acceptance (an unknown category **drops the item**, text is bounded, a suggested cap must be within
   3× of what the category has done and differ from the current limit; one item per category, five
-  max). **Cost is bounded by the cache key, not the summary:** `narrativeKey` = the deterministic
-  finding ids + totals rounded to two significant digits + language, so a narrative regenerates only
-  when the review would read differently (`insight_narratives` Room table, `SCHEMA_VERSION` 9→10
-  additive, not in the backup envelope — a restored ledger misses and regenerates; an empty reply is
-  cached too). An answer already saved for exactly these figures is **shown straight away — no send**;
+  max). **Cost is bounded by the cache key, not the summary:** `narrativeKey` is an FNV-1a digest of
+  the period's **concrete date window** (not its enum name — "this month" and "this year" coincide
+  when every transaction is in the current month, and a custom range later needs no new rule) +
+  language + the deterministic finding ids + totals rounded to two significant digits, so a
+  narrative regenerates only when the review would read differently. The digest is the primary key
+  of the `insight_narratives` Room table (`SCHEMA_VERSION` 9→10 additive, 10→11 manual rebuild of
+  the cache table; not in the backup envelope — a restored ledger misses and regenerates; rows are
+  pruned by age only, and an empty reply is cached too). An answer already saved for exactly these figures is **shown straight away — no send**;
   otherwise the screen asks, and the answer gives way to the ask again when the figures materially
   change. The ask card (Explain with AI / **See what's shared**, which renders the exact
   payload) appears only when the build has a service (`AppConfig.hasParseService`). Suggestions are **confirm-first chips**: "Set a X

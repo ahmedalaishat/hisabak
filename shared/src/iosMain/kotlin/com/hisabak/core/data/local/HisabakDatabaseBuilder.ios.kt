@@ -13,7 +13,7 @@ fun hisabakDatabaseBuilder(): RoomDatabase.Builder<HisabakDatabase> =
     Room.databaseBuilder<HisabakDatabase>(
         name = "${documentDirectoryPath()}/${HisabakDatabase.NAME}",
     )
-        .addMigrations(MIGRATION_1_2)
+        .addMigrations(MIGRATION_1_2, MIGRATION_10_11)
         .setDriver(BundledSQLiteDriver())
 
 @OptIn(ExperimentalForeignApi::class)
