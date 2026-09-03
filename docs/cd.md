@@ -60,6 +60,13 @@ section by `scripts/changelog-to-whatsnew.sh` (flattened to plain bullets, cappe
 `whatsNewDirectory`. So the storefront notes always track the CHANGELOG — keep that section
 user-facing and concise. (The generated file is git-ignored.)
 
+**Bullets are whole or absent.** A bullet that would take the note past 500 chars is skipped
+and the next one tried, so only entries that fit appear — order the CHANGELOG section by
+significance, because the leading entries are the ones that reach the storefront. Hisabak's
+entries run 250–700 chars each, so in practice **one** of them makes it; if every bullet
+exceeds the limit alone the generator falls back to a truncated first bullet, so the note is
+never empty (it silently was, before that fallback existed).
+
 Distribution channels: **demo** = staging via Firebase (sample data); **direct APK** = the
 GitHub Release here; **live** = Play.
 
