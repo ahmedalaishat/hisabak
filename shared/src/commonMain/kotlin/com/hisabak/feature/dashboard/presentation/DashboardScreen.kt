@@ -96,7 +96,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.yearMonth
 import kotlin.math.abs
 import kotlin.math.roundToInt
-import androidx.compose.material3.TextButton
 import com.hisabak.ui.components.labelRes
 import com.hisabak.feature.insights.domain.Insight
 import com.hisabak.feature.insights.presentation.InsightRow
@@ -1119,18 +1118,28 @@ private fun ReviewCard(
     // The whole card opens the review: it is a teaser, and the per-insight deep links live on the
     // screen it opens. Individually clickable rows inside a clickable card would nest two targets
     // and send a tap on "Dining over limit" somewhere other than dining.
-    SurfaceCard(modifier = modifier, onClick = onSeeAll) {
+    // Same padding as the hero, and a flat label row like the hero's: a TextButton here brought
+    // its own 40dp minimum height and inset padding, which made the title row taller than the
+    // hero's and floated "See all" in from the card edge.
+    SurfaceCard(modifier = modifier, contentPadding = Spacing.cardGap, onClick = onSeeAll) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Same title treatment as the net-worth hero's label, so the card reads as a peer of
+            // the cards around it rather than a heading over them.
             Text(
                 text = stringResource(Res.string.insights_review_title, stringResource(period.labelRes())),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onSeeAll) { Text(stringResource(Res.string.insights_see_all)) }
+            Text(
+                text = stringResource(Res.string.insights_see_all),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable(onClick = onSeeAll),
+            )
         }
         Spacer(Modifier.height(Spacing.s2))
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
