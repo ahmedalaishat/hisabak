@@ -26,6 +26,8 @@ import com.patrykandpatrick.vico.multiplatform.cartesian.layer.LineCartesianLaye
 import com.patrykandpatrick.vico.multiplatform.cartesian.layer.rememberColumnCartesianLayer
 import com.patrykandpatrick.vico.multiplatform.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.multiplatform.cartesian.layer.rememberLineCartesianLayer
+import com.patrykandpatrick.vico.multiplatform.cartesian.marker.CartesianMarker
+import com.patrykandpatrick.vico.multiplatform.cartesian.marker.ColumnCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.multiplatform.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.multiplatform.cartesian.marker.LineCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.multiplatform.cartesian.marker.rememberDefaultCartesianMarker
@@ -138,6 +140,37 @@ fun AreaLineChart(
     )
 }
 
+/**
+ * A marker for the column charts. The bottom axis is thinned to ~5 labels so bars stay readable, so
+ * without this a bar has a date at best and never its amount — which is the number the user came
+ * for. Multi-series charts show every column at that x, in series order.
+ */
+@Composable
+private fun rememberColumnMarker(xLabels: List<String>, arabic: Boolean): CartesianMarker? {
+    if (xLabels.isEmpty()) return null
+    return rememberDefaultCartesianMarker(
+        label = rememberTextComponent(
+            style = TextStyle(
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 11.sp,
+            ),
+        ),
+        guideline = rememberLineComponent(
+            fill = Fill(MaterialTheme.colorScheme.outlineVariant),
+            thickness = 1.dp,
+        ),
+        valueFormatter = DefaultCartesianMarker.ValueFormatter { _, targets ->
+            val target = targets.firstOrNull()
+            val date = xLabels.getOrNull(target?.x?.toInt() ?: 0).orEmpty()
+            val amounts = (target as? ColumnCartesianLayerMarkerTarget)
+                ?.columns
+                ?.joinToString("   ") { compactAmount(it.entry.y, arabic) }
+                .orEmpty()
+            if (amounts.isEmpty()) date else "$date   $amounts"
+        },
+    )
+}
+
 @Composable
 fun BarSparkline(
     values: List<Double>,
@@ -181,6 +214,7 @@ fun BarSparkline(
                 columnProvider = ColumnCartesianLayer.ColumnProvider.series(column),
             ),
             bottomAxis = bottomAxis,
+            marker = rememberColumnMarker(xLabels, rememberIsArabic()),
         ),
         modelProducer = producer,
         modifier = modifier.height(heightDp),
@@ -240,6 +274,8 @@ fun GroupedBarChart(
                 columnProvider = ColumnCartesianLayer.ColumnProvider.series(incomeCol, expenseCol),
             ),
             bottomAxis = bottomAxis,
+            // Both series at that bucket, income first — the legend above says which is which.
+            marker = rememberColumnMarker(xLabels, rememberIsArabic()),
         ),
         modelProducer = producer,
         modifier = modifier.height(heightDp),
