@@ -66,6 +66,7 @@ import com.hisabak.feature.dashboard.domain.BrandShare
 import com.hisabak.feature.dashboard.domain.CategoryOption
 import com.hisabak.feature.dashboard.domain.CategoryShare
 import com.hisabak.feature.dashboard.domain.DashboardSnapshot
+import com.hisabak.feature.dashboard.domain.periodLimit
 import com.hisabak.feature.dashboard.domain.DayPoint
 import com.hisabak.feature.dashboard.domain.MonthPoint
 import com.hisabak.feature.dashboard.presentation.components.AreaLineChart
@@ -905,17 +906,6 @@ private fun buildCategoryChart(
         else -> emptyList()
     }
     return CategoryChart(values, overlay)
-}
-
-/** The limit budget for the selected period: the month's limit for a single-month window, or the
- *  sum of each month's applicable limit for a multi-month window. Null if no limit applies. */
-private fun periodLimit(limitSeries: List<Long?>, period: SummaryPeriod): Long? {
-    val singleMonth = period == SummaryPeriod.CURRENT_MONTH || period == SummaryPeriod.LAST_MONTH
-    return if (singleMonth) {
-        limitSeries.firstOrNull { it != null }
-    } else {
-        limitSeries.filterNotNull().takeIf { it.isNotEmpty() }?.sum()
-    }
 }
 
 @Composable

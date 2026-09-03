@@ -453,7 +453,8 @@
     <string name="insights_detail_largest">Largest expense · %1$s of spending</string>
     <string name="insights_detail_savings_rate">Savings rate %1$s</string>
     <string name="insights_detail_savings_rate_delta">Savings rate %1$s · %2$s pts vs the previous period</string>
-    <string name="insights_narrative_badge">AI review</string>
+    <string name="insights_section_ai">Explained by AI</string>
+    <string name="insights_section_findings">Findings</string>
     <string name="insights_narrative_footer">Written by AI from your totals, not your transactions.</string>
     <string name="insights_narrative_loading">Explaining what changed…</string>
     <string name="insights_narrative_unavailable">The explanation couldn't be fetched right now. The review below is complete on its own.</string>

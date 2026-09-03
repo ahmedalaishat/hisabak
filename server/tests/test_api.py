@@ -327,6 +327,7 @@ def test_insights_prompt_carries_only_figures():
     system, user = build_insights(InsightsRequest(**SUMMARY))
 
     assert "dining | Dining | 1,800.00 | 1,200.00 | 1,500.00" in user
+    assert "limit for the period" in user
     assert "fuel | Fuel | 400.00 | 420.00 | -" in user
     assert "Period: this month (prior period: last month)" in user
     assert "Write in English" in system

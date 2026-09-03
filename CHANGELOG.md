@@ -19,8 +19,8 @@ All notable changes to Hisabak are documented here. Format based on
   and what needs attention for the period you're viewing: a category over or near its limit, a
   category up or down sharply on last time, your largest expense, your savings rate and how it
   moved, and anything still uncategorized. It's all worked out on your phone from numbers the
-  dashboard already has — nothing is sent anywhere. Tap **See all** for the full list, and tap a
-  finding to jump to those transactions.
+  dashboard already has — nothing is sent anywhere. Tap **See all** for the full list, switch the
+  period right there, and tap a finding to jump to those transactions.
 
 ## [2.2.0] — 2026-09-03
 

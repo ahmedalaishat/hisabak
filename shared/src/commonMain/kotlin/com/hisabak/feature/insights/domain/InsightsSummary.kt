@@ -4,6 +4,7 @@ import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.dashboard.domain.DashboardSnapshot
+import com.hisabak.feature.dashboard.domain.periodLimit
 import kotlin.math.roundToLong
 
 /** One expense category's figures for the period. [priorMinor] is null when no prior period exists. */
@@ -14,6 +15,7 @@ data class CategorySpend(
     val icon: String,
     val spentMinor: Long,
     val priorMinor: Long?,
+    /** The period's limit budget — monthly cap for a month, the months' caps summed otherwise. */
     val limitMinor: Long?,
     val shareOfExpense: Double,
 )
@@ -58,9 +60,9 @@ data class InsightsSummary(
                         icon = option.icon,
                         spentMinor = spent,
                         priorMinor = if (hasPriorPeriod) snapshot.trendPrevTotalByCategory[option.id] else null,
-                        // The limit in force at the period's last bucket: a limit that starts
-                        // mid-period is the one the user is being held to now.
-                        limitMinor = snapshot.limitByCategory[option.id]?.lastOrNull { it != null },
+                        // The same budget the Categories tab shows: one month's cap for a month,
+                        // the months' caps summed for a year — never one month's cap against a year.
+                        limitMinor = periodLimit(snapshot.limitByCategory[option.id].orEmpty(), period),
                         shareOfExpense = if (expense > 0) spent.toDouble() / expense else 0.0,
                     )
                 }
