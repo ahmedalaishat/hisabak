@@ -68,7 +68,7 @@ fun SmsTemplatesScreen(
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = Spacing.pageMargin, vertical = Spacing.s4),
+        contentPadding = PaddingValues(horizontal = Spacing.pageMargin, vertical = Spacing.pageMargin),
         verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
     ) {
         item {

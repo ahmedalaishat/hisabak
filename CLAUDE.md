@@ -554,7 +554,10 @@ Use the HTML/CSS kit only for throwaway visual mockups.
   (DM Sans 400/500/600/700, Geist Mono 400/500/600, Tajawal 400/500/700) loaded through CMP
   resources — the downloadable-fonts (Google Fonts provider) setup was removed.
 - **Spacing:** 8dp grid. 16dp page margin, 16dp card padding, 12dp between cards.
-  Touch targets ≥ 44dp.
+  Touch targets ≥ 44dp. **Every screen's first content starts at `Spacing.pageMargin` (16dp)
+  below the top bar** — the page margin is all four sides — so tabs line up when switching. The one
+  exception is content under an in-screen control row (the ledger's sub-tab selector, the
+  dashboard's header): the row carries the 16dp and the content sits closer beneath it.
 - **Shape:** 12dp default card radius, 16dp hero/sheet, pill for buttons/chips/badges,
   14dp category icon tiles.
 - **Depth:** prefer surface contrast over shadows. Flat cards use a 1dp outline; reserve

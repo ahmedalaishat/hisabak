@@ -151,7 +151,7 @@ fun InsightsScreen(
         contentPadding = PaddingValues(
             start = Spacing.pageMargin,
             end = Spacing.pageMargin,
-            top = Spacing.s4,
+            top = Spacing.pageMargin,
             bottom = Spacing.s8,
         ),
         verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
