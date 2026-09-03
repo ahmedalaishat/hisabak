@@ -12,16 +12,21 @@ import com.hisabak.feature.insights.domain.ai.GenerateNarrativeUseCase
 import com.hisabak.feature.insights.domain.ai.NarrativeResult
 import com.hisabak.feature.insights.domain.ai.narrativeKey
 import com.hisabak.feature.insights.domain.deriveInsights
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 /**
  * Re-derives the review from the metrics rather than receiving it from the dashboard: the
  * computation is one pure pass, and the alternative — a bus, or a nav key carrying a list — buys
- * nothing for it. [period] arrives from the key, so the screen reviews what the dashboard showed.
+ * nothing for it. [period] arrives from the key, so the screen opens on what the dashboard showed,
+ * and the period chips on the screen re-scope it from there.
  *
  * The narrative (layer 2) appears **only after the user's tap** — every visit starts at the ask,
  * even when the cache already holds an answer for these figures (the tap is then answered from
@@ -30,6 +35,7 @@ import kotlinx.coroutines.launch
  * [InsightsIntent.RequestNarrative] alone. [language] is the UI language the text is
  * generated in — fixed for the screen's life, since a switch recreates it.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class InsightsViewModel(
     private val getMetrics: GetDashboardMetricsUseCase,
     private val generateNarrative: GenerateNarrativeUseCase,
@@ -39,6 +45,7 @@ class InsightsViewModel(
     private val language: String,
 ) : BaseViewModel<InsightsIntent, InsightsUiState, InsightsEffect>() {
 
+    private val periodFlow = MutableStateFlow(period)
     private var opened = false
     private var request: Job? = null
 
@@ -48,8 +55,9 @@ class InsightsViewModel(
     override fun initialState() = InsightsUiState(period = period)
 
     init {
-        getMetrics(flowOf(period))
-            .onEach { snapshot ->
+        periodFlow
+            .flatMapLatest { p -> getMetrics(flowOf(p)).map { p to it } }
+            .onEach { (period, snapshot) ->
                 val summary = InsightsSummary.from(snapshot, period)
                 val insights = deriveInsights(summary)
                 val key = narrativeKey(summary, language)
@@ -62,7 +70,7 @@ class InsightsViewModel(
                         this.narrative is NarrativeUi.Ready && answeredKey == key -> this.narrative
                         else -> NarrativeUi.Ask
                     }
-                    copy(insights = insights, summary = summary, isLoading = false, narrative = narrative)
+                    copy(period = period, insights = insights, summary = summary, isLoading = false, narrative = narrative)
                 }
                 if (!opened) {
                     opened = true
@@ -80,6 +88,7 @@ class InsightsViewModel(
                 analytics.log(AnalyticsEvent.InsightTapped(type = "narrative"))
             is InsightsIntent.SuggestionAccepted ->
                 analytics.log(AnalyticsEvent.InsightsSuggestionAccepted(type = "set_limit"))
+            is InsightsIntent.PeriodChanged -> periodFlow.value = intent.period
             InsightsIntent.RequestNarrative -> requestNarrative()
             InsightsIntent.ShowShared -> setState { copy(showShared = true) }
             InsightsIntent.HideShared -> setState { copy(showShared = false) }

@@ -48,7 +48,8 @@ import com.hisabak.shared.resources.insights_empty_subtitle
 import com.hisabak.shared.resources.insights_empty_title
 import com.hisabak.shared.resources.insights_savings_title
 import com.hisabak.shared.resources.insights_uncategorized_title
-import com.hisabak.shared.resources.insights_narrative_badge
+import com.hisabak.shared.resources.insights_section_ai
+import com.hisabak.shared.resources.insights_section_findings
 import com.hisabak.shared.resources.insights_narrative_footer
 import com.hisabak.shared.resources.insights_narrative_loading
 import com.hisabak.shared.resources.insights_narrative_unavailable
@@ -72,12 +73,16 @@ import com.hisabak.shared.resources.period_this_year
 import com.hisabak.ui.components.LeadingIconChip
 import com.hisabak.ui.components.NoticeCard
 import com.hisabak.ui.components.NoticeTone
+import com.hisabak.ui.components.PeriodChipRow
 import com.hisabak.ui.components.PrimaryPillButton
+import com.hisabak.ui.components.SkeletonBox
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.hisabak.ui.components.compactAmountMinor
 import com.hisabak.ui.components.exactAmount
 import com.hisabak.ui.components.EmptyStatePanel
 import com.hisabak.ui.components.IconTile
 import com.hisabak.ui.components.MoneyText
+import com.hisabak.ui.components.SectionHeader
 import com.hisabak.ui.components.SurfaceCard
 import com.hisabak.ui.components.iconForKey
 import com.hisabak.ui.components.localizeDigits
@@ -104,15 +109,6 @@ fun InsightsScreen(
     onIntent: (InsightsIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (!state.isLoading && state.insights.isEmpty()) {
-        EmptyStatePanel(
-            title = stringResource(Res.string.insights_empty_title),
-            subtitle = stringResource(Res.string.insights_empty_subtitle),
-            icon = HugeIcons.Insights,
-            modifier = modifier.fillMaxSize(),
-        )
-        return
-    }
     if (state.showShared && state.summary != null) {
         SharedSummaryDialog(summary = state.summary, onDismiss = { onIntent(InsightsIntent.HideShared) })
     }
@@ -126,9 +122,37 @@ fun InsightsScreen(
         ),
         verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
     ) {
+        // The chips live here too: re-scoping the review should not mean a trip back to the
+        // dashboard, and an empty period must still offer a way to another one.
+        item(key = "period") {
+            PeriodChipRow(
+                selected = state.period,
+                onSelect = { onIntent(InsightsIntent.PeriodChanged(it)) },
+                modifier = Modifier.padding(bottom = Spacing.s1),
+            )
+        }
+        if (!state.isLoading && state.insights.isEmpty()) {
+            item(key = "empty") {
+                EmptyStatePanel(
+                    title = stringResource(Res.string.insights_empty_title),
+                    subtitle = stringResource(Res.string.insights_empty_subtitle),
+                    icon = HugeIcons.Insights,
+                    modifier = Modifier.fillMaxWidth().padding(top = Spacing.s8),
+                )
+            }
+            return@LazyColumn
+        }
         // The AI layer sits above the findings it explains — an explanation is read before its
         // evidence — and never replaces them: the deterministic list below is complete on its own.
+        // Each is a titled section once both are on screen, so the reader knows which words came
+        // from a model and which from arithmetic.
         narrativeItems(state.narrative, onNarrativeClick, onSuggestionClick, onIntent)
+        item(key = "findings:header") {
+            SectionHeader(
+                title = stringResource(Res.string.insights_section_findings),
+                modifier = Modifier.padding(top = Spacing.s2),
+            )
+        }
         items(state.insights, key = { it.id }) { insight ->
             SurfaceCard(onClick = { onInsightClick(insight) }) {
                 InsightRow(insight)
@@ -145,12 +169,17 @@ private fun LazyListScope.narrativeItems(
 ) {
     when (narrative) {
         NarrativeUi.Hidden -> Unit
+        // The ask is self-titled; the section header appears once there is a section.
         NarrativeUi.Ask -> item(key = "ai:ask") { NarrativeAskCard(onIntent) }
-        NarrativeUi.Loading -> item(key = "ai:loading") { NarrativeLoadingCard() }
+        NarrativeUi.Loading -> {
+            narrativeHeader(onIntent)
+            item(key = "ai:loading") { NarrativeLoadingCards() }
+        }
         is NarrativeUi.Ready -> narrativeCards(narrative.items, onNarrativeClick, onSuggestionClick, onIntent)
         is NarrativeUi.Unavailable -> {
             val stale = narrative.stale
             if (stale.isNullOrEmpty()) {
+                narrativeHeader(onIntent)
                 item(key = "ai:unavailable") {
                     NoticeCard(text = stringResource(Res.string.insights_narrative_unavailable), tone = NoticeTone.Info)
                 }
@@ -161,6 +190,17 @@ private fun LazyListScope.narrativeItems(
     }
 }
 
+/** "See what's shared" rides the header: it is about the section, not any one card. */
+private fun LazyListScope.narrativeHeader(onIntent: (InsightsIntent) -> Unit) {
+    item(key = "ai:header") {
+        SectionHeader(
+            title = stringResource(Res.string.insights_section_ai),
+            actionLabel = stringResource(Res.string.insights_shared_action),
+            onAction = { onIntent(InsightsIntent.ShowShared) },
+        )
+    }
+}
+
 private fun LazyListScope.narrativeCards(
     cards: List<NarrativeInsight>,
     onNarrativeClick: (NarrativeInsight) -> Unit,
@@ -168,6 +208,7 @@ private fun LazyListScope.narrativeCards(
     onIntent: (InsightsIntent) -> Unit,
 ) {
     if (cards.isEmpty()) return
+    narrativeHeader(onIntent)
     items(cards, key = { it.id }) { item ->
         NarrativeCard(
             item = item,
@@ -175,14 +216,11 @@ private fun LazyListScope.narrativeCards(
             onSuggestion = { onSuggestionClick(item) },
         )
     }
-    item(key = "ai:footer") {
-        NarrativeFooter(onSeeShared = { onIntent(InsightsIntent.ShowShared) })
-    }
+    item(key = "ai:footer") { NarrativeFooter() }
 }
 
 /**
- * One AI item: the "AI" overline says where the words came from, the glyph tile says what it is
- * about (the category's own icon, or the idea glyph for a period-wide item), and the optional chip
+ * One AI item under the "Explained by AI" header: the glyph tile says what it is about (the category's own icon, or the idea glyph for a period-wide item), and the optional chip
  * is the only action — confirm-first, opening the editor prefilled rather than writing anything.
  */
 @Composable
@@ -202,11 +240,6 @@ private fun NarrativeCard(item: NarrativeInsight, onClick: () -> Unit, onSuggest
                 foreground = tileFg,
             )
             Column(Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(Res.string.insights_narrative_badge),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
                 Text(
                     text = item.headline,
                     style = MaterialTheme.typography.bodyLarge,
@@ -237,31 +270,52 @@ private fun NarrativeCard(item: NarrativeInsight, onClick: () -> Unit, onSuggest
 }
 
 @Composable
-private fun NarrativeFooter(onSeeShared: () -> Unit) {
-    Row(
+private fun NarrativeFooter() {
+    Text(
+        text = stringResource(Res.string.insights_narrative_footer),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.s1),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = stringResource(Res.string.insights_narrative_footer),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        TextButton(onClick = onSeeShared) { Text(stringResource(Res.string.insights_shared_action)) }
+    )
+}
+
+/**
+ * Loading as the shape of what is coming: two skeleton cards with the narrative card's footprint
+ * (tile, headline, two lines of detail), so the list does not jump when the real cards land, and a
+ * status line on the first so the wait reads as work rather than a stall. The shimmer respects
+ * reduced motion via [SkeletonBox].
+ */
+@Composable
+private fun NarrativeLoadingCards() {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
+        SurfaceCard {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(Spacing.s4),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = stringResource(Res.string.insights_narrative_loading),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.height(Spacing.s3))
+            SkeletonNarrativeBody(headlineFraction = 0.7f)
+        }
+        SurfaceCard { SkeletonNarrativeBody(headlineFraction = 0.55f) }
     }
 }
 
 @Composable
-private fun NarrativeLoadingCard() {
-    SurfaceCard {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s3)) {
-            CircularProgressIndicator(modifier = Modifier.size(Spacing.s5), strokeWidth = 2.dp)
-            Text(
-                text = stringResource(Res.string.insights_narrative_loading),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+private fun SkeletonNarrativeBody(headlineFraction: Float) {
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.Top) {
+        SkeletonBox(Modifier.size(Spacing.s9), height = Spacing.s9, shape = RoundedCornerShape(10.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            SkeletonBox(Modifier.fillMaxWidth(headlineFraction), height = 14.dp)
+            SkeletonBox(Modifier.fillMaxWidth(), height = 10.dp)
+            SkeletonBox(Modifier.fillMaxWidth(0.8f), height = 10.dp)
         }
     }
 }

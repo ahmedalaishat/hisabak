@@ -35,6 +35,9 @@ data class InsightsUiState(
 ) : ViewState
 
 sealed interface InsightsIntent : ViewIntent {
+    /** The period chips live on this screen too, so the review can be re-scoped without going back. */
+    data class PeriodChanged(val period: SummaryPeriod) : InsightsIntent
+
     /** Analytics only — navigation is the Route's job. */
     data class Tapped(val insight: Insight) : InsightsIntent
 

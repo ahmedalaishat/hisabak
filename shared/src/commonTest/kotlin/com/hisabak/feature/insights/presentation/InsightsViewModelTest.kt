@@ -141,6 +141,23 @@ class InsightsViewModelTest : MainDispatcherTest() {
         assertEquals(first.type.name.lowercase(), tapped.params["type"])
     }
 
+    @Test
+    fun `the period chips re-scope the review without leaving the screen`() = runTest {
+        val vm = viewModel(ledger, service = true)
+        advanceUntilIdle()
+        vm.onIntent(InsightsIntent.RequestNarrative)
+        advanceUntilIdle()
+        assertIs<NarrativeUi.Ready>(vm.state.value.narrative)
+
+        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.LAST_MONTH))
+        advanceUntilIdle()
+
+        assertEquals(SummaryPeriod.LAST_MONTH, vm.state.value.period)
+        assertTrue(vm.state.value.insights.isEmpty())           // the June ledger has nothing in May
+        assertEquals(NarrativeUi.Ask, vm.state.value.narrative) // other figures: ask again, no send
+        assertEquals(1, ai.calls)
+    }
+
     // ── Layer 2: the narrative ────────────────────────────────────────────────
 
     @Test

@@ -454,7 +454,7 @@ retained per tab when switching; the user always exits the app through the **Das
 
 | Tab | Top-level key | Internal screens |
 |-----|---------------|-----------------|
-| Dashboard | DashboardKey | Summary/Trends/Categories tabs → Insights (full screen, from the Review card) |
+| Dashboard | DashboardKey | Summary/Trends/Categories tabs → Insights (full screen, from the Review card; has its own period chips) |
 | Transactions | TransactionsKey | List → Edit (bottom sheet; the "New brand" chip and the uncategorized-brand note detour to the brand editor — the sheet closes/reopens around it with its typed input parked in `TransactionDraftBus`, and a created brand auto-selects via `BrandCreatedBus`) |
 | SMS | SmsKey | Inbox → template editor (full screen) / transaction sheet (review of an AI-parsed entry) |
 | Manage | ManageKey | Brands/Categories list → Edit (full screen; the brand editor's "+ New category" chip pushes the category editor and auto-selects the result via `CategoryCreatedBus`) |
