@@ -158,8 +158,10 @@ fun DashboardScreen(
                 .padding(top = Spacing.s5),
             verticalArrangement = Arrangement.spacedBy(Spacing.s3),
         ) {
-            PeriodChipRow(selected = state.period, onSelect = onPeriodChange)
+            // Tabs pick the view, the period scopes the data inside it: the broader control sits
+            // on top, and the chip row reads as filtering the content directly beneath it.
             DashboardTabs(selected = tab, onSelect = { tab = it })
+            PeriodChipRow(selected = state.period, onSelect = onPeriodChange)
         }
         AnimatedContent(
             targetState = tab,
