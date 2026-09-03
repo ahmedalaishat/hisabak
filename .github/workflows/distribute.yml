@@ -29,6 +29,21 @@ jobs:
       - name: Build staging release APK
         run: ./gradlew assembleStagingRelease --no-daemon
 
+      # Firebase caps release notes and rejects an over-long body with a 400 *after* the binary
+      # has uploaded — so the build goes red while the testers already have the APK, which reads
+      # like a failed distribution. Squash merges make this the normal case rather than an edge
+      # one: the squash body concatenates every commit message on the branch, so the note grows
+      # with branch length and any branch of more than a couple of commits breaches the limit.
+      # Keep the subject and as much body as fits.
+      - name: Compose release notes
+        env:
+          # Through env rather than direct interpolation: a commit message is untrusted input
+          # and would otherwise be spliced into the shell.
+          MSG: ${{ github.event.head_commit.message || format('Manual staging build {0}', github.sha) }}
+        run: |
+          python3 -c 'import os; m = os.environ["MSG"].strip(); lim = 900; print(m if len(m) <= lim else m[:lim].rstrip() + "\u2026")' > release-notes.txt
+          echo "Release notes: $(wc -m < release-notes.txt | tr -d ' ') chars"
+
       - name: Upload to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
@@ -37,4 +52,4 @@ jobs:
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           groups: qa
           file: androidApp/build/outputs/apk/staging/release/androidApp-staging-release.apk
-          releaseNotes: ${{ github.event.head_commit.message || format('Manual staging build {0}', github.sha) }}
+          releaseNotesFile: release-notes.txt
