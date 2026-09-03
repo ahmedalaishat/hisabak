@@ -478,7 +478,7 @@
     <string name="insights_narrative_loading">جارٍ شرح ما تغيّر…</string>
     <string name="insights_narrative_unavailable">تعذّر جلب الشرح الآن. المراجعة أدناه كاملة بذاتها.</string>
     <string name="insights_ask_title">هل تريد شرحًا لهذا؟</string>
-    <string name="insights_ask_body">اضغط لإرسال هذه المجاميع — لا معاملاتك — إلى خدمة حسابك لتكتب شرحًا قصيرًا وتقترح ما تفعله. لا يُرسل شيء قبل ضغطك، ويمكنك رؤية ما سيُرسل بالضبط.</string>
+    <string name="insights_ask_body">اضغط لإرسال هذه المجاميع — لا معاملاتك — إلى خدمة حسابك لتكتب شرحًا قصيرًا وتقترح ما تفعله. لا يُرسل شيء قبل ضغطك، ولا تخزّن الخدمة شيئًا، ويمكنك رؤية ما سيُرسل بالضبط.</string>
     <string name="insights_ask_accept">اشرح بالذكاء الاصطناعي</string>
     <string name="insights_shared_action">ما الذي يُشارك؟</string>
     <string name="insights_shared_title">ما الذي يُشارك</string>
