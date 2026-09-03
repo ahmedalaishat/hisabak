@@ -103,10 +103,10 @@ slashes have to be split by an empty variable expansion or the value is truncate
 Leave either blank and the remote parser reports `Unavailable`; the app behaves exactly as it does
 today. **The user must also opt in** (Settings → SMS parsing) before any text is sent.
 
-Note the ordering: `PreferOnDeviceAiSmsParser` tries the on-device model first, so a device that has
-one (a flagship Android, or an iPhone 15 Pro or newer) will not call this service unless the local
-model returns nothing. The service is there for the devices that have no local model — which is
-where the feature was previously absent entirely.
+Note the ordering: `PreferredAiSmsParser` calls **this service first** once the user enables it,
+including on devices that have their own model. Enabling the setting is a preference, not just
+consent, and the on-device models are weaker. A device falls back to its local model only when the
+service cannot answer — offline, an outage, or a spent daily budget.
 
 ## API
 

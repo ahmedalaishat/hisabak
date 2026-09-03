@@ -169,8 +169,12 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   iPhone 15 Pro+ — so `RemoteAiSmsParser` (`feature/sms/domain/ai/`) implements the same
   `AiSmsParser` port against a small self-hosted service (`server/`, FastAPI + Docker; Claude
   Haiku 4.5 by default behind a `ParseProvider` protocol, so a self-hosted model is a swap with no
-  client change). `PreferOnDeviceAiSmsParser` composes the two: **on-device first** (free, offline,
-  nothing transmitted), remote only when there is no local model or it returned nothing. Transport
+  client change). `PreferredAiSmsParser` composes the two: **the service leads when the user has enabled it** —
+  turning that switch on is a preference, not merely consent, and the on-device models are
+  materially weaker; preferring the local model made the setting close to a no-op on the devices
+  that have one. Nothing is transmitted until the opt-in, and the fallback runs both ways, so a
+  phone with a local model still parses when the service is unreachable (offline, an outage, a
+  spent daily budget). Transport
   follows the `BackupRemote` pattern rather than adding an HTTP dependency —
   `RemoteParseClient` in commonMain, `HttpRemoteParseClient` (androidApp, `HttpURLConnection`) and
   `IosRemoteParseClient` (iosMain, `NSURLSession`); every failure is `null`, so an outage degrades

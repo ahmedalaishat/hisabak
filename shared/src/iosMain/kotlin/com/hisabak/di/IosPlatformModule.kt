@@ -39,7 +39,7 @@ import com.hisabak.feature.sms.platform.IosRemoteParseClient
 import com.hisabak.feature.sms.domain.ai.ParseServiceConfig
 import com.hisabak.feature.sms.domain.ai.RemoteParseClient
 import com.hisabak.feature.sms.domain.ai.RemoteAiSmsParser
-import com.hisabak.feature.sms.domain.ai.PreferOnDeviceAiSmsParser
+import com.hisabak.feature.sms.domain.ai.PreferredAiSmsParser
 import com.hisabak.feature.sms.platform.AiSmsBridge
 import com.hisabak.feature.sms.platform.IosAiSmsParser
 import kotlin.experimental.ExperimentalNativeApi
@@ -78,7 +78,7 @@ fun iosPlatformModule(
     }
 
     single<AiSmsParser> {
-        PreferOnDeviceAiSmsParser(
+        PreferredAiSmsParser(
             onDevice = IosAiSmsParser(aiSmsBridge),
             remote = RemoteAiSmsParser(client = get(), preferences = get()),
         )

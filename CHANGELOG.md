@@ -7,6 +7,9 @@ All notable changes to Hisabak are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **The online model is now used whenever it is switched on**, including on phones that have their
+  own built-in AI. Previously the built-in model answered first and the setting had little effect
+  on those devices. Your phone still falls back to its own model when the service can't be reached.
 - **Settings now has an SMS parsing section**, gathering the three things that decide how messages
   are read: your parsing templates, whether unrecognised messages may be sent to the online model,
   and whether a confirmed-looking result may be saved without asking you.

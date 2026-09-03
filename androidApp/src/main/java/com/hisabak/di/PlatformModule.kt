@@ -35,7 +35,7 @@ import com.hisabak.feature.brand.domain.ai.AiCategorySuggester
 import com.hisabak.feature.brand.platform.GeminiNanoCategorySuggester
 import com.hisabak.feature.sms.domain.ai.AiSmsParser
 import com.hisabak.feature.sms.domain.ai.RemoteAiSmsParser
-import com.hisabak.feature.sms.domain.ai.PreferOnDeviceAiSmsParser
+import com.hisabak.feature.sms.domain.ai.PreferredAiSmsParser
 import com.hisabak.feature.sms.platform.GeminiNanoSmsParser
 import com.hisabak.feature.notification.platform.AndroidNotificationStrings
 import com.hisabak.feature.notification.platform.SystemNotifier
@@ -80,10 +80,10 @@ val platformModule = module {
 
     single { BiometricAuthenticator(androidContext()) } bind BiometricAvailability::class
 
-    // On-device first (free, offline, never leaves the phone); the opt-in remote service is the
-    // fallback for the majority of devices that have no on-device model.
+    // The opt-in service leads when it is on: enabling it is a preference, not just consent.
+    // The on-device model is the fallback, and the reason capture still works offline.
     single<AiSmsParser> {
-        PreferOnDeviceAiSmsParser(
+        PreferredAiSmsParser(
             onDevice = GeminiNanoSmsParser(appScope = get(APPLICATION_SCOPE)),
             remote = RemoteAiSmsParser(client = get(), preferences = get()),
         )
