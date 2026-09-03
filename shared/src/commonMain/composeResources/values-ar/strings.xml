@@ -215,7 +215,6 @@
     <string name="brand_ai_suggested">مقترح: %1$s</string>
     <string name="brand_ai_suggested_new">جديدة: %1$s</string>
     <string name="brand_search_placeholder">ابحث في العلامات</string>
-    <string name="brand_all_section">كل العلامات</string>
     <string name="brand_empty_title">لا توجد علامات بعد</string>
     <string name="brand_empty_in_category">لا توجد علامات في هذه الفئة</string>
     <string name="brand_empty_subtitle">اضغط علامة جديدة لإضافة واحدة.</string>

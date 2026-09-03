@@ -215,7 +215,6 @@
     <string name="brand_ai_suggested">Suggested: %1$s</string>
     <string name="brand_ai_suggested_new">New: %1$s</string>
     <string name="brand_search_placeholder">Search brands</string>
-    <string name="brand_all_section">All brands</string>
     <string name="brand_empty_title">No brands yet</string>
     <string name="brand_empty_in_category">No brands in this category</string>
     <string name="brand_empty_subtitle">Tap New brand to add one.</string>
