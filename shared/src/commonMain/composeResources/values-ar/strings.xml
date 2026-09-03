@@ -51,6 +51,9 @@
     <string name="transaction_deleting">جارٍ الحذف…</string>
     <string name="settings_group_backup_security">النسخ الاحتياطي والأمان</string>
     <string name="settings_group_sms_parsing">تحليل الرسائل</string>
+    <string name="settings_group_capture">الالتقاط</string>
+    <string name="settings_sms_parsing">تحليل الرسائل</string>
+    <string name="settings_sms_parsing_hint">صيغ الرسائل، والنموذج عبر الإنترنت، والتأكيد التلقائي</string>
     <string name="settings_group_preferences">التفضيلات</string>
     <string name="settings_theme">المظهر</string>
     <string name="settings_appearance">المظهر</string>

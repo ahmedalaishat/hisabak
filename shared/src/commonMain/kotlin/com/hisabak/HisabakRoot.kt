@@ -57,6 +57,7 @@ import com.hisabak.feature.category.presentation.edit.CategoryEditRoute
 import com.hisabak.feature.dashboard.presentation.CategoryFocusBus
 import com.hisabak.feature.insights.presentation.InsightsPeriodBus
 import com.hisabak.feature.insights.presentation.InsightsRoute
+import com.hisabak.feature.settings.presentation.SmsParsingRoute
 import com.hisabak.feature.insights.presentation.ask.AskRoute
 import com.hisabak.feature.dashboard.presentation.DashboardRoute
 import com.hisabak.feature.notification.domain.NotificationRepository
@@ -79,6 +80,7 @@ import com.hisabak.nav.InsightsKey
 import com.hisabak.nav.LedgerTab
 import com.hisabak.nav.NotificationsKey
 import com.hisabak.nav.SettingsKey
+import com.hisabak.nav.SmsParsingKey
 import com.hisabak.nav.SmsTemplateEditKey
 import com.hisabak.nav.SmsTemplatesKey
 import com.hisabak.nav.TransactionEditKey
@@ -95,6 +97,7 @@ import com.hisabak.shared.resources.app_brand_name
 import com.hisabak.shared.resources.backup_title
 import com.hisabak.shared.resources.sms_template_edit_title
 import com.hisabak.shared.resources.sms_template_new_title
+import com.hisabak.shared.resources.settings_sms_parsing
 import com.hisabak.shared.resources.sms_templates_title
 import com.hisabak.shared.resources.brand_edit_title
 import com.hisabak.shared.resources.brand_new_title
@@ -133,7 +136,7 @@ class PlatformSlots(
     val onboarding: @Composable () -> Unit,
     val restore: @Composable () -> Unit,
     val smsInbox: @Composable (onCreateTemplate: (String) -> Unit, onReviewTransaction: (String) -> Unit, Modifier) -> Unit,
-    val settings: @Composable (onOpenBackup: () -> Unit, onOpenSmsTemplates: () -> Unit, Modifier) -> Unit,
+    val settings: @Composable (onOpenBackup: () -> Unit, onOpenSmsParsing: () -> Unit, Modifier) -> Unit,
     val backup: @Composable (Modifier) -> Unit,
     val appLockGate: @Composable (content: @Composable () -> Unit) -> Unit = { it() },
     val notificationPermissionEffect: @Composable () -> Unit = {},
@@ -292,7 +295,7 @@ private fun HisabakNav(slots: PlatformSlots) {
     val leaf = navigationState.backStacks[navigationState.topLevelRoute]?.lastOrNull()
     val fullScreen = leaf is BrandEditKey || leaf is CategoryEditKey ||
         leaf == NotificationsKey || leaf == BackupKey || leaf is InsightsAskKey ||
-        leaf == SmsTemplatesKey || leaf is SmsTemplateEditKey
+        leaf == SmsParsingKey || leaf == SmsTemplatesKey || leaf is SmsTemplateEditKey
 
     val analytics = koinInject<Analytics>()
     val screenName = when (leaf) {
@@ -302,6 +305,7 @@ private fun HisabakNav(slots: PlatformSlots) {
         NotificationsKey -> "notifications"
         is InsightsAskKey -> "insights_ask"
         BackupKey -> "backup"
+        SmsParsingKey -> "sms_parsing"
         SmsTemplatesKey -> "sms_templates"
         is SmsTemplateEditKey -> "sms_template_edit"
         else -> when (currentTab) {
@@ -335,6 +339,10 @@ private fun HisabakNav(slots: PlatformSlots) {
                 )
                 BackupKey -> DetailTopBar(
                     title = stringResource(Res.string.backup_title),
+                    onBack = { navigator.goBack() },
+                )
+                SmsParsingKey -> DetailTopBar(
+                    title = stringResource(Res.string.settings_sms_parsing),
                     onBack = { navigator.goBack() },
                 )
                 SmsTemplatesKey -> DetailTopBar(
@@ -441,12 +449,18 @@ private fun HisabakNav(slots: PlatformSlots) {
             entry<SettingsKey> {
                 slots.settings(
                     { navigator.navigate(BackupKey) },
-                    { navigator.navigate(SmsTemplatesKey) },
+                    { navigator.navigate(SmsParsingKey) },
                     Modifier.fillMaxSize(),
                 )
             }
             entry<BackupKey>(metadata = fullScreenTransition()) {
                 slots.backup(Modifier.fillMaxSize())
+            }
+            entry<SmsParsingKey>(metadata = fullScreenTransition()) {
+                SmsParsingRoute(
+                    onOpenTemplates = { navigator.navigate(SmsTemplatesKey) },
+                    modifier = Modifier.fillMaxSize(),
+                )
             }
             entry<SmsTemplatesKey>(metadata = fullScreenTransition()) {
                 SmsTemplatesRoute(
