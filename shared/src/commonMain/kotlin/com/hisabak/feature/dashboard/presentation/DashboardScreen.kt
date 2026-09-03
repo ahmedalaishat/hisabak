@@ -269,18 +269,6 @@ private fun SummaryTab(
             )
         }
 
-        // ── Review: what changed, and what needs attention ─────────────────
-        if (review.isNotEmpty()) {
-            item {
-                ReviewCard(
-                    period = period,
-                    insights = review,
-                    onSeeAll = { onOpenInsights(period) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-
         // ── Cash / Savings / Investment pills ───────────────────────────────
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -307,6 +295,18 @@ private fun SummaryTab(
                     bgColor = c.investmentSoft,
                     fgColor = c.investment,
                     modifier = Modifier.weight(1f),
+                )
+            }
+        }
+
+        // ── Review: what changed, and what needs attention — after the position, before the flow ─────────────────
+        if (review.isNotEmpty()) {
+            item {
+                ReviewCard(
+                    period = period,
+                    insights = review,
+                    onSeeAll = { onOpenInsights(period) },
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
