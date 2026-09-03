@@ -580,7 +580,8 @@ private fun LedgerTabs(
         SingleChoiceSegmentedButtonRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = Spacing.pageMargin, vertical = Spacing.s2),
+                .padding(horizontal = Spacing.pageMargin)
+                .padding(top = Spacing.pageMargin),
         ) {
             LedgerTab.entries.forEachIndexed { index, tab ->
                 SegmentedButton(
