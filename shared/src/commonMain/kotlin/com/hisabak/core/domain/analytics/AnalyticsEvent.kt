@@ -205,6 +205,19 @@ sealed class AnalyticsEvent(
         params = mapOf("period" to period),
     )
 
+    /** The insights screen opened; [count] is how many deterministic findings it listed — a small
+     *  integer, not an amount. */
+    class InsightsOpened(count: Int) : AnalyticsEvent(
+        name = "insights_opened",
+        params = mapOf("count" to count),
+    )
+
+    /** An insight card was tapped through to its transactions. [type] is the lower-cased InsightType. */
+    class InsightTapped(type: String) : AnalyticsEvent(
+        name = "insight_tapped",
+        params = mapOf("type" to type),
+    )
+
     /** A Google account was connected for backup (no identifier — boolean signal only). */
     data object BackupAccountConnected : AnalyticsEvent("backup_account_connected")
 

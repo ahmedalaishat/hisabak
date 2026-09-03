@@ -96,6 +96,12 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.yearMonth
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import androidx.compose.material3.TextButton
+import com.hisabak.ui.components.labelRes
+import com.hisabak.feature.insights.domain.Insight
+import com.hisabak.feature.insights.presentation.InsightRow
+import com.hisabak.shared.resources.insights_review_title
+import com.hisabak.shared.resources.insights_see_all
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,6 +109,7 @@ fun DashboardScreen(
     state: DashboardUiState,
     onPeriodChange: (SummaryPeriod) -> Unit,
     onShowUncategorized: () -> Unit,
+    onOpenInsights: (SummaryPeriod) -> Unit,
     focusCategoryId: String? = null,
     onFocusConsumed: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -171,6 +178,8 @@ fun DashboardScreen(
                     period = state.period,
                     listState = summaryListState,
                     onShowUncategorized = onShowUncategorized,
+                    review = state.review,
+                    onOpenInsights = onOpenInsights,
                     modifier = Modifier.fillMaxSize(),
                 )
                 DashboardTab.TRENDS -> TrendsTab(
@@ -223,6 +232,8 @@ private fun SummaryTab(
     period: SummaryPeriod,
     listState: LazyListState,
     onShowUncategorized: () -> Unit,
+    review: List<Insight>,
+    onOpenInsights: (SummaryPeriod) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val c = HisabakTheme.colors
@@ -256,6 +267,18 @@ private fun SummaryTab(
                 modifier = Modifier.fillMaxWidth(),
                 animateValue = true,
             )
+        }
+
+        // ── Review: what changed, and what needs attention ─────────────────
+        if (review.isNotEmpty()) {
+            item {
+                ReviewCard(
+                    period = period,
+                    insights = review,
+                    onSeeAll = { onOpenInsights(period) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
 
         // ── Cash / Savings / Investment pills ───────────────────────────────
@@ -1079,4 +1102,39 @@ private fun monthlyPairs(
         expense = months.map { expenseByMonth[it] ?: 0.0 },
         labels = months.map { if (multiYear) formatter.monthYear(it) else formatter.month(it) },
     )
+}
+
+// ── Review card ───────────────────────────────────────────────────────────────
+
+/** Top findings only: the card is a summary of the summary, and "See all" is where the rest live. */
+private const val REVIEW_CARD_MAX = 3
+
+@Composable
+private fun ReviewCard(
+    period: SummaryPeriod,
+    insights: List<Insight>,
+    onSeeAll: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // The whole card opens the review: it is a teaser, and the per-insight deep links live on the
+    // screen it opens. Individually clickable rows inside a clickable card would nest two targets
+    // and send a tap on "Dining over limit" somewhere other than dining.
+    SurfaceCard(modifier = modifier, onClick = onSeeAll) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(Res.string.insights_review_title, stringResource(period.labelRes())),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onSeeAll) { Text(stringResource(Res.string.insights_see_all)) }
+        }
+        Spacer(Modifier.height(Spacing.s2))
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
+            insights.take(REVIEW_CARD_MAX).forEach { insight -> InsightRow(insight) }
+        }
+    }
 }

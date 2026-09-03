@@ -46,6 +46,7 @@ import com.hisabak.feature.category.presentation.CategoryCreatedBus
 import com.hisabak.feature.category.presentation.edit.CategoryEditPrefill
 import com.hisabak.feature.category.presentation.edit.CategoryEditRoute
 import com.hisabak.feature.dashboard.presentation.CategoryFocusBus
+import com.hisabak.feature.insights.presentation.InsightsRoute
 import com.hisabak.feature.dashboard.presentation.DashboardRoute
 import com.hisabak.feature.notification.domain.NotificationRepository
 import com.hisabak.feature.notification.presentation.list.NotificationsRoute
@@ -61,6 +62,8 @@ import com.hisabak.nav.CategoryEditKey
 import com.hisabak.nav.DashboardKey
 import com.hisabak.nav.ManageKey
 import com.hisabak.nav.Navigator
+import com.hisabak.core.common.SummaryPeriod
+import com.hisabak.nav.InsightsKey
 import com.hisabak.nav.NotificationsKey
 import com.hisabak.nav.SettingsKey
 import com.hisabak.nav.SmsKey
@@ -90,6 +93,7 @@ import com.hisabak.shared.resources.nav_manage
 import com.hisabak.shared.resources.nav_settings
 import com.hisabak.shared.resources.nav_sms
 import com.hisabak.shared.resources.nav_transactions
+import com.hisabak.shared.resources.insights_title
 import com.hisabak.shared.resources.notifications_title
 import com.hisabak.shared.resources.sms_inbox_title
 import com.hisabak.shared.resources.transaction_add
@@ -265,7 +269,7 @@ private fun HisabakNav(slots: PlatformSlots) {
     // Brand/Category edits and the notifications screen are full-screen pages with a back arrow.
     val leaf = navigationState.backStacks[navigationState.topLevelRoute]?.lastOrNull()
     val fullScreen = leaf is BrandEditKey || leaf is CategoryEditKey ||
-        leaf == NotificationsKey || leaf == BackupKey ||
+        leaf == NotificationsKey || leaf == BackupKey || leaf is InsightsKey ||
         leaf == SmsTemplatesKey || leaf is SmsTemplateEditKey
 
     val analytics = koinInject<Analytics>()
@@ -274,6 +278,7 @@ private fun HisabakNav(slots: PlatformSlots) {
         is BrandEditKey -> "brand_edit"
         is CategoryEditKey -> "category_edit"
         NotificationsKey -> "notifications"
+        is InsightsKey -> "insights"
         BackupKey -> "backup"
         SmsTemplatesKey -> "sms_templates"
         is SmsTemplateEditKey -> "sms_template_edit"
@@ -300,6 +305,10 @@ private fun HisabakNav(slots: PlatformSlots) {
                 )
                 NotificationsKey -> DetailTopBar(
                     title = stringResource(Res.string.notifications_title),
+                    onBack = { navigator.goBack() },
+                )
+                is InsightsKey -> DetailTopBar(
+                    title = stringResource(Res.string.insights_title),
                     onBack = { navigator.goBack() },
                 )
                 BackupKey -> DetailTopBar(
@@ -359,6 +368,7 @@ private fun HisabakNav(slots: PlatformSlots) {
                         filterBus.request(TransactionListFilterRequest.Uncategorized)
                         navigator.navigate(TransactionsKey)
                     },
+                    onOpenInsights = { period -> navigator.navigate(InsightsKey(period.name)) },
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -416,6 +426,21 @@ private fun HisabakNav(slots: PlatformSlots) {
                         filterBus.request(TransactionListFilterRequest.ByCategory(id))
                         navigator.navigate(TransactionsKey)
                     },
+                )
+            }
+            entry<InsightsKey>(metadata = fullScreenTransition()) { key ->
+                InsightsRoute(
+                    period = SummaryPeriod.valueOf(key.period),
+                    // Same shape as the dashboard's deep links: park the filter, then go.
+                    onOpenCategory = { id ->
+                        filterBus.request(TransactionListFilterRequest.ByCategory(id))
+                        navigator.navigate(TransactionsKey)
+                    },
+                    onOpenUncategorized = {
+                        filterBus.request(TransactionListFilterRequest.Uncategorized)
+                        navigator.navigate(TransactionsKey)
+                    },
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
             entry<NotificationsKey>(metadata = fullScreenTransition()) {

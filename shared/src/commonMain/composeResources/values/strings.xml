@@ -436,4 +436,25 @@
     <string name="sms_status_parsed">Parsed</string>
     <string name="sms_status_unparsed">Unparsed</string>
     <string name="sms_review_transaction">Review transaction</string>
+
+    <!-- Insights review (deterministic, on-device) -->
+    <string name="insights_title">Insights</string>
+    <string name="insights_review_title">Review · %1$s</string>
+    <string name="insights_see_all">See all</string>
+    <string name="insights_empty_title">Nothing to review yet</string>
+    <string name="insights_empty_subtitle">Add a few transactions and the review will point out what changed.</string>
+    <string name="insights_savings_title">Savings</string>
+    <string name="insights_uncategorized_title">Uncategorized</string>
+    <string name="insights_detail_over_limit">Over the limit by</string>
+    <string name="insights_detail_near_limit">%1$s of the limit used</string>
+    <string name="insights_detail_spend_up">Up %1$s vs the previous period</string>
+    <string name="insights_detail_spend_down">Down %1$s vs the previous period</string>
+    <string name="insights_detail_new_spend">New spending this period</string>
+    <string name="insights_detail_largest">Largest expense · %1$s of spending</string>
+    <string name="insights_detail_savings_rate">Savings rate %1$s</string>
+    <string name="insights_detail_savings_rate_delta">Savings rate %1$s · %2$s pts vs the previous period</string>
+    <plurals name="insights_detail_uncategorized">
+        <item quantity="one">%1$s transaction without a category</item>
+        <item quantity="other">%1$s transactions without a category</item>
+    </plurals>
 </resources>

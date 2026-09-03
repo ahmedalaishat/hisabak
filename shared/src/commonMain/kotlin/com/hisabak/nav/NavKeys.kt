@@ -31,6 +31,10 @@ data class CategoryEditKey(
 // Full-screen child opened from the top-bar bell.
 data object NotificationsKey : NavKey
 
+// Full-screen child opened from the dashboard's Review card. Carries the SummaryPeriod name so
+// the screen reviews the period the dashboard was showing; a raw string keeps the key plain data.
+data class InsightsKey(val period: String) : NavKey
+
 // Full-screen child opened from Settings → Data.
 data object BackupKey : NavKey
 

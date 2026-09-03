@@ -91,7 +91,10 @@ Everything below is built and shipping today:
   the dashboard with that category expanded.
 - [x] 📊 **Dashboard** — net worth with cash / savings / investment breakdown, income & expense
   trends, category and brand breakdowns, and period filters (this/last month, this/last year, all
-  time) across Summary, Trends, and Categories tabs.
+  time) across Summary, Trends, and Categories tabs — plus a **Review** card that points out what
+  changed and what needs attention (a category over or near its limit, a sharp rise or fall, your
+  largest expense, savings rate, uncategorized spend), worked out on the phone with nothing sent
+  anywhere, each finding one tap from its transactions.
 - [x] 🧾 **Transactions** — searchable, filterable list (by brand, category, date range), with
   uncategorized spending surfaced for quick cleanup. Add, edit, or delete an entry (deletion is
   confirmed first, and hands any bank message that created it back to the SMS inbox).
