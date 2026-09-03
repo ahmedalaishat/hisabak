@@ -1,6 +1,15 @@
 package com.hisabak.feature.insights.presentation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -10,7 +19,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,7 +31,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import com.hisabak.feature.insights.domain.Insight
 import com.hisabak.feature.insights.domain.InsightType
+import com.hisabak.feature.insights.domain.InsightsSummary
 import com.hisabak.feature.insights.domain.Severity
+import com.hisabak.feature.insights.domain.ai.NarrativeInsight
 import com.hisabak.shared.resources.Res
 import com.hisabak.shared.resources.insights_detail_largest
 import com.hisabak.shared.resources.insights_detail_near_limit
@@ -35,6 +48,34 @@ import com.hisabak.shared.resources.insights_empty_subtitle
 import com.hisabak.shared.resources.insights_empty_title
 import com.hisabak.shared.resources.insights_savings_title
 import com.hisabak.shared.resources.insights_uncategorized_title
+import com.hisabak.shared.resources.insights_narrative_badge
+import com.hisabak.shared.resources.insights_narrative_footer
+import com.hisabak.shared.resources.insights_narrative_loading
+import com.hisabak.shared.resources.insights_narrative_unavailable
+import com.hisabak.shared.resources.insights_offer_accept
+import com.hisabak.shared.resources.insights_offer_body
+import com.hisabak.shared.resources.insights_offer_not_now
+import com.hisabak.shared.resources.insights_offer_title
+import com.hisabak.shared.resources.insights_shared_action
+import com.hisabak.shared.resources.insights_shared_expense
+import com.hisabak.shared.resources.insights_shared_income
+import com.hisabak.shared.resources.insights_shared_intro
+import com.hisabak.shared.resources.insights_shared_limit
+import com.hisabak.shared.resources.insights_shared_prior
+import com.hisabak.shared.resources.insights_shared_title
+import com.hisabak.shared.resources.insights_suggest_limit
+import com.hisabak.shared.resources.common_done
+import com.hisabak.shared.resources.period_all_time
+import com.hisabak.shared.resources.period_last_month
+import com.hisabak.shared.resources.period_last_year
+import com.hisabak.shared.resources.period_this_month
+import com.hisabak.shared.resources.period_this_year
+import com.hisabak.ui.components.LeadingIconChip
+import com.hisabak.ui.components.NoticeCard
+import com.hisabak.ui.components.NoticeTone
+import com.hisabak.ui.components.PrimaryPillButton
+import com.hisabak.ui.components.compactAmountMinor
+import com.hisabak.ui.components.exactAmount
 import com.hisabak.ui.components.EmptyStatePanel
 import com.hisabak.ui.components.IconTile
 import com.hisabak.ui.components.MoneyText
@@ -48,6 +89,8 @@ import com.hisabak.ui.icons.HugeIcons
 import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.HisabakType
 import com.hisabak.ui.theme.Spacing
+import com.hisabak.core.common.SummaryPeriod
+import androidx.compose.ui.text.font.FontWeight
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.pluralStringResource
@@ -57,6 +100,9 @@ import org.jetbrains.compose.resources.stringResource
 fun InsightsScreen(
     state: InsightsUiState,
     onInsightClick: (Insight) -> Unit,
+    onNarrativeClick: (NarrativeInsight) -> Unit,
+    onSuggestionClick: (NarrativeInsight) -> Unit,
+    onIntent: (InsightsIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (!state.isLoading && state.insights.isEmpty()) {
@@ -68,6 +114,9 @@ fun InsightsScreen(
         )
         return
     }
+    if (state.showShared && state.summary != null) {
+        SharedSummaryDialog(summary = state.summary, onDismiss = { onIntent(InsightsIntent.HideShared) })
+    }
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -78,10 +127,270 @@ fun InsightsScreen(
         ),
         verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
     ) {
+        // The AI layer sits above the findings it explains — an explanation is read before its
+        // evidence — and never replaces them: the deterministic list below is complete on its own.
+        narrativeItems(state.narrative, onNarrativeClick, onSuggestionClick, onIntent)
         items(state.insights, key = { it.id }) { insight ->
             SurfaceCard(onClick = { onInsightClick(insight) }) {
                 InsightRow(insight)
             }
+        }
+    }
+}
+
+private fun LazyListScope.narrativeItems(
+    narrative: NarrativeUi,
+    onNarrativeClick: (NarrativeInsight) -> Unit,
+    onSuggestionClick: (NarrativeInsight) -> Unit,
+    onIntent: (InsightsIntent) -> Unit,
+) {
+    when (narrative) {
+        NarrativeUi.Hidden -> Unit
+        NarrativeUi.Offer -> item(key = "ai:offer") { NarrativeOfferCard(onIntent) }
+        NarrativeUi.Loading -> item(key = "ai:loading") { NarrativeLoadingCard() }
+        is NarrativeUi.Ready -> narrativeCards(narrative.items, onNarrativeClick, onSuggestionClick, onIntent)
+        is NarrativeUi.Unavailable -> {
+            val stale = narrative.stale
+            if (stale.isNullOrEmpty()) {
+                item(key = "ai:unavailable") {
+                    NoticeCard(text = stringResource(Res.string.insights_narrative_unavailable), tone = NoticeTone.Info)
+                }
+            } else {
+                narrativeCards(stale, onNarrativeClick, onSuggestionClick, onIntent)
+            }
+        }
+    }
+}
+
+private fun LazyListScope.narrativeCards(
+    cards: List<NarrativeInsight>,
+    onNarrativeClick: (NarrativeInsight) -> Unit,
+    onSuggestionClick: (NarrativeInsight) -> Unit,
+    onIntent: (InsightsIntent) -> Unit,
+) {
+    if (cards.isEmpty()) return
+    items(cards, key = { it.id }) { item ->
+        NarrativeCard(
+            item = item,
+            onClick = { onNarrativeClick(item) },
+            onSuggestion = { onSuggestionClick(item) },
+        )
+    }
+    item(key = "ai:footer") {
+        NarrativeFooter(onSeeShared = { onIntent(InsightsIntent.ShowShared) })
+    }
+}
+
+/**
+ * One AI item: the "AI" overline says where the words came from, the glyph tile says what it is
+ * about (the category's own icon, or the idea glyph for a period-wide item), and the optional chip
+ * is the only action — confirm-first, opening the editor prefilled rather than writing anything.
+ */
+@Composable
+private fun NarrativeCard(item: NarrativeInsight, onClick: () -> Unit, onSuggestion: () -> Unit) {
+    val c = HisabakTheme.colors
+    val category = item.category
+    val (tileBg, tileFg) = if (category != null) tintPairForColor(category.color) else c.infoSoft to c.info
+    SurfaceCard(onClick = category?.let { { onClick() } }) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
+        ) {
+            IconTile(
+                icon = if (category != null) iconForKey(category.icon) else HugeIcons.Idea,
+                background = tileBg,
+                foreground = tileFg,
+            )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(Res.string.insights_narrative_badge),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = item.headline,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (item.detail.isNotBlank()) {
+                    Spacer(Modifier.height(Spacing.s1))
+                    Text(
+                        text = item.detail,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+        val limit = item.suggestedLimitMinor
+        if (category != null && limit != null) {
+            Spacer(Modifier.height(Spacing.s3))
+            LeadingIconChip(
+                label = stringResource(Res.string.insights_suggest_limit, compactAmountMinor(limit, rememberIsArabic())),
+                leadingIcon = HugeIcons.Tag,
+                selected = false,
+                onClick = onSuggestion,
+            )
+        }
+    }
+}
+
+@Composable
+private fun NarrativeFooter(onSeeShared: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.s1),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(Res.string.insights_narrative_footer),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = onSeeShared) { Text(stringResource(Res.string.insights_shared_action)) }
+    }
+}
+
+@Composable
+private fun NarrativeLoadingCard() {
+    SurfaceCard {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s3)) {
+            CircularProgressIndicator(modifier = Modifier.size(Spacing.s5), strokeWidth = 2.dp)
+            Text(
+                text = stringResource(Res.string.insights_narrative_loading),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/**
+ * The opt-in, offered where it applies. Two answers plus a look at the payload: "Turn on" is the
+ * one primary action on the screen, "Not now" hides it for this visit, and "See what's shared"
+ * shows the exact figures before anything is sent — the promise, made checkable.
+ */
+@Composable
+private fun NarrativeOfferCard(onIntent: (InsightsIntent) -> Unit) {
+    val c = HisabakTheme.colors
+    SurfaceCard {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.Top) {
+            IconTile(icon = HugeIcons.Idea, background = c.infoSoft, foreground = c.info)
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(Res.string.insights_offer_title),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(Modifier.height(Spacing.s1))
+                Text(
+                    text = stringResource(Res.string.insights_offer_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Spacer(Modifier.height(Spacing.s3))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            PrimaryPillButton(
+                text = stringResource(Res.string.insights_offer_accept),
+                onClick = { onIntent(InsightsIntent.EnableNarrative) },
+                vertical = Spacing.s2,
+            )
+            Spacer(Modifier.width(Spacing.s2))
+            TextButton(onClick = { onIntent(InsightsIntent.DismissOffer) }) {
+                Text(stringResource(Res.string.insights_offer_not_now))
+            }
+            Spacer(Modifier.weight(1f))
+            TextButton(onClick = { onIntent(InsightsIntent.ShowShared) }) {
+                Text(stringResource(Res.string.insights_shared_action))
+            }
+        }
+    }
+}
+
+/** The payload, verbatim: the same fields `InsightsSummary.toRequestDto` sends, and nothing else. */
+@Composable
+private fun SharedSummaryDialog(summary: InsightsSummary, onDismiss: () -> Unit) {
+    val arabic = rememberIsArabic()
+    fun money(minor: Long?) = if (minor == null) "—" else exactAmount(minor / 100.0, arabic)
+    val periodLabel = stringResource(
+        when (summary.period) {
+            SummaryPeriod.CURRENT_MONTH -> Res.string.period_this_month
+            SummaryPeriod.LAST_MONTH -> Res.string.period_last_month
+            SummaryPeriod.CURRENT_YEAR -> Res.string.period_this_year
+            SummaryPeriod.LAST_YEAR -> Res.string.period_last_year
+            SummaryPeriod.ALL -> Res.string.period_all_time
+        },
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.common_done)) } },
+        title = { Text(stringResource(Res.string.insights_shared_title)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+            ) {
+                Text(
+                    text = stringResource(Res.string.insights_shared_intro),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                SharedRow(periodLabel, "")
+                SharedRow(
+                    stringResource(Res.string.insights_shared_income),
+                    money(summary.incomeMinor),
+                    stringResource(Res.string.insights_shared_prior, money(summary.priorIncomeMinor)),
+                )
+                SharedRow(
+                    stringResource(Res.string.insights_shared_expense),
+                    money(summary.expenseMinor),
+                    stringResource(Res.string.insights_shared_prior, money(summary.priorExpenseMinor)),
+                )
+                summary.categories.forEach { c ->
+                    SharedRow(
+                        c.name,
+                        money(c.spentMinor),
+                        listOfNotNull(
+                            stringResource(Res.string.insights_shared_prior, money(c.priorMinor)),
+                            c.limitMinor?.let { stringResource(Res.string.insights_shared_limit, money(it)) },
+                        ).joinToString(" · "),
+                    )
+                }
+                SharedRow(
+                    stringResource(Res.string.insights_uncategorized_title),
+                    money(summary.uncategorizedMinor),
+                    pluralStringResource(
+                        Res.plurals.insights_detail_uncategorized,
+                        summary.uncategorizedCount,
+                        localizedFormatArg(summary.uncategorizedCount),
+                    ),
+                )
+            }
+        },
+    )
+}
+
+@Composable
+private fun SharedRow(label: String, value: String, sub: String? = null) {
+    Column {
+        Row(Modifier.fillMaxWidth()) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(text = value, style = HisabakType.amount, color = MaterialTheme.colorScheme.onSurface)
+        }
+        if (!sub.isNullOrBlank()) {
+            Text(text = sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

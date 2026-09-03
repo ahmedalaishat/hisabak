@@ -73,6 +73,18 @@ interface AppPreferences {
     suspend fun setAutoConfirmEnabled(value: Boolean)
 
     /**
+     * Whether the period summary may be sent to the service for the AI narrative; defaults to
+     * `false`.
+     *
+     * Its own consent, separate from [remoteParseEnabled]: parsing sends one bank message, this
+     * sends a picture of the user's finances (totals by category — never rows or notes), and one
+     * must not imply the other.
+     */
+    val insightsEnabled: Flow<Boolean>
+
+    suspend fun setInsightsEnabled(value: Boolean)
+
+    /**
      * "Don't ask again" for the SMS-inbox offers, one flag per offer.
      *
      * Only the permanent choice is stored. "Not now" is deliberately in-memory: the user said not

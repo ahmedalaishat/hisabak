@@ -18,7 +18,8 @@ data class TransactionEditKey(val id: String?) : NavKey
 data class BrandEditKey(val id: String?, val forPick: Boolean = false) : NavKey
 // forPick: opened from the brand editor's "+ New category" chip — the created category is
 // published to CategoryCreatedBus so the brand editor underneath selects it on return.
-// The prefill fields carry an accepted AI "new category" suggestion into the editor.
+// The prefill fields carry an accepted AI "new category" suggestion into the editor;
+// prefillLimitMinor carries an accepted narrative "set a limit" suggestion for an existing one.
 data class CategoryEditKey(
     val id: String?,
     val forPick: Boolean = false,
@@ -26,6 +27,7 @@ data class CategoryEditKey(
     val prefillType: String? = null,
     val prefillColor: String? = null,
     val prefillIcon: String? = null,
+    val prefillLimitMinor: Long? = null,
 ) : NavKey
 
 // Full-screen child opened from the top-bar bell.

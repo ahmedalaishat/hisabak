@@ -13,6 +13,8 @@ import com.hisabak.di.APPLICATION_SCOPE
 import com.hisabak.feature.sms.domain.ai.AutoConfirmSuggestionUseCase
 import com.hisabak.feature.sms.domain.ai.ConfirmAiSuggestionUseCase
 import com.hisabak.feature.sms.domain.ai.DismissAiSuggestionUseCase
+import com.hisabak.feature.sms.domain.ai.RemoteParseClient
+import com.hisabak.feature.sms.domain.ai.ServiceRemoteParseClient
 import com.hisabak.feature.sms.domain.ai.SuggestAiParseUseCase
 import com.hisabak.feature.sms.domain.capture.CaptureTransactionUseCase
 import com.hisabak.feature.sms.domain.SmsMessageId
@@ -36,6 +38,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val smsModule = module {
+    single<RemoteParseClient> { ServiceRemoteParseClient(transport = get()) }
     single { com.hisabak.feature.sms.presentation.InboxOpenBus() }
     single<SmsRepository> { RoomSmsRepository(dao = get()) }
 

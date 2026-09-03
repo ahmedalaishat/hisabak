@@ -127,6 +127,7 @@ internal fun IosSettingsRoute(
     val appLockEnabled by viewModel.appLockEnabled.collectAsStateWithLifecycle(initialValue = false)
     val remoteParseEnabled by viewModel.remoteParseEnabled.collectAsStateWithLifecycle(initialValue = false)
     val autoConfirmEnabled by viewModel.autoConfirmEnabled.collectAsStateWithLifecycle(initialValue = false)
+    val insightsEnabled by viewModel.insightsEnabled.collectAsStateWithLifecycle(initialValue = false)
     val appConfig: AppConfig = koinInject()
     val passphraseReminderVisible by viewModel.passphraseReminderVisible.collectAsStateWithLifecycle(initialValue = false)
 
@@ -144,11 +145,12 @@ internal fun IosSettingsRoute(
         remoteParseEnabled = remoteParseEnabled,
         // No service configured in this build -> the row stays hidden rather than offering
         // an opt-in that would do nothing.
-        remoteParseSupported = appConfig.parseServiceUrl.isNotBlank() &&
-            appConfig.parseServiceToken.isNotBlank(),
+        remoteParseSupported = appConfig.hasParseService,
         onRemoteParseChange = viewModel::setRemoteParseEnabled,
         autoConfirmEnabled = autoConfirmEnabled,
         onAutoConfirmChange = viewModel::setAutoConfirmEnabled,
+        insightsEnabled = insightsEnabled,
+        onInsightsChange = viewModel::setInsightsEnabled,
         appLockSupported = appLockSupported,
         onThemeChange = viewModel::setThemeMode,
         onLanguageChange = { tag ->

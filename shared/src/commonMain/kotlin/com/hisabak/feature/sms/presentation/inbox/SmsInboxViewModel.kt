@@ -202,8 +202,7 @@ class SmsInboxViewModel(
             preferences.suppressedInboxPrompts,
         ) { remoteOn, autoConfirmOn, suppressed ->
             choosePrompt(
-                remoteConfigured = appConfig.parseServiceUrl.isNotBlank() &&
-                    appConfig.parseServiceToken.isNotBlank(),
+                remoteConfigured = appConfig.hasParseService,
                 remoteEnabled = remoteOn,
                 aiReady = aiReady,
                 autoConfirmEnabled = autoConfirmOn,

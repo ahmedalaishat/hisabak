@@ -35,9 +35,9 @@ import com.hisabak.feature.brand.domain.ai.AiCategorySuggester
 import com.hisabak.feature.brand.platform.AiCategoryBridge
 import com.hisabak.feature.brand.platform.IosAiCategorySuggester
 import com.hisabak.feature.sms.domain.ai.AiSmsParser
-import com.hisabak.feature.sms.platform.IosRemoteParseClient
-import com.hisabak.feature.sms.domain.ai.ParseServiceConfig
-import com.hisabak.feature.sms.domain.ai.RemoteParseClient
+import com.hisabak.core.domain.remote.ServiceConfig
+import com.hisabak.core.domain.remote.ServiceTransport
+import com.hisabak.core.platform.remote.IosServiceTransport
 import com.hisabak.feature.sms.domain.ai.RemoteAiSmsParser
 import com.hisabak.feature.sms.domain.ai.PreferredAiSmsParser
 import com.hisabak.feature.sms.platform.AiSmsBridge
@@ -72,9 +72,9 @@ fun iosPlatformModule(
     aiSmsBridge: AiSmsBridge,
     aiCategoryBridge: AiCategoryBridge,
 ): Module = module {
-    single<RemoteParseClient> {
+    single<ServiceTransport> {
         val config: AppConfig = get()
-        IosRemoteParseClient(ParseServiceConfig(config.parseServiceUrl, config.parseServiceToken))
+        IosServiceTransport(ServiceConfig(config.parseServiceUrl, config.parseServiceToken))
     }
 
     single<AiSmsParser> {
