@@ -237,13 +237,13 @@
     <string name="transaction_brand_uncategorized">No category yet — tap to categorize this brand</string>
     <string name="transaction_direction_deposit">Deposit</string>
     <string name="transaction_direction_withdrawal">Withdrawal</string>
-    <string name="settings_sms_templates">SMS parsing</string>
+    <string name="settings_sms_templates">SMS templates</string>
     <string name="settings_sms_templates_hint">Teach the app your bank's message formats</string>
     <string name="settings_remote_parse">Parse with the online model</string>
     <string name="settings_remote_parse_hint">Messages no template recognises are sent to Hisabak's parsing service to be read. Only those messages are sent, only when this is on, and they are not stored.</string>
     <string name="settings_auto_confirm">Confirm automatically</string>
     <string name="settings_auto_confirm_hint">Save a transaction without asking, when the amount and the shop were both found in the message and the shop is one you already have. Messages you paste yourself are always confirmed by you.</string>
-    <string name="sms_templates_title">SMS parsing</string>
+    <string name="sms_templates_title">SMS templates</string>
     <string name="sms_templates_hint">Templates turn bank messages into transactions automatically. The most specific template wins; ones you create take priority over the built-ins.</string>
     <string name="sms_template_new">New template</string>
     <string name="sms_templates_empty_title">No templates</string>

@@ -237,13 +237,13 @@
     <string name="transaction_brand_uncategorized">لا فئة بعد — اضغط لتصنيف هذه العلامة</string>
     <string name="transaction_direction_deposit">إيداع</string>
     <string name="transaction_direction_withdrawal">سحب</string>
-    <string name="settings_sms_templates">تحليل الرسائل</string>
+    <string name="settings_sms_templates">قوالب الرسائل</string>
     <string name="settings_sms_templates_hint">علّم التطبيق صيغ رسائل بنكك</string>
     <string name="settings_remote_parse">التحليل بالنموذج عبر الإنترنت</string>
     <string name="settings_remote_parse_hint">الرسائل التي لا يتعرف عليها أي قالب تُرسل إلى خدمة التحليل الخاصة بحسابك لقراءتها. تُرسل هذه الرسائل فقط، وفقط عند تفعيل هذا الخيار، ولا يتم تخزينها.</string>
     <string name="settings_auto_confirm">التأكيد تلقائيًا</string>
     <string name="settings_auto_confirm_hint">حفظ المعاملة دون سؤالك، عندما يُعثر على المبلغ والمتجر في نص الرسالة ويكون المتجر ضمن متاجرك الحالية. الرسائل التي تلصقها بنفسك تحتاج تأكيدك دائمًا.</string>
-    <string name="sms_templates_title">تحليل الرسائل</string>
+    <string name="sms_templates_title">قوالب الرسائل</string>
     <string name="sms_templates_hint">تحوّل القوالب رسائل البنك إلى معاملات تلقائيًا. القالب الأكثر تحديدًا هو الذي يُطبَّق، وقوالبك لها الأولوية على المدمجة.</string>
     <string name="sms_template_new">قالب جديد</string>
     <string name="sms_templates_empty_title">لا توجد قوالب</string>
