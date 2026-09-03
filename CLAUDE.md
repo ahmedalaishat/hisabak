@@ -217,8 +217,12 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   and budget are what bound the bill. The conversation is in-memory for the sheet's life only; the
   last `ASK_HISTORY_TURNS` (6) ride with each question, and the model returns an `on_topic` flag it
   sets false when it refuses. `insights_ask(source=chip|free, on_topic)` is the measurement behind
-  whether the free-text box earns its cost. The sheet is `// TODO: design` — it reuses existing
-  components rather than inventing a chat UI.
+  whether the free-text box earns its cost. **Ask is its own full screen** (`InsightsAskKey(period,
+  question)`, `feature/insights/presentation/ask/`), not a sheet: a conversation needs the keyboard,
+  room to scroll, and its own back. The insights screen keeps the entry card; tapping a suggestion
+  pushes the screen with that question, which `AskViewModel` sends on arrival (the tap *was* the
+  send). The screen rebuilds the summary from the metrics for its period, like the review does, so a
+  question is answered against figures current at the moment it is asked.
 - **Learn-once template synthesis:** a confirmed AI parse also **teaches the regex engine**, so
   the next message of that bank format parses offline on any device — including the majority
   that have no on-device model at all. No extra model call: `deriveAiSpans`
@@ -480,7 +484,7 @@ retained per tab when switching; the user always exits the app through the **Das
 | Tab | Top-level key | Internal screens |
 |-----|---------------|-----------------|
 | Dashboard | DashboardKey | Summary/Trends/Categories tabs; the Review card opens the Insights tab (parking its period in `InsightsPeriodBus`) |
-| Insights | InsightsKey | Findings + the AI explanation + Ask; own period chips, seeded once from `InsightsPeriodBus` |
+| Insights | InsightsKey | Findings + the AI explanation + the Ask entry card → Ask (full screen); own period chips, seeded once from `InsightsPeriodBus` |
 | Transactions | TransactionsKey | **Two sub-tabs** (`LedgerTab`, selector hoisted in `HisabakRoot`): **Transactions** — list → Edit (bottom sheet; the "New brand" chip and the uncategorized-brand note detour to the brand editor — the sheet closes/reopens around it with its typed input parked in `TransactionDraftBus`, and a created brand auto-selects via `BrandCreatedBus`) — and **SMS** — inbox → template editor (full screen) / transaction sheet (review of an AI-parsed entry). The FAB and the top-bar title follow the sub-tab; `InboxOpenBus` selects the SMS half. |
 | Manage | ManageKey | Brands/Categories list → Edit (full screen; the brand editor's "+ New category" chip pushes the category editor and auto-selects the result via `CategoryCreatedBus`) |
 | Settings | SettingsKey | Theme + language + app lock → Backup & restore / SMS parsing → template editor (full screen) |

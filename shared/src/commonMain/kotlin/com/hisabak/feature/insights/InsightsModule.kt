@@ -10,6 +10,7 @@ import com.hisabak.feature.insights.domain.ai.RemoteAiInsights
 import com.hisabak.feature.insights.domain.ai.RemoteInsightsClient
 import com.hisabak.feature.insights.domain.ai.ServiceRemoteInsightsClient
 import com.hisabak.feature.insights.presentation.InsightsViewModel
+import com.hisabak.feature.insights.presentation.ask.AskViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -19,6 +20,16 @@ val insightsModule = module {
     single<NarrativeCache> { RoomNarrativeCache(dao = get()) }
     factory { GenerateNarrativeUseCase(aiInsights = get(), cache = get(), clock = get(), analytics = get()) }
     factory { AskInsightUseCase(client = get(), preferences = get(), currency = get(), clock = get(), analytics = get()) }
+
+    viewModel { (period: SummaryPeriod, language: String, initialQuestion: String?) ->
+        AskViewModel(
+            getMetrics = get(),
+            askInsight = get(),
+            period = period,
+            language = language,
+            initialQuestion = initialQuestion,
+        )
+    }
 
     viewModel { (period: SummaryPeriod, language: String) ->
         InsightsViewModel(

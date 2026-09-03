@@ -490,6 +490,9 @@
     <string name="insights_shared_prior">الفترة السابقة %1$s</string>
     <string name="insights_shared_limit">الحد %1$s</string>
     <string name="insights_suggest_limit">تعيين حد %1$s</string>
+    <string name="insights_ask_empty_title">اسأل عن هذه الفترة</string>
+    <string name="insights_ask_empty_body">اختر سؤالًا أو اكتب سؤالك. تعتمد الإجابات على مجاميع هذه الفترة فقط، لا على معاملاتك، ولا يُخزَّن شيء.</string>
+    <string name="insights_ask_suggestions">أو اسأل</string>
     <string name="insights_ask_title_sheet">اسأل عن هذه الفترة</string>
     <string name="insights_ask_hint">كل سؤال يُرسل المجاميع نفسها التي يُرسلها الشرح، مع سؤالك. لا تخزّن الخدمة شيئًا.</string>
     <string name="insights_ask_own">اسأل سؤالك</string>

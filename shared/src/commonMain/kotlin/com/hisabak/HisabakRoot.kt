@@ -57,6 +57,7 @@ import com.hisabak.feature.category.presentation.edit.CategoryEditRoute
 import com.hisabak.feature.dashboard.presentation.CategoryFocusBus
 import com.hisabak.feature.insights.presentation.InsightsPeriodBus
 import com.hisabak.feature.insights.presentation.InsightsRoute
+import com.hisabak.feature.insights.presentation.ask.AskRoute
 import com.hisabak.feature.dashboard.presentation.DashboardRoute
 import com.hisabak.feature.notification.domain.NotificationRepository
 import com.hisabak.feature.notification.presentation.list.NotificationsRoute
@@ -73,6 +74,7 @@ import com.hisabak.nav.DashboardKey
 import com.hisabak.nav.ManageKey
 import com.hisabak.nav.Navigator
 import com.hisabak.core.common.SummaryPeriod
+import com.hisabak.nav.InsightsAskKey
 import com.hisabak.nav.InsightsKey
 import com.hisabak.nav.LedgerTab
 import com.hisabak.nav.NotificationsKey
@@ -104,6 +106,7 @@ import com.hisabak.shared.resources.nav_manage
 import com.hisabak.shared.resources.nav_settings
 import com.hisabak.shared.resources.nav_sms
 import com.hisabak.shared.resources.nav_transactions
+import com.hisabak.shared.resources.insights_ask_title_sheet
 import com.hisabak.shared.resources.insights_title
 import com.hisabak.shared.resources.notifications_title
 import com.hisabak.shared.resources.sms_inbox_title
@@ -288,7 +291,7 @@ private fun HisabakNav(slots: PlatformSlots) {
     // Brand/Category edits and the notifications screen are full-screen pages with a back arrow.
     val leaf = navigationState.backStacks[navigationState.topLevelRoute]?.lastOrNull()
     val fullScreen = leaf is BrandEditKey || leaf is CategoryEditKey ||
-        leaf == NotificationsKey || leaf == BackupKey ||
+        leaf == NotificationsKey || leaf == BackupKey || leaf is InsightsAskKey ||
         leaf == SmsTemplatesKey || leaf is SmsTemplateEditKey
 
     val analytics = koinInject<Analytics>()
@@ -297,6 +300,7 @@ private fun HisabakNav(slots: PlatformSlots) {
         is BrandEditKey -> "brand_edit"
         is CategoryEditKey -> "category_edit"
         NotificationsKey -> "notifications"
+        is InsightsAskKey -> "insights_ask"
         BackupKey -> "backup"
         SmsTemplatesKey -> "sms_templates"
         is SmsTemplateEditKey -> "sms_template_edit"
@@ -323,6 +327,10 @@ private fun HisabakNav(slots: PlatformSlots) {
                 )
                 NotificationsKey -> DetailTopBar(
                     title = stringResource(Res.string.notifications_title),
+                    onBack = { navigator.goBack() },
+                )
+                is InsightsAskKey -> DetailTopBar(
+                    title = stringResource(Res.string.insights_ask_title_sheet),
                     onBack = { navigator.goBack() },
                 )
                 BackupKey -> DetailTopBar(
@@ -417,6 +425,16 @@ private fun HisabakNav(slots: PlatformSlots) {
                     onSetLimit = { id, amountMinor ->
                         navigator.navigate(CategoryEditKey(id = id.value, prefillLimitMinor = amountMinor))
                     },
+                    onOpenAsk = { period, question ->
+                        navigator.navigate(InsightsAskKey(period = period.name, question = question))
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            entry<InsightsAskKey>(metadata = fullScreenTransition()) { key ->
+                AskRoute(
+                    period = SummaryPeriod.valueOf(key.period),
+                    initialQuestion = key.question,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
