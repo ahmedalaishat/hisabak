@@ -448,8 +448,11 @@ com.hisabak
 retained per tab when switching; the user always exits the app through the **Dashboard**
 (home) tab.
 
-- `NavKeys.kt` — destination keys: `DashboardKey`, `TransactionsKey`, `SmsKey`,
+- `NavKeys.kt` — destination keys: `DashboardKey`, `TransactionsKey`, `InsightsKey`,
   `ManageKey`, `SettingsKey` (top-level) + `TransactionEditKey/BrandEditKey/CategoryEditKey(id)` (children).
+  SMS is **not** a top-level key: it is `LedgerTab.Sms`, a sub-tab of `TransactionsKey`. That merge
+  is what freed the fifth slot for the review, and the two belong together — what was spent, and the
+  messages it was captured from.
 - `NavigationState.kt` — `NavigationState` (one back stack per tab), `Navigator`
   (`navigate`/`goBack`: back from a tab → home; back from home → exit), and `toEntries()`
   which wires the saveable-state + **ViewModel-store** entry decorators plus an
@@ -474,9 +477,9 @@ retained per tab when switching; the user always exits the app through the **Das
 
 | Tab | Top-level key | Internal screens |
 |-----|---------------|-----------------|
-| Dashboard | DashboardKey | Summary/Trends/Categories tabs → Insights (full screen, from the Review card; has its own period chips) |
-| Transactions | TransactionsKey | List → Edit (bottom sheet; the "New brand" chip and the uncategorized-brand note detour to the brand editor — the sheet closes/reopens around it with its typed input parked in `TransactionDraftBus`, and a created brand auto-selects via `BrandCreatedBus`) |
-| SMS | SmsKey | Inbox → template editor (full screen) / transaction sheet (review of an AI-parsed entry) |
+| Dashboard | DashboardKey | Summary/Trends/Categories tabs; the Review card opens the Insights tab (parking its period in `InsightsPeriodBus`) |
+| Transactions | TransactionsKey | **Two sub-tabs** (`LedgerTab`, selector hoisted in `HisabakRoot`): **Transactions** — list → Edit (bottom sheet; the "New brand" chip and the uncategorized-brand note detour to the brand editor — the sheet closes/reopens around it with its typed input parked in `TransactionDraftBus`, and a created brand auto-selects via `BrandCreatedBus`) — and **SMS** — inbox → template editor (full screen) / transaction sheet (review of an AI-parsed entry). The FAB and the top-bar title follow the sub-tab; `InboxOpenBus` selects the SMS half. |
+| Insights | InsightsKey | Findings + the AI explanation + Ask; own period chips, seeded once from `InsightsPeriodBus` |
 | Manage | ManageKey | Brands/Categories list → Edit (full screen; the brand editor's "+ New category" chip pushes the category editor and auto-selects the result via `CategoryCreatedBus`) |
 | Settings | SettingsKey | Theme + language + app lock → Backup & restore / SMS parsing → template editor (full screen) |
 

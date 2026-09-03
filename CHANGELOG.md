@@ -15,6 +15,9 @@ All notable changes to Hisabak are documented here. Format based on
   **See what's shared** beside it shows the exact figures first. There is no switch to leave on; the
   answer is kept on your phone for as long as those exact figures stand, and if the service can't
   answer the review below is complete on its own.
+- **Insights has its own tab, and SMS moved in with Transactions.** The review is no longer buried
+  behind the dashboard: it is a tab of its own. The SMS inbox sits beside the transaction list as
+  the second half of the Transactions tab, which is where the messages you capture from belong.
 - **Ask about a period.** Under the review you can now put a question to the AI — tap one of the
   suggested questions ("Why is Dining up?", "What should I focus on?") or type your own. It sends
   the same totals as the explanation plus your question, never your transactions, and the service

@@ -13,6 +13,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import com.hisabak.ui.theme.Spacing
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.Text
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -46,6 +55,7 @@ import com.hisabak.feature.category.presentation.CategoryCreatedBus
 import com.hisabak.feature.category.presentation.edit.CategoryEditPrefill
 import com.hisabak.feature.category.presentation.edit.CategoryEditRoute
 import com.hisabak.feature.dashboard.presentation.CategoryFocusBus
+import com.hisabak.feature.insights.presentation.InsightsPeriodBus
 import com.hisabak.feature.insights.presentation.InsightsRoute
 import com.hisabak.feature.dashboard.presentation.DashboardRoute
 import com.hisabak.feature.notification.domain.NotificationRepository
@@ -64,9 +74,9 @@ import com.hisabak.nav.ManageKey
 import com.hisabak.nav.Navigator
 import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.nav.InsightsKey
+import com.hisabak.nav.LedgerTab
 import com.hisabak.nav.NotificationsKey
 import com.hisabak.nav.SettingsKey
-import com.hisabak.nav.SmsKey
 import com.hisabak.nav.SmsTemplateEditKey
 import com.hisabak.nav.SmsTemplatesKey
 import com.hisabak.nav.TransactionEditKey
@@ -89,6 +99,7 @@ import com.hisabak.shared.resources.brand_new_title
 import com.hisabak.shared.resources.category_edit_title
 import com.hisabak.shared.resources.category_new_title
 import com.hisabak.shared.resources.nav_dashboard
+import com.hisabak.shared.resources.nav_insights
 import com.hisabak.shared.resources.nav_manage
 import com.hisabak.shared.resources.nav_settings
 import com.hisabak.shared.resources.nav_sms
@@ -193,7 +204,7 @@ private enum class RootTab(
 ) {
     Dashboard(DashboardKey, Res.string.nav_dashboard, HugeIcons.SpaceDashboard),
     Transactions(TransactionsKey, Res.string.nav_transactions, HugeIcons.List),
-    Sms(SmsKey, Res.string.nav_sms, HugeIcons.Message),
+    Insights(InsightsKey, Res.string.nav_insights, HugeIcons.Insights),
     Manage(ManageKey, Res.string.nav_manage, HugeIcons.Layers),
     Settings(SettingsKey, Res.string.nav_settings, HugeIcons.Settings),
 }
@@ -214,6 +225,9 @@ private fun HisabakNav(slots: PlatformSlots) {
     // sheet first and reopen the same transaction (null id = a new one, whose typed input the
     // draft bus preserves) when the brand editor finishes.
     val reopenTransactionAfterBrandEdit = remember { mutableStateOf<ReopenSheet?>(null) }
+    // Which half of the ledger tab is showing. Hoisted here because the top bar, the FAB, and the
+    // "open the inbox" intent all depend on it.
+    var ledgerTab by rememberSaveable { mutableStateOf(LedgerTab.Transactions) }
     val bottomSheetStrategy = remember { BottomSheetSceneStrategy<NavKey>() }
     val filterBus = koinInject<TransactionListFilterBus>()
     val inboxOpenBus = koinInject<com.hisabak.feature.sms.presentation.InboxOpenBus>()
@@ -222,6 +236,7 @@ private fun HisabakNav(slots: PlatformSlots) {
     val categoryCreatedBus = koinInject<CategoryCreatedBus>()
     val brandCreatedBus = koinInject<BrandCreatedBus>()
     val notificationRepository = koinInject<NotificationRepository>()
+    val insightsPeriodBus = koinInject<InsightsPeriodBus>()
 
     val unreadCount by notificationRepository.observeUnreadCount().collectAsStateWithLifecycle(initialValue = 0)
     val pendingFocus by categoryFocusBus.pending.collectAsStateWithLifecycle()
@@ -230,7 +245,8 @@ private fun HisabakNav(slots: PlatformSlots) {
     val pendingInboxOpen by inboxOpenBus.pending.collectAsStateWithLifecycle()
     LaunchedEffect(pendingInboxOpen) {
         if (pendingInboxOpen) {
-            navigator.navigate(SmsKey)
+            ledgerTab = LedgerTab.Sms
+            navigator.navigate(TransactionsKey)
             inboxOpenBus.consume()
         }
     }
@@ -269,7 +285,7 @@ private fun HisabakNav(slots: PlatformSlots) {
     // Brand/Category edits and the notifications screen are full-screen pages with a back arrow.
     val leaf = navigationState.backStacks[navigationState.topLevelRoute]?.lastOrNull()
     val fullScreen = leaf is BrandEditKey || leaf is CategoryEditKey ||
-        leaf == NotificationsKey || leaf == BackupKey || leaf is InsightsKey ||
+        leaf == NotificationsKey || leaf == BackupKey ||
         leaf == SmsTemplatesKey || leaf is SmsTemplateEditKey
 
     val analytics = koinInject<Analytics>()
@@ -278,14 +294,13 @@ private fun HisabakNav(slots: PlatformSlots) {
         is BrandEditKey -> "brand_edit"
         is CategoryEditKey -> "category_edit"
         NotificationsKey -> "notifications"
-        is InsightsKey -> "insights"
         BackupKey -> "backup"
         SmsTemplatesKey -> "sms_templates"
         is SmsTemplateEditKey -> "sms_template_edit"
         else -> when (currentTab) {
             RootTab.Dashboard -> "dashboard"
-            RootTab.Transactions -> "transactions"
-            RootTab.Sms -> "sms_inbox"
+            RootTab.Transactions -> if (ledgerTab == LedgerTab.Sms) "sms_inbox" else "transactions"
+            RootTab.Insights -> "insights"
             RootTab.Manage -> "manage"
             RootTab.Settings -> "settings"
         }
@@ -307,10 +322,6 @@ private fun HisabakNav(slots: PlatformSlots) {
                     title = stringResource(Res.string.notifications_title),
                     onBack = { navigator.goBack() },
                 )
-                is InsightsKey -> DetailTopBar(
-                    title = stringResource(Res.string.insights_title),
-                    onBack = { navigator.goBack() },
-                )
                 BackupKey -> DetailTopBar(
                     title = stringResource(Res.string.backup_title),
                     onBack = { navigator.goBack() },
@@ -330,7 +341,7 @@ private fun HisabakNav(slots: PlatformSlots) {
                     title = when (currentTab) {
                         RootTab.Dashboard -> stringResource(Res.string.app_brand_name)
                         RootTab.Transactions -> stringResource(Res.string.nav_transactions)
-                        RootTab.Sms -> stringResource(Res.string.sms_inbox_title)
+                        RootTab.Insights -> stringResource(Res.string.insights_title)
                         RootTab.Manage -> stringResource(Res.string.nav_manage)
                         RootTab.Settings -> stringResource(Res.string.nav_settings)
                     },
@@ -349,7 +360,7 @@ private fun HisabakNav(slots: PlatformSlots) {
             }
         },
         floatingActionButton = {
-            if (leaf == TransactionsKey) {
+            if (leaf == TransactionsKey && ledgerTab == LedgerTab.Transactions) {
                 FloatingActionButton(
                     onClick = { navigator.navigate(TransactionEditKey(id = null)) },
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -368,21 +379,42 @@ private fun HisabakNav(slots: PlatformSlots) {
                         filterBus.request(TransactionListFilterRequest.Uncategorized)
                         navigator.navigate(TransactionsKey)
                     },
-                    onOpenInsights = { period -> navigator.navigate(InsightsKey(period.name)) },
+                    onOpenInsights = { period ->
+                        insightsPeriodBus.request(period)
+                        navigator.navigate(InsightsKey)
+                    },
                     modifier = Modifier.fillMaxSize(),
                 )
             }
             entry<TransactionsKey> {
-                TransactionListRoute(
-                    onAdd = { navigator.navigate(TransactionEditKey(id = null)) },
-                    onEdit = { id -> navigator.navigate(TransactionEditKey(id = id.value)) },
-                )
+                LedgerTabs(selected = ledgerTab, onSelect = { ledgerTab = it }) {
+                    when (ledgerTab) {
+                        LedgerTab.Transactions -> TransactionListRoute(
+                            onAdd = { navigator.navigate(TransactionEditKey(id = null)) },
+                            onEdit = { id -> navigator.navigate(TransactionEditKey(id = id.value)) },
+                        )
+                        LedgerTab.Sms -> slots.smsInbox(
+                            { smsId -> navigator.navigate(SmsTemplateEditKey(templateId = null, sampleSmsId = smsId)) },
+                            { txId -> navigator.navigate(TransactionEditKey(id = txId)) },
+                            Modifier.fillMaxSize(),
+                        )
+                    }
+                }
             }
-            entry<SmsKey> {
-                slots.smsInbox(
-                    { smsId -> navigator.navigate(SmsTemplateEditKey(templateId = null, sampleSmsId = smsId)) },
-                    { txId -> navigator.navigate(TransactionEditKey(id = txId)) },
-                    Modifier.fillMaxSize(),
+            entry<InsightsKey> {
+                InsightsRoute(
+                    onOpenCategory = { id ->
+                        filterBus.request(TransactionListFilterRequest.ByCategory(id))
+                        navigator.navigate(TransactionsKey)
+                    },
+                    onOpenUncategorized = {
+                        filterBus.request(TransactionListFilterRequest.Uncategorized)
+                        navigator.navigate(TransactionsKey)
+                    },
+                    onSetLimit = { id, amountMinor ->
+                        navigator.navigate(CategoryEditKey(id = id.value, prefillLimitMinor = amountMinor))
+                    },
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
             entry<SettingsKey> {
@@ -426,24 +458,6 @@ private fun HisabakNav(slots: PlatformSlots) {
                         filterBus.request(TransactionListFilterRequest.ByCategory(id))
                         navigator.navigate(TransactionsKey)
                     },
-                )
-            }
-            entry<InsightsKey>(metadata = fullScreenTransition()) { key ->
-                InsightsRoute(
-                    period = SummaryPeriod.valueOf(key.period),
-                    // Same shape as the dashboard's deep links: park the filter, then go.
-                    onOpenCategory = { id ->
-                        filterBus.request(TransactionListFilterRequest.ByCategory(id))
-                        navigator.navigate(TransactionsKey)
-                    },
-                    onOpenUncategorized = {
-                        filterBus.request(TransactionListFilterRequest.Uncategorized)
-                        navigator.navigate(TransactionsKey)
-                    },
-                    onSetLimit = { id, amountMinor ->
-                        navigator.navigate(CategoryEditKey(id = id.value, prefillLimitMinor = amountMinor))
-                    },
-                    modifier = Modifier.fillMaxSize(),
                 )
             }
             entry<NotificationsKey>(metadata = fullScreenTransition()) {
@@ -545,5 +559,43 @@ private fun HisabakNav(slots: PlatformSlots) {
                 .clearFocusOnTap()
                 .clearFocusOnScroll(),
         )
+    }
+}
+
+/**
+ * The ledger's two halves. The selector is the top-level element of the tab and each half owns its
+ * own controls beneath it — the transaction list already carries period chips and filters, and
+ * stacking a second row of shared controls above them would read as one long toolbar.
+ */
+@Composable
+private fun LedgerTabs(
+    selected: LedgerTab,
+    onSelect: (LedgerTab) -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Column(Modifier.fillMaxSize()) {
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.pageMargin, vertical = Spacing.s2),
+        ) {
+            LedgerTab.entries.forEachIndexed { index, tab ->
+                SegmentedButton(
+                    selected = selected == tab,
+                    onClick = { onSelect(tab) },
+                    shape = SegmentedButtonDefaults.itemShape(index, LedgerTab.entries.size),
+                ) {
+                    Text(
+                        stringResource(
+                            when (tab) {
+                                LedgerTab.Transactions -> Res.string.nav_transactions
+                                LedgerTab.Sms -> Res.string.nav_sms
+                            },
+                        ),
+                    )
+                }
+            }
+        }
+        Box(Modifier.weight(1f)) { content() }
     }
 }

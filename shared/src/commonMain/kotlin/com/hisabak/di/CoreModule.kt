@@ -13,6 +13,7 @@ import org.koin.dsl.module
 val APPLICATION_SCOPE = named("applicationScope")
 
 val coreModule = module {
+    single { com.hisabak.feature.insights.presentation.InsightsPeriodBus() }
     single<Clock> { SystemClock() }
     single { Currency.AED }
     single { SeedData(clock = get(), currency = get()) }
