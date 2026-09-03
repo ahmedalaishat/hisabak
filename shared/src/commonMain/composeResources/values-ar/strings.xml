@@ -477,8 +477,8 @@
     <string name="insights_detail_largest">أكبر مصروف · %1$s من الإنفاق</string>
     <string name="insights_detail_savings_rate">نسبة الادخار %1$s</string>
     <string name="insights_detail_savings_rate_delta">نسبة الادخار %1$s · %2$s نقطة مقارنةً بالفترة السابقة</string>
-    <string name="insights_section_ai">شرح الذكاء الاصطناعي</string>
-    <string name="insights_section_findings">النتائج</string>
+    <string name="insights_tab_findings">النتائج</string>
+    <string name="insights_tab_assistant">المساعد الذكي</string>
     <string name="insights_narrative_footer">كُتبت بالذكاء الاصطناعي من مجاميعك، لا من معاملاتك.</string>
     <string name="insights_narrative_loading">جارٍ شرح ما تغيّر…</string>
     <string name="insights_narrative_unavailable">تعذّر جلب الشرح الآن. المراجعة أدناه كاملة بذاتها.</string>

@@ -33,6 +33,8 @@ data class InsightsUiState(
     val summary: InsightsSummary? = null,
     val narrative: NarrativeUi = NarrativeUi.Hidden,
     val showShared: Boolean = false,
+    /** False when the build has no service: there is nothing in the assistant tab, so it is hidden. */
+    val showAiTab: Boolean = false,
     /** Questions derived from the findings; empty when the build has no service. */
     val suggestedQuestions: List<SuggestedQuestion> = emptyList(),
     /** Questions left today, for the entry card; null until read. */
