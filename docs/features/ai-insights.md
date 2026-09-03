@@ -51,7 +51,7 @@ picture off the phone by default.
   | token bounds | summary ≤ ~3K tokens, question ≤ 500 chars, history window ~6 turns, `max_tokens` on output | cost per call is a constant, not a variable |
   | prompt caching | system prompt + summary as the cached prefix across a session | multi-turn cost collapses to question + answer |
   | scope | system prompt: this user's finances from this summary only; brief refusal otherwise | kills general-chatbot use cheaply |
-  | period cache | narrative keyed by `(period, hash(summary))`; regenerate only on material change | layer 2 is ~one call per user per month |
+  | input cache | narrative keyed by a digest of the exact input (date window + language + every figure); a repeat tap for unchanged figures costs nothing | layer 2 costs one call per tap on changed figures |
   Cost is then bounded by construction: `users × N/day × constant`, with the global budget as the
   hard stop. Size N against current model pricing at implementation time, not from memory. The
   bearer token remains the real gate — this is the same exposure `/v1/parse` already carries, and
