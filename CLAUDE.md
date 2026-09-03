@@ -181,18 +181,20 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
 - **Insights narrative (AI, opt-in, layer 2):** the insights screen adds the model's explanation
   **above** the deterministic findings, never instead of them. `AiInsights` port
   (`feature/insights/domain/ai/`) → `RemoteAiInsights` over `/v1/insights` (same service, same
-  token, same `Limiter`; `InsightsProvider` beside `ParseProvider` server-side). **Its own consent**
-  — `insightsEnabled`, distinct from `remoteParseEnabled`, because parsing sends one bank message
-  and this sends a picture of the user's finances; re-checked per call. `sanitizeNarrative` owns
+  token, same `Limiter`; `InsightsProvider` beside `ParseProvider` server-side). **Consent is per
+  request, not a setting:** there is no `insightsEnabled` switch — the send *is* the tap on
+  "Explain with AI", which sits next to "See what's shared" on the insights screen; the ViewModel
+  never fetches on its own (it only looks the cache up), so a picture of the user's finances leaves
+  the phone only when they just asked. `sanitizeNarrative` owns
   acceptance (an unknown category **drops the item**, text is bounded, a suggested cap must be within
   3× of what the category has done and differ from the current limit; one item per category, five
   max). **Cost is bounded by the cache key, not the summary:** `narrativeKey` = the deterministic
   finding ids + totals rounded to two significant digits + language, so a narrative regenerates only
   when the review would read differently (`insight_narratives` Room table, `SCHEMA_VERSION` 9→10
   additive, not in the backup envelope — a restored ledger misses and regenerates; an empty reply is
-  cached too). The screen offers the opt-in where it applies (Turn on / Not now — in-memory, per
-  visit — / **See what's shared**, which renders the exact payload) and stays silent when the build
-  has no service (`AppConfig.hasParseService`). Suggestions are **confirm-first chips**: "Set a X
+  cached too). Unchanged figures show the last answer on reopen without a send; changed figures show
+  the ask again. The ask card (Explain with AI / **See what's shared**, which renders the exact
+  payload) appears only when the build has a service (`AppConfig.hasParseService`). Suggestions are **confirm-first chips**: "Set a X
   limit" opens the category editor with `CategoryEditKey.prefillLimitMinor` in the field and Save is
   the confirmation. `server/evals/run_insights.py` checks properties (over-limit leads, no invented
   category, a hostile category name is not obeyed, Arabic in Arabic) against the shipped prompt.

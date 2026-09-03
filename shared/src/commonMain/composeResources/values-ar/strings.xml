@@ -51,7 +51,6 @@
     <string name="settings_group_backup_security">النسخ الاحتياطي والأمان</string>
     <string name="settings_group_sms_parsing">تحليل الرسائل</string>
     <string name="settings_group_preferences">التفضيلات</string>
-    <string name="settings_group_insights">الرؤى</string>
     <string name="settings_theme">المظهر</string>
     <string name="settings_appearance">المظهر</string>
     <string name="settings_appearance_hint">اختر شكل حسابك. يتبع وضع النظام مظهر جهازك.</string>
@@ -238,8 +237,6 @@
     <string name="settings_sms_templates_hint">علّم التطبيق صيغ رسائل بنكك</string>
     <string name="settings_remote_parse">التحليل بالنموذج عبر الإنترنت</string>
     <string name="settings_remote_parse_hint">الرسائل التي لا يتعرف عليها أي قالب تُرسل إلى خدمة التحليل الخاصة بحسابك لقراءتها. تُرسل هذه الرسائل فقط، وفقط عند تفعيل هذا الخيار، ولا يتم تخزينها.</string>
-    <string name="settings_insights_narrative">شرح المراجعة بالذكاء الاصطناعي</string>
-    <string name="settings_insights_narrative_hint">يُرسل مجاميع إنفاقك حسب الفئة للفترة — دون المعاملات أو الملاحظات أو الرسائل أبدًا — إلى خدمة حسابك لتشرح ما تغيّر وتقترح ما تفعله. متوقف افتراضيًا.</string>
     <string name="settings_auto_confirm">التأكيد تلقائيًا</string>
     <string name="settings_auto_confirm_hint">حفظ المعاملة دون سؤالك، عندما يُعثر على المبلغ والمتجر في نص الرسالة ويكون المتجر ضمن متاجرك الحالية. الرسائل التي تلصقها بنفسك تحتاج تأكيدك دائمًا.</string>
     <string name="sms_templates_title">تحليل الرسائل</string>
@@ -480,10 +477,9 @@
     <string name="insights_narrative_footer">كُتبت بالذكاء الاصطناعي من مجاميعك، لا من معاملاتك.</string>
     <string name="insights_narrative_loading">جارٍ شرح ما تغيّر…</string>
     <string name="insights_narrative_unavailable">تعذّر جلب الشرح الآن. المراجعة أدناه كاملة بذاتها.</string>
-    <string name="insights_offer_title">هل تريد شرحًا لهذا؟</string>
-    <string name="insights_offer_body">يمكن لحسابك إرسال هذه المجاميع — لا معاملاتك — إلى خدمته لتكتب شرحًا قصيرًا وتقترح ما تفعله. يمكنك رؤية ما يُشارك بالضبط أولًا.</string>
-    <string name="insights_offer_accept">تفعيل</string>
-    <string name="insights_offer_not_now">ليس الآن</string>
+    <string name="insights_ask_title">هل تريد شرحًا لهذا؟</string>
+    <string name="insights_ask_body">اضغط لإرسال هذه المجاميع — لا معاملاتك — إلى خدمة حسابك لتكتب شرحًا قصيرًا وتقترح ما تفعله. لا يُرسل شيء قبل ضغطك، ويمكنك رؤية ما سيُرسل بالضبط.</string>
+    <string name="insights_ask_accept">اشرح بالذكاء الاصطناعي</string>
     <string name="insights_shared_action">ما الذي يُشارك؟</string>
     <string name="insights_shared_title">ما الذي يُشارك</string>
     <string name="insights_shared_intro">هذه الأرقام فقط تخرج من هاتفك. لا معاملات ولا ملاحظات ولا علامات ولا رسائل.</string>

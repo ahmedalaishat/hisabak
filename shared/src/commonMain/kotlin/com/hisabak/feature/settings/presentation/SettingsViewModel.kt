@@ -30,8 +30,6 @@ class SettingsViewModel(
     /** Whether a verified suggestion may be saved without a tap. Distinct from the consent above. */
     val autoConfirmEnabled: Flow<Boolean> = preferences.autoConfirmEnabled
 
-    /** Consent for sending the period's totals to the service for the AI narrative. Its own switch. */
-    val insightsEnabled: Flow<Boolean> = preferences.insightsEnabled
 
     /** Show the "do you still remember your backup passphrase?" card once it's been a while. */
     val passphraseReminderVisible: Flow<Boolean> = combine(
@@ -71,11 +69,6 @@ class SettingsViewModel(
     fun setRemoteParseEnabled(value: Boolean) {
         analytics.log(AnalyticsEvent.RemoteParseToggled(value))
         viewModelScope.launch { preferences.setRemoteParseEnabled(value) }
-    }
-
-    fun setInsightsEnabled(value: Boolean) {
-        analytics.log(AnalyticsEvent.InsightsToggled(value))
-        viewModelScope.launch { preferences.setInsightsEnabled(value) }
     }
 
     fun setAutoConfirmEnabled(value: Boolean) {

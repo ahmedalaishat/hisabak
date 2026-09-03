@@ -70,13 +70,11 @@ fun SettingsScreen(
     remoteParseEnabled: Boolean,
     remoteParseSupported: Boolean,
     autoConfirmEnabled: Boolean,
-    insightsEnabled: Boolean,
     onThemeChange: (ThemeMode) -> Unit,
     onLanguageChange: (String) -> Unit,
     onAppLockChange: (Boolean) -> Unit,
     onRemoteParseChange: (Boolean) -> Unit,
     onAutoConfirmChange: (Boolean) -> Unit,
-    onInsightsChange: (Boolean) -> Unit,
     onOpenBackup: () -> Unit,
     onOpenSmsTemplates: () -> Unit,
     passphraseReminderVisible: Boolean,
@@ -163,22 +161,6 @@ fun SettingsScreen(
                     Switch(checked = autoConfirmEnabled, onCheckedChange = onAutoConfirmChange)
                 },
             )
-        }
-
-        // Its own group and its own switch: parsing sends one message, this sends a picture of the
-        // user's finances, and consent to one must not read as consent to the other. Hidden without
-        // a service, like the parsing row.
-        if (remoteParseSupported) {
-            SettingsGroup(title = stringResource(Res.string.settings_group_insights)) {
-                SettingCard(
-                    icon = HugeIcons.Idea,
-                    title = stringResource(Res.string.settings_insights_narrative),
-                    hint = stringResource(Res.string.settings_insights_narrative_hint),
-                    trailing = {
-                        Switch(checked = insightsEnabled, onCheckedChange = onInsightsChange)
-                    },
-                )
-            }
         }
 
         SettingsGroup(title = stringResource(Res.string.settings_group_preferences)) {

@@ -147,7 +147,8 @@ POST /v1/insights       Authorization: Bearer <HISABAK_API_TOKEN>
                  "detail": "…", "suggested_limit_minor": 160000 } ], "model": "…" }
 ```
 
-The opt-in narrative over the app's deterministic review. **The request schema is the privacy
+The on-request narrative over the app's deterministic review — the client sends only when the
+user taps "Explain with AI"; there is no stored opt-in. **The request schema is the privacy
 boundary:** it has no field for a transaction, a note, a brand, or a message, so a client cannot
 send one even by mistake (unknown fields are dropped, not forwarded). Category names are the only
 user text in the prompt and the prompt treats them as data. Every reply is validated on the
@@ -155,9 +156,10 @@ client (`sanitizeNarrative`): an item naming a category not in the summary is dr
 suggested cap must be within reach of the figures.
 
 It shares the parse limiter and budget. Cost per call is ~$0.002 (≈600 tokens in, ≈300 out) and
-the client regenerates only when its review **materially** changes — a finding appears or
-disappears, or a total moves in its second significant digit — so this runs roughly once per
-user per period, not per transaction. Property evals: `python -m evals.run_insights`.
+the client sends only on a tap, and a tap for figures it has already explained is answered from
+its cache — the answer is keyed on **material** change (a finding appears or disappears, or a
+total moves in its second significant digit) — so this runs at most a few times per user per
+period. Property evals: `python -m evals.run_insights`.
 
 ## Abuse and spend control
 

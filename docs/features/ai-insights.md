@@ -28,12 +28,12 @@ picture off the phone by default.
   leave** — the most sensitive field and the obvious prompt-injection vector. Transaction rows
   never leave; if a question needs one ("what was that 1,200 on the 9th?") the answer comes from
   the local deterministic layer, not the model.
-- **A separate opt-in.** `insightsEnabled`, distinct from `remoteParseEnabled`: parsing sends one
-  bank SMS, this sends a picture of the user's finances, and one consent must not imply the other.
-  The Settings row appears only when a service is configured, exactly like parsing.
-  `docs/privacy.html` gets its own section. **"See what's shared"** shows the exact summary before
-  the first send — cheap, and on-brand for an app whose promise is that SMS text stays on the
-  phone.
+- **Consent per request, not a switch** (decided 2026-09-03, after building it as a switch first).
+  Parsing has a stored opt-in because it must run unattended when a message arrives; the narrative
+  has no such need — the user is on the screen. So there is no `insightsEnabled` setting: the send
+  *is* the tap on **Explain with AI**, and **"See what's shared"** sits beside it showing the exact
+  summary that tap would send. Nothing is ever sent by the app on its own, and there is nothing to
+  revoke. `docs/privacy.html` gets its own section.
 - **Read-only, always.** The model never writes. An actionable suggestion ("set a 600 dining
   limit") renders as a **confirm-first chip** that opens the existing editor prefilled — the AI
   parse and category-suggestion pattern. No exception, even when it would be convenient.
@@ -131,8 +131,10 @@ picture off the phone by default.
   insights screen. No server, no opt-in.
 - **PR 2 (2026-09-03):** layer 2 — `/v1/insights` + `InsightsProvider`, `AiInsights` /
   `RemoteAiInsights`, `sanitizeNarrative`, the `insight_narratives` cache (schema 9→10), the
-  `insightsEnabled` opt-in in Settings and as an offer on the screen, "See what's shared", the
-  privacy section, confirm-first "Set a limit" chips, property evals. Decisions made while building:
+  ask card on the screen (Explain with AI + See what's shared), the privacy section, confirm-first
+  "Set a limit" chips, property evals. **Revised the same evening:** the `insightsEnabled` switch
+  (Settings → Insights) was removed at his request — consent is the tap, every time; the cache
+  still shows the last answer for unchanged figures without a send. Decisions made while building:
   - **"Material change" is defined by the deterministic layer**, not by a hash of the summary: the
     cache key is the sorted finding ids + income/expense/uncategorized rounded to two significant
     digits + language. Hashing the summary would have regenerated per transaction; this regenerates
@@ -144,9 +146,8 @@ picture off the phone by default.
   - **Suggestion bounds:** within 3× of max(spent, prior, limit), positive, ≠ current limit, rounded
     to whole units. The chip opens the editor prefilled; Save is the confirmation. Nothing is written
     by a reply.
-  - **The offer has two answers plus a look at the payload** (Turn on / Not now / See what's
-    shared). "Not now" is per visit (ViewModel-held). No "don't ask again": the screen is one the
-    user opens deliberately, and Settings has the switch.
+  - **The ask has one action plus a look at the payload** (Explain with AI / See what's shared).
+    No "not now", nothing to dismiss: an unanswered ask costs nothing and sends nothing.
   - **One transport per platform** (`ServiceTransport`) replaced the per-endpoint HTTP clients so
     parsing and insights share the wire code and the contract stays in commonMain.
   - **Not done:** prompt caching (Haiku's 4096-token floor makes it inert at this payload size),
