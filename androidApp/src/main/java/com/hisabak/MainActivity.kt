@@ -85,10 +85,10 @@ class MainActivity : FragmentActivity() {
                 modifier = modifier,
             )
         },
-        settings = { onOpenBackup, onOpenSmsTemplates, modifier ->
+        settings = { onOpenBackup, onOpenSmsParsing, modifier ->
             SettingsRoute(
                 onOpenBackup = onOpenBackup,
-                onOpenSmsTemplates = onOpenSmsTemplates,
+                onOpenSmsParsing = onOpenSmsParsing,
                 modifier = modifier,
             )
         },

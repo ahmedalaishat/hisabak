@@ -397,7 +397,8 @@ progress — see `docs/kmp-migration.md`):
   `FirebaseAnalyticsClient`, `BiometricAuthenticator`, `AppLocale`,
   `AndroidLocalizedDateFormatter`), the Koin platform bindings (`di/PlatformModule.kt`),
   and the **thin Routes** that need launchers/Intents (`SmsInboxRoute`, `OnboardingRoute`,
-  `SettingsRoute`, `BackupRoute`, `RestoreRoute`). Everything else is in `shared`.
+  `SettingsRoute`, `BackupRoute`, `RestoreRoute`). The nested **SMS parsing** screen is *not* among
+  them: it is switches only, so `SmsParsingRoute` lives in `shared` and needs no platform Route. Everything else is in `shared`.
 - **`shared/`** — the KMP library (`org.jetbrains.kotlin.multiplatform` +
   `com.android.kotlin.multiplatform.library`; android + iosArm64 + iosSimulatorArm64,
   static `Shared` framework). `commonMain` holds the whole app minus the platform glue:
@@ -484,10 +485,10 @@ retained per tab when switching; the user always exits the app through the **Das
 | Tab | Top-level key | Internal screens |
 |-----|---------------|-----------------|
 | Dashboard | DashboardKey | Summary/Trends/Categories tabs; the Review card opens the Insights tab (parking its period in `InsightsPeriodBus`) |
-| Insights | InsightsKey | Findings + the AI explanation + the Ask entry card → Ask (full screen); own period chips, seeded once from `InsightsPeriodBus` |
+| Insights | InsightsKey | **Two tabs** (`InsightsTab`): **Findings** (deterministic) and **AI assistant** (the explanation + the Ask entry card → Ask, full screen). The AI tab is hidden when the build has no service, so the review reads as one list. Own period chips under the tabs, seeded once from `InsightsPeriodBus` |
 | Transactions | TransactionsKey | **Two sub-tabs** (`LedgerTab`, selector hoisted in `HisabakRoot`): **Transactions** — list → Edit (bottom sheet; the "New brand" chip and the uncategorized-brand note detour to the brand editor — the sheet closes/reopens around it with its typed input parked in `TransactionDraftBus`, and a created brand auto-selects via `BrandCreatedBus`) — and **SMS** — inbox → template editor (full screen) / transaction sheet (review of an AI-parsed entry). The FAB and the top-bar title follow the sub-tab; `InboxOpenBus` selects the SMS half. |
-| Manage | ManageKey | Brands/Categories list → Edit (full screen; the brand editor's "+ New category" chip pushes the category editor and auto-selects the result via `CategoryCreatedBus`) |
-| Settings | SettingsKey | Theme + language + app lock → Backup & restore / SMS parsing → template editor (full screen) |
+| Manage | ManageKey | **Two sub-tabs** (segmented, count in the label): Brands/Categories list → Edit (full screen; the brand editor's "+ New category" chip pushes the category editor and auto-selects the result via `CategoryCreatedBus`) |
+| Settings | SettingsKey | Theme + language + app lock → Backup & restore / **SMS parsing** (nested screen: templates, the online model, auto-confirm) → template editor |
 
 Pattern: `List` → tap row or FAB → push `Edit(id?)` destination → Save/Cancel calls
 `navigator.goBack()` → back to `List`.

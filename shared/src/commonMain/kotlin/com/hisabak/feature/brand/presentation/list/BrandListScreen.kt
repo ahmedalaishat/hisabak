@@ -53,7 +53,6 @@ import com.hisabak.ui.components.EmptyStatePanel
 import com.hisabak.ui.components.IconTile
 import com.hisabak.ui.components.ListRow
 import com.hisabak.ui.components.SearchField
-import com.hisabak.ui.components.SectionHeader
 import com.hisabak.ui.components.SurfaceCard
 import com.hisabak.ui.components.iconForKey
 import com.hisabak.ui.components.tintPairForColor
@@ -95,7 +94,8 @@ fun BrandListScreen(
         contentPadding = PaddingValues(
             start = Spacing.pageMargin,
             end = Spacing.pageMargin,
-            top = Spacing.s5,
+            // Under the Manage selector, which owns the page's top margin.
+            top = Spacing.s3,
             bottom = Spacing.s10 + Spacing.s7, // clear the Manage FAB
         ),
         verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
@@ -124,10 +124,6 @@ fun BrandListScreen(
         }
 
         // Most-used card hidden for now (see the shared MostUsedCard / BrandRow.transactionCount).
-
-        item {
-            SectionHeader(title = stringResource(Res.string.brand_all_section))
-        }
 
         if (state.rows.isEmpty()) {
             item {

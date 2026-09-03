@@ -2,6 +2,15 @@ package com.hisabak.feature.insights.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import org.jetbrains.compose.resources.StringResource
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -53,8 +62,8 @@ import com.hisabak.shared.resources.insights_empty_subtitle
 import com.hisabak.shared.resources.insights_empty_title
 import com.hisabak.shared.resources.insights_savings_title
 import com.hisabak.shared.resources.insights_uncategorized_title
-import com.hisabak.shared.resources.insights_section_ai
-import com.hisabak.shared.resources.insights_section_findings
+import com.hisabak.shared.resources.insights_tab_assistant
+import com.hisabak.shared.resources.insights_tab_findings
 import com.hisabak.shared.resources.insights_narrative_footer
 import com.hisabak.shared.resources.insights_narrative_loading
 import com.hisabak.shared.resources.insights_narrative_unavailable
@@ -96,7 +105,6 @@ import com.hisabak.ui.components.exactAmount
 import com.hisabak.ui.components.EmptyStatePanel
 import com.hisabak.ui.components.IconTile
 import com.hisabak.ui.components.MoneyText
-import com.hisabak.ui.components.SectionHeader
 import com.hisabak.ui.components.SurfaceCard
 import com.hisabak.ui.components.iconForKey
 import com.hisabak.ui.components.localizeDigits
@@ -124,65 +132,94 @@ fun InsightsScreen(
     onIntent: (InsightsIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Two tabs, not three: the explanation and the questions are one conversation about the same
+    // figures, and the question occurs while reading the explanation. Ask is a full screen pushed
+    // from this tab, so it would be a tab that shows no view of its own.
+    var tab by rememberSaveable { mutableStateOf(InsightsTab.Findings) }
+
     if (state.showShared && state.summary != null) {
         SharedSummaryDialog(summary = state.summary, onDismiss = { onIntent(InsightsIntent.HideShared) })
     }
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = Spacing.pageMargin,
-            end = Spacing.pageMargin,
-            top = Spacing.pageMargin,
-            bottom = Spacing.s8,
-        ),
-        verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
-    ) {
-        // The chips live here too: re-scoping the review should not mean a trip back to the
-        // dashboard, and an empty period must still offer a way to another one.
-        item(key = "period") {
+    Column(modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.pageMargin)
+                .padding(top = Spacing.pageMargin),
+            verticalArrangement = Arrangement.spacedBy(Spacing.s3),
+        ) {
+            // Same order as the dashboard: the tab picks the view, the period scopes what is in it.
+            if (state.showAiTab) {
+                InsightsTabs(selected = tab, onSelect = { tab = it })
+            }
             PeriodChipRow(
                 selected = state.period,
                 onSelect = { onIntent(InsightsIntent.PeriodChanged(it)) },
-                modifier = Modifier.padding(bottom = Spacing.s1),
             )
         }
-        if (!state.isLoading && state.insights.isEmpty()) {
-            item(key = "empty") {
-                EmptyStatePanel(
-                    title = stringResource(Res.string.insights_empty_title),
-                    subtitle = stringResource(Res.string.insights_empty_subtitle),
-                    icon = HugeIcons.Insights,
-                    modifier = Modifier.fillMaxWidth().padding(top = Spacing.s8),
-                )
+        val showing = if (state.showAiTab) tab else InsightsTab.Findings
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = Spacing.pageMargin,
+                end = Spacing.pageMargin,
+                top = Spacing.s4,
+                bottom = Spacing.s8,
+            ),
+            verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
+        ) {
+            if (!state.isLoading && state.insights.isEmpty()) {
+                item(key = "empty") {
+                    EmptyStatePanel(
+                        title = stringResource(Res.string.insights_empty_title),
+                        subtitle = stringResource(Res.string.insights_empty_subtitle),
+                        icon = HugeIcons.Insights,
+                        modifier = Modifier.fillMaxWidth().padding(top = Spacing.s8),
+                    )
+                }
+                return@LazyColumn
             }
-            return@LazyColumn
-        }
-        // The AI layer sits above the findings it explains — an explanation is read before its
-        // evidence — and never replaces them: the deterministic list below is complete on its own.
-        // Each is a titled section once both are on screen, so the reader knows which words came
-        // from a model and which from arithmetic.
-        narrativeItems(state.narrative, onNarrativeClick, onSuggestionClick, onIntent)
-        // The entry point to Ask is a question about a finding, never a blank box: chips derived
-        // from the review, plus the allowance so the cost is visible before the first tap.
-        if (state.suggestedQuestions.isNotEmpty()) {
-            item(key = "ask:entry") {
-                AskEntryCard(
-                    questions = state.suggestedQuestions,
-                    remaining = state.askRemaining,
-                    onQuestion = { question -> onOpenAsk(question) },
-                    onOpen = { onOpenAsk(null) },
-                )
+            when (showing) {
+                InsightsTab.Findings -> items(state.insights, key = { it.id }) { insight ->
+                    SurfaceCard(onClick = { onInsightClick(insight) }) {
+                        InsightRow(insight)
+                    }
+                }
+                InsightsTab.Assistant -> {
+                    narrativeItems(state.narrative, onNarrativeClick, onSuggestionClick, onIntent)
+                    // The way on from an explanation is a question about it, so the ask sits last.
+                    if (state.suggestedQuestions.isNotEmpty()) {
+                        item(key = "ask:entry") {
+                            AskEntryCard(
+                                questions = state.suggestedQuestions,
+                                remaining = state.askRemaining,
+                                onQuestion = { question -> onOpenAsk(question) },
+                                onOpen = { onOpenAsk(null) },
+                            )
+                        }
+                    }
+                }
             }
         }
-        item(key = "findings:header") {
-            SectionHeader(
-                title = stringResource(Res.string.insights_section_findings),
-                modifier = Modifier.padding(top = Spacing.s2),
-            )
-        }
-        items(state.insights, key = { it.id }) { insight ->
-            SurfaceCard(onClick = { onInsightClick(insight) }) {
-                InsightRow(insight)
+    }
+}
+
+/** The two halves of the review: what was worked out, and what a model made of it. */
+enum class InsightsTab(val labelRes: StringResource) {
+    Findings(Res.string.insights_tab_findings),
+    Assistant(Res.string.insights_tab_assistant),
+}
+
+@Composable
+private fun InsightsTabs(selected: InsightsTab, onSelect: (InsightsTab) -> Unit) {
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        InsightsTab.entries.forEachIndexed { index, entry ->
+            SegmentedButton(
+                selected = selected == entry,
+                onClick = { onSelect(entry) },
+                shape = SegmentedButtonDefaults.itemShape(index, InsightsTab.entries.size),
+            ) {
+                Text(stringResource(entry.labelRes))
             }
         }
     }
@@ -214,11 +251,14 @@ private fun LazyListScope.narrativeItems(
 
 /** "See what's shared" rides the header: it is about the section, not any one card. */
 private fun LazyListScope.narrativeHeader(onIntent: (InsightsIntent) -> Unit) {
-    item(key = "ai:header") {
-        SectionHeader(
-            title = stringResource(Res.string.insights_section_ai),
-            actionLabel = stringResource(Res.string.insights_shared_action),
-            onAction = { onIntent(InsightsIntent.ShowShared) },
+    // Not a section title — the tab names the section. This is the payload disclosure, which
+    // belongs above the content it describes.
+    item(key = "ai:shared") {
+        Text(
+            text = stringResource(Res.string.insights_shared_action),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.clickable { onIntent(InsightsIntent.ShowShared) },
         )
     }
 }

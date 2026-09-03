@@ -119,14 +119,12 @@ internal fun IosSmsInboxRoute(
 @Composable
 internal fun IosSettingsRoute(
     onOpenBackup: () -> Unit,
-    onOpenSmsTemplates: () -> Unit,
+    onOpenSmsParsing: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
     val appLockEnabled by viewModel.appLockEnabled.collectAsStateWithLifecycle(initialValue = false)
-    val remoteParseEnabled by viewModel.remoteParseEnabled.collectAsStateWithLifecycle(initialValue = false)
-    val autoConfirmEnabled by viewModel.autoConfirmEnabled.collectAsStateWithLifecycle(initialValue = false)
     val appConfig: AppConfig = koinInject()
     val passphraseReminderVisible by viewModel.passphraseReminderVisible.collectAsStateWithLifecycle(initialValue = false)
 
@@ -141,13 +139,6 @@ internal fun IosSettingsRoute(
         themeMode = themeMode,
         language = language,
         appLockEnabled = appLockEnabled,
-        remoteParseEnabled = remoteParseEnabled,
-        // No service configured in this build -> the row stays hidden rather than offering
-        // an opt-in that would do nothing.
-        remoteParseSupported = appConfig.hasParseService,
-        onRemoteParseChange = viewModel::setRemoteParseEnabled,
-        autoConfirmEnabled = autoConfirmEnabled,
-        onAutoConfirmChange = viewModel::setAutoConfirmEnabled,
         appLockSupported = appLockSupported,
         onThemeChange = viewModel::setThemeMode,
         onLanguageChange = { tag ->
@@ -172,7 +163,7 @@ internal fun IosSettingsRoute(
             }
         },
         onOpenBackup = onOpenBackup,
-        onOpenSmsTemplates = onOpenSmsTemplates,
+        onOpenSmsParsing = onOpenSmsParsing,
         passphraseReminderVisible = passphraseReminderVisible,
         onConfirmRemembered = viewModel::confirmPassphraseRemembered,
         onVerifyPassphrase = viewModel::verifyPassphrase,

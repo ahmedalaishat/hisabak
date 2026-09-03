@@ -82,6 +82,7 @@ class InsightsViewModel(
                         isLoading = false,
                         narrative = narrative,
                         suggestedQuestions = if (appConfig.hasParseService) suggestedQuestions(insights) else emptyList(),
+                        showAiTab = appConfig.hasParseService,
                     )
                 }
                 if (appConfig.hasParseService && state.value.askRemaining == null) {

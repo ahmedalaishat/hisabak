@@ -52,6 +52,9 @@ data class InsightsAskKey(val period: String, val question: String?) : NavKey
 // Full-screen child opened from Settings → Data.
 data object BackupKey : NavKey
 
+// Full-screen child of Settings: the parsing options (formats, the online model, auto-confirm).
+data object SmsParsingKey : NavKey
+
 // Full-screen children for SMS parse templates: the manager (from Settings) and the
 // define-by-sample editor (from the manager, or from an unparsed inbox message).
 data object SmsTemplatesKey : NavKey

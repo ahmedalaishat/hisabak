@@ -12,6 +12,7 @@
     <string name="action_saving">جارٍ الحفظ…</string>
     <string name="common_all">الكل</string>
     <string name="common_brand">العلامة</string>
+    <string name="manage_tab_label">%1$s · %2$s</string>
     <string name="common_brands">العلامات</string>
     <string name="common_categories">الفئات</string>
     <string name="common_category">الفئة</string>
@@ -51,6 +52,9 @@
     <string name="transaction_deleting">جارٍ الحذف…</string>
     <string name="settings_group_backup_security">النسخ الاحتياطي والأمان</string>
     <string name="settings_group_sms_parsing">تحليل الرسائل</string>
+    <string name="settings_group_capture">الالتقاط</string>
+    <string name="settings_sms_parsing">تحليل الرسائل</string>
+    <string name="settings_sms_parsing_hint">صيغ الرسائل، والنموذج عبر الإنترنت، والتأكيد التلقائي</string>
     <string name="settings_group_preferences">التفضيلات</string>
     <string name="settings_theme">المظهر</string>
     <string name="settings_appearance">المظهر</string>
@@ -211,7 +215,6 @@
     <string name="brand_ai_suggested">مقترح: %1$s</string>
     <string name="brand_ai_suggested_new">جديدة: %1$s</string>
     <string name="brand_search_placeholder">ابحث في العلامات</string>
-    <string name="brand_all_section">كل العلامات</string>
     <string name="brand_empty_title">لا توجد علامات بعد</string>
     <string name="brand_empty_in_category">لا توجد علامات في هذه الفئة</string>
     <string name="brand_empty_subtitle">اضغط علامة جديدة لإضافة واحدة.</string>
@@ -234,13 +237,13 @@
     <string name="transaction_brand_uncategorized">لا فئة بعد — اضغط لتصنيف هذه العلامة</string>
     <string name="transaction_direction_deposit">إيداع</string>
     <string name="transaction_direction_withdrawal">سحب</string>
-    <string name="settings_sms_templates">تحليل الرسائل</string>
+    <string name="settings_sms_templates">قوالب الرسائل</string>
     <string name="settings_sms_templates_hint">علّم التطبيق صيغ رسائل بنكك</string>
     <string name="settings_remote_parse">التحليل بالنموذج عبر الإنترنت</string>
     <string name="settings_remote_parse_hint">الرسائل التي لا يتعرف عليها أي قالب تُرسل إلى خدمة التحليل الخاصة بحسابك لقراءتها. تُرسل هذه الرسائل فقط، وفقط عند تفعيل هذا الخيار، ولا يتم تخزينها.</string>
     <string name="settings_auto_confirm">التأكيد تلقائيًا</string>
     <string name="settings_auto_confirm_hint">حفظ المعاملة دون سؤالك، عندما يُعثر على المبلغ والمتجر في نص الرسالة ويكون المتجر ضمن متاجرك الحالية. الرسائل التي تلصقها بنفسك تحتاج تأكيدك دائمًا.</string>
-    <string name="sms_templates_title">تحليل الرسائل</string>
+    <string name="sms_templates_title">قوالب الرسائل</string>
     <string name="sms_templates_hint">تحوّل القوالب رسائل البنك إلى معاملات تلقائيًا. القالب الأكثر تحديدًا هو الذي يُطبَّق، وقوالبك لها الأولوية على المدمجة.</string>
     <string name="sms_template_new">قالب جديد</string>
     <string name="sms_templates_empty_title">لا توجد قوالب</string>
@@ -474,8 +477,8 @@
     <string name="insights_detail_largest">أكبر مصروف · %1$s من الإنفاق</string>
     <string name="insights_detail_savings_rate">نسبة الادخار %1$s</string>
     <string name="insights_detail_savings_rate_delta">نسبة الادخار %1$s · %2$s نقطة مقارنةً بالفترة السابقة</string>
-    <string name="insights_section_ai">شرح الذكاء الاصطناعي</string>
-    <string name="insights_section_findings">النتائج</string>
+    <string name="insights_tab_findings">النتائج</string>
+    <string name="insights_tab_assistant">المساعد الذكي</string>
     <string name="insights_narrative_footer">كُتبت بالذكاء الاصطناعي من مجاميعك، لا من معاملاتك.</string>
     <string name="insights_narrative_loading">جارٍ شرح ما تغيّر…</string>
     <string name="insights_narrative_unavailable">تعذّر جلب الشرح الآن. المراجعة أدناه كاملة بذاتها.</string>

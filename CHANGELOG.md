@@ -15,6 +15,9 @@ All notable changes to Hisabak are documented here. Format based on
   **See what's shared** beside it shows the exact figures first. There is no switch to leave on; the
   answer is kept on your phone for as long as those exact figures stand, and if the service can't
   answer the review below is complete on its own.
+- **Settings is shorter.** The message-parsing options — formats, the online model, automatic
+  confirmation — now live on their own screen under Settings → SMS parsing, instead of three
+  switches inline.
 - **Insights has its own tab, and SMS moved in with Transactions.** The review is no longer buried
   behind the dashboard: it is a tab of its own. The SMS inbox sits beside the transaction list as
   the second half of the Transactions tab, which is where the messages you capture from belong.
