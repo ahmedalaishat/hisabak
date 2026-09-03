@@ -7,6 +7,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
+# Shipped deliberately: running the evals inside the image means they exercise the exact prompt
+# and schema that is deployed, not a copy. Nothing at runtime imports them.
+COPY evals ./evals
 
 # Non-root: the container holds an Anthropic API key, so a compromised process should not be root.
 RUN useradd --create-home --uid 10001 hisabak && chown -R hisabak /srv

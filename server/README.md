@@ -167,6 +167,33 @@ backstop that survives a bug in any of this.
 configs, and health-checks the result, rolling back the `.env` if the service does not come up.
 Existing installs get 401 until you rebuild them.
 
+## Evals
+
+`evals/cases.json` holds real message shapes with the answers they must produce; `evals/run.py`
+runs them against the **shipped** prompt and schema by importing `app.prompts` and `app.schema`
+rather than restating them. That is not incidental: a hand-written probe with the prompt pasted
+inline once reported a fixed bug as still broken, and hid a second bug entirely.
+
+```bash
+docker compose exec -w /srv parse python -m evals.run          # all cases
+docker compose exec -w /srv parse python -m evals.run fx        # ids containing "fx"
+docker compose exec -w /srv parse python -m evals.run -e REPEAT=5   # five runs each
+```
+
+Roughly $0.0006 per run — the full set is about a cent.
+
+**One pass is not proof.** Deleting a prompt rule that three cases depend on made only one of them
+fail on the first attempt; model output varies. Raise `REPEAT` before trusting a result you plan
+to act on, and treat a single green run as a smoke test.
+
+Expected values are **decisions, not guesses**, and each case says why in its `note`. Two of the
+expectations written by hand while probing turned out to be wrong and were only caught by reading
+output — a reviewed file is the fix for that. A case marked `open_question` is one whose correct
+answer nobody has decided yet (currently: does a cashback message record the cashback or the
+underlying purchase?); those are reported and never fail the run.
+
+Exit code is non-zero when a decided case fails, so this can gate a deploy.
+
 ## Privacy
 
 **Message text is never logged or persisted.** Access logging is off (`--no-access-log`), no handler
