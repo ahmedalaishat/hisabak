@@ -86,11 +86,13 @@ Ships to every user. The parent spec is the source of truth; this PR's doc scope
     rules pure and the copy localizable. `id` is `"$type:$categoryId"` so list keys are stable.
 - **Presentation:**
   - `DashboardUiState.review: List<Insight>` — `DashboardViewModel` maps each snapshot through
-    `deriveInsights(InsightsSummary.from(...))` in the same `onEach`. `ReviewCard` in
-    `DashboardScreen`'s Summary tab (a `SurfaceCard`: `SectionHeader`-style title row with the
-    period label and a **See all** action, then up to three `InsightRow`s — `IconTile` in the
-    category tint via `tintPairForColor`/`iconForKey`, or a semantic icon for non-category
-    insights, plus the one-line text). Hidden when `review` is empty. The **whole card** taps
+    `deriveInsights(InsightsSummary.from(...))` in the same `onEach`. On `DashboardScreen`'s
+    Summary tab the review is introduced the way every other grouped block is: a `SectionHeader`
+    ("Review · <period>", **See all** in the action slot) followed by a compact `SurfaceCard` of
+    up to three `InsightRow(compact = true)`s — a 32dp `IconTile` in the category tint via
+    `tintPairForColor`/`iconForKey` (or a semantic icon), title, one-line detail, trailing
+    figure. A *titled* card carried hero weight and competed with the net-worth card; the header
+    breaks the card rhythm and takes the title out of the card. Hidden when `review` is empty. The **whole card** taps
     through to the review — it is a teaser, and per-insight deep links live on the screen; rows
     individually clickable inside a clickable card would nest two targets and send a tap on
     "Dining over limit" somewhere other than dining.

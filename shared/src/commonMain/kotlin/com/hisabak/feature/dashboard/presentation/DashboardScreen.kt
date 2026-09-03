@@ -96,7 +96,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.yearMonth
 import kotlin.math.abs
 import kotlin.math.roundToInt
-import androidx.compose.material3.TextButton
 import com.hisabak.ui.components.labelRes
 import com.hisabak.feature.insights.domain.Insight
 import com.hisabak.feature.insights.presentation.InsightRow
@@ -300,10 +299,19 @@ private fun SummaryTab(
         }
 
         // ── Review: what changed, and what needs attention — after the position, before the flow ─────────────────
+        // A section header, not a titled card: the review opens the flow section the way every
+        // other grouped block on the dashboard is introduced, and a card with hero-weight chrome
+        // here competed with the net-worth card and left the pills wedged between two of them.
         if (review.isNotEmpty()) {
             item {
+                SectionHeader(
+                    title = stringResource(Res.string.insights_review_title, stringResource(period.labelRes())),
+                    actionLabel = stringResource(Res.string.insights_see_all),
+                    onAction = { onOpenInsights(period) },
+                )
+            }
+            item {
                 ReviewCard(
-                    period = period,
                     insights = review,
                     onSeeAll = { onOpenInsights(period) },
                     modifier = Modifier.fillMaxWidth(),
@@ -1111,7 +1119,6 @@ private const val REVIEW_CARD_MAX = 3
 
 @Composable
 private fun ReviewCard(
-    period: SummaryPeriod,
     insights: List<Insight>,
     onSeeAll: () -> Unit,
     modifier: Modifier = Modifier,
@@ -1120,21 +1127,8 @@ private fun ReviewCard(
     // screen it opens. Individually clickable rows inside a clickable card would nest two targets
     // and send a tap on "Dining over limit" somewhere other than dining.
     SurfaceCard(modifier = modifier, onClick = onSeeAll) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(Res.string.insights_review_title, stringResource(period.labelRes())),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-            )
-            TextButton(onClick = onSeeAll) { Text(stringResource(Res.string.insights_see_all)) }
-        }
-        Spacer(Modifier.height(Spacing.s2))
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
-            insights.take(REVIEW_CARD_MAX).forEach { insight -> InsightRow(insight) }
+            insights.take(REVIEW_CARD_MAX).forEach { insight -> InsightRow(insight, compact = true) }
         }
     }
 }
