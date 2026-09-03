@@ -71,4 +71,14 @@ interface AppPreferences {
     val autoConfirmEnabled: Flow<Boolean>
 
     suspend fun setAutoConfirmEnabled(value: Boolean)
+
+    /**
+     * "Don't ask again" for the SMS-inbox offers, one flag per offer.
+     *
+     * Only the permanent choice is stored. "Not now" is deliberately in-memory: the user said not
+     * now, not never, and a launch is the natural moment to ask once more.
+     */
+    val suppressedInboxPrompts: Flow<Set<String>>
+
+    suspend fun suppressInboxPrompt(name: String)
 }

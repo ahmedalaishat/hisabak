@@ -169,6 +169,8 @@ val smsModule = module {
             confirmAiSuggestion = get(),
             dismissAiSuggestion = get(),
             deleteTemplate = get(),
+            preferences = get(),
+            appConfig = get(),
             analytics = get(),
         )
     }

@@ -53,4 +53,8 @@ class FakeAppPreferences(
     private val autoConfirmEnabledFlow = MutableStateFlow(false)
     override val autoConfirmEnabled: Flow<Boolean> = autoConfirmEnabledFlow
     override suspend fun setAutoConfirmEnabled(value: Boolean) { autoConfirmEnabledFlow.value = value }
+
+    private val suppressedPromptsFlow = MutableStateFlow(emptySet<String>())
+    override val suppressedInboxPrompts: Flow<Set<String>> = suppressedPromptsFlow
+    override suspend fun suppressInboxPrompt(name: String) { suppressedPromptsFlow.value += name }
 }

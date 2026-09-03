@@ -36,7 +36,16 @@ data class SmsInboxUiState(
     // On-device AI parse fallback: false (the default) hides every AI affordance.
     val aiAvailable: Boolean = false,
     val suggestingIds: Set<SmsMessageId> = emptySet(),
+    /** The one offer worth making right now, or null. At most one is ever shown. */
+    val prompt: InboxPrompt? = null,
 ) : ViewState
+
+/**
+ * A capability the user has not turned on, offered where it would help rather than only buried in
+ * Settings. Dismissing hides it until the next launch; "don't ask again" hides it for good and
+ * leaves Settings as the way in.
+ */
+enum class InboxPrompt { OnlineParsing, AutoConfirm }
 
 sealed interface SmsInboxIntent : ViewIntent {
     data class SearchChanged(val query: String) : SmsInboxIntent
@@ -50,6 +59,11 @@ sealed interface SmsInboxIntent : ViewIntent {
     data class DismissSuggestion(val id: SmsMessageId) : SmsInboxIntent
     /** Remove a template that confirming a suggestion just installed. */
     data class UndoLearnedTemplate(val id: SmsTemplateId) : SmsInboxIntent
+    data class AcceptPrompt(val prompt: InboxPrompt) : SmsInboxIntent
+    /** Not now — the offer returns on the next launch. */
+    data class DismissPrompt(val prompt: InboxPrompt) : SmsInboxIntent
+    /** Don't ask again — never offered here again; Settings still has the switch. */
+    data class SuppressPrompt(val prompt: InboxPrompt) : SmsInboxIntent
     data class PermissionChanged(val granted: Boolean) : SmsInboxIntent
     data object ConsumeEffect : SmsInboxIntent
 }

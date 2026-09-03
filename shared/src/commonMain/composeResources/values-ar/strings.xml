@@ -321,6 +321,12 @@
     <string name="dashboard_over_limit">· تجاوز الحد</string>
     <string name="sms_search_placeholder">ابحث في الرسائل</string>
     <string name="sms_recent_section">أحدث الرسائل</string>
+    <string name="sms_prompt_online">الرسائل التي لا تتعرف عليها قوالبك يمكن أن يقرأها النموذج عبر الإنترنت، لتتحول إلى معاملات. تُرسل هذه الرسائل فقط ولا يتم تخزينها.</string>
+    <string name="sms_prompt_online_accept">تشغيل</string>
+    <string name="sms_prompt_auto_confirm">يمكن لحسابك حفظ المعاملة دون سؤالك، عندما يُعثر على المبلغ والمتجر في نص الرسالة ويكون المتجر ضمن متاجرك الحالية.</string>
+    <string name="sms_prompt_auto_confirm_accept">تشغيل</string>
+    <string name="sms_prompt_later">ليس الآن</string>
+    <string name="sms_prompt_never">لا تسأل مرة أخرى</string>
     <string name="sms_empty_title">لا توجد رسائل</string>
     <string name="sms_empty_auto">فعّل الاستيراد التلقائي لالتقاط رسائل البنك تلقائيًا.</string>
     <string name="sms_empty_manual">شارك رسالة بنكية مع حسابك، أو حدّد نصها، أو الصقها بالأسفل.</string>

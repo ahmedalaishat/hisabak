@@ -105,6 +105,9 @@ internal fun IosSmsInboxRoute(
         onSuggestParse = { viewModel.onIntent(SmsInboxIntent.SuggestParse(it)) },
         onConfirmSuggestion = { viewModel.onIntent(SmsInboxIntent.ConfirmSuggestion(it)) },
         onDismissSuggestion = { viewModel.onIntent(SmsInboxIntent.DismissSuggestion(it)) },
+        onPromptAccept = { viewModel.onIntent(SmsInboxIntent.AcceptPrompt(it)) },
+        onPromptLater = { viewModel.onIntent(SmsInboxIntent.DismissPrompt(it)) },
+        onPromptNever = { viewModel.onIntent(SmsInboxIntent.SuppressPrompt(it)) },
     )
 }
 

@@ -25,6 +25,8 @@ import com.hisabak.feature.sms.domain.usecase.ImportParsedSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.IngestSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ObserveSmsMessagesUseCase
 import com.hisabak.testutil.FakeAiSmsParser
+import com.hisabak.core.common.AppConfig
+import com.hisabak.testutil.FakeAppPreferences
 import com.hisabak.testutil.FakeAnalytics
 import com.hisabak.testutil.FakeBrandRepository
 import com.hisabak.testutil.FakeCategoryLimitAlertStore
@@ -136,6 +138,12 @@ class SmsInboxViewModelTest : MainDispatcherTest() {
             smsRepo, processor, limitMonitor, synthesizeTemplate, FakeAnalytics(),
         ),
         deleteTemplate = DeleteSmsTemplateUseCase(templateRepo, FakeAnalytics()),
+        preferences = FakeAppPreferences(),
+        // No parse service in this build, so the online-parsing offer never appears and these
+        // tests stay about the inbox rather than the prompts.
+        appConfig = AppConfig(
+            seedData = false, smsAutoCapture = false, isDebug = true, versionCode = 1, flavor = "test",
+        ),
         analytics = FakeAnalytics(),
         dismissAiSuggestion = DismissAiSuggestionUseCase(smsRepo, FakeAnalytics()),
     )

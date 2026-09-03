@@ -96,6 +96,9 @@ fun SmsInboxRoute(
         modifier = modifier,
         onSuggestParse = { viewModel.onIntent(SmsInboxIntent.SuggestParse(it)) },
         onConfirmSuggestion = { viewModel.onIntent(SmsInboxIntent.ConfirmSuggestion(it)) },
+        onPromptAccept = { viewModel.onIntent(SmsInboxIntent.AcceptPrompt(it)) },
+        onPromptLater = { viewModel.onIntent(SmsInboxIntent.DismissPrompt(it)) },
+        onPromptNever = { viewModel.onIntent(SmsInboxIntent.SuppressPrompt(it)) },
         onDismissSuggestion = { viewModel.onIntent(SmsInboxIntent.DismissSuggestion(it)) },
     )
 }

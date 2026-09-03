@@ -196,6 +196,15 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   `TransactionRecordedNotifier`. **What the gate cannot catch is a misreading** — a message saying
   "USD 42.10 (AED 154.62)" was read as 42.10 with the evidence genuinely present, so verification
   passes; `server/evals` is how that error rate gets measured.
+- **Inbox offers (discoverability):** both AI settings are also offered where they matter — a card
+  above the paste box in the SMS inbox, since that is where an unrecognised message lands. Three
+  answers, because two are not enough: **Turn on**, **Not now** (returns next launch — held in the
+  ViewModel, deliberately not persisted), and **Don't ask again** (persisted in
+  `suppressedInboxPrompts`; Settings keeps the switch). `choosePrompt`
+  (`feature/sms/presentation/inbox/InboxPromptPolicy.kt`, pure) shows **at most one** — online
+  parsing first, auto-confirm after it is on — and offers neither where it would be a promise the
+  build can't keep (no parse service configured) or pointless (no engine to produce a suggestion).
+  `inbox_prompt_accepted` / `inbox_prompt_suppressed` say whether the offer is welcome or noise.
 - **Platform:** Android only, portrait, edge-to-edge. `minSdk 29`.
 - **Dates & times: use kotlinx-datetime** (`kotlin.time.Instant`, `kotlinx.datetime.LocalDate` /
   `YearMonth` / `TimeZone`), **not `java.time`** — the code is KMP-bound and java.time doesn't

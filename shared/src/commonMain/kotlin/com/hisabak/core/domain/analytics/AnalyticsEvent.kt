@@ -125,6 +125,18 @@ sealed class AnalyticsEvent(
         params = mapOf("enabled" to enabled),
     )
 
+    /** [prompt] is an InboxPrompt name, lowercased — which offer, never any message content. */
+    class InboxPromptAccepted(prompt: String) : AnalyticsEvent(
+        name = "inbox_prompt_accepted",
+        params = mapOf("prompt" to prompt),
+    )
+
+    /** "Don't ask again". The ratio against accepted says whether the offer is welcome or noise. */
+    class InboxPromptSuppressed(prompt: String) : AnalyticsEvent(
+        name = "inbox_prompt_suppressed",
+        params = mapOf("prompt" to prompt),
+    )
+
     /** [type] is a [CategoryType] name, lowercased. */
     class CategoryCreated(type: String, hasLimit: Boolean) : AnalyticsEvent(
         name = "category_created",

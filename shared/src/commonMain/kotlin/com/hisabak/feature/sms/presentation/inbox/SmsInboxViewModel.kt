@@ -5,6 +5,9 @@ import com.hisabak.core.common.DomainError
 import com.hisabak.core.common.DomainResult
 import com.hisabak.core.domain.analytics.Analytics
 import com.hisabak.core.domain.analytics.AnalyticsEvent
+import com.hisabak.core.common.AppConfig
+import com.hisabak.core.domain.AppPreferences
+import kotlinx.coroutines.flow.combine
 import com.hisabak.core.presentation.BaseViewModel
 import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessage
@@ -44,6 +47,8 @@ class SmsInboxViewModel(
     private val confirmAiSuggestion: ConfirmAiSuggestionUseCase,
     private val dismissAiSuggestion: DismissAiSuggestionUseCase,
     private val deleteTemplate: DeleteSmsTemplateUseCase,
+    private val preferences: AppPreferences,
+    private val appConfig: AppConfig,
     private val analytics: Analytics,
 ) : BaseViewModel<SmsInboxIntent, SmsInboxUiState, SmsInboxEffect>() {
 
@@ -54,6 +59,7 @@ class SmsInboxViewModel(
         viewModelScope.launch {
             val ready = aiParser.availability() == AiParserAvailability.Ready
             setState { copy(aiAvailable = ready) }
+            observePrompt(ready)
         }
     }
 
@@ -81,6 +87,12 @@ class SmsInboxViewModel(
             is SmsInboxIntent.PermissionChanged ->
                 setState { copy(autoImportGranted = intent.granted) }
             is SmsInboxIntent.UndoLearnedTemplate -> undoLearnedTemplate(intent.id)
+            is SmsInboxIntent.AcceptPrompt -> acceptPrompt(intent.prompt)
+            is SmsInboxIntent.DismissPrompt -> dismissedThisLaunch += intent.prompt
+            is SmsInboxIntent.SuppressPrompt -> viewModelScope.launch {
+                analytics.log(AnalyticsEvent.InboxPromptSuppressed(intent.prompt.name.lowercase()))
+                preferences.suppressInboxPrompt(intent.prompt.name)
+            }
             SmsInboxIntent.ConsumeEffect -> clearEffect()
         }
     }
@@ -169,6 +181,43 @@ class SmsInboxViewModel(
                 )
                 is DomainResult.Failure ->
                     sendEffect(SmsInboxEffect.ParseFailed(reasonFor(result.error)))
+            }
+        }
+    }
+
+    /**
+     * "Not now" lives here rather than in storage: the user said not now, not never, so the offer
+     * should return on the next launch. This ViewModel is scoped to the nav entry, so it survives
+     * tab switches and dies with the process — which is exactly the lifetime wanted.
+     */
+    private val dismissedThisLaunch = mutableSetOf<InboxPrompt>()
+
+    private fun observePrompt(aiReady: Boolean) {
+        combine(
+            preferences.remoteParseEnabled,
+            preferences.autoConfirmEnabled,
+            preferences.suppressedInboxPrompts,
+        ) { remoteOn, autoConfirmOn, suppressed ->
+            choosePrompt(
+                remoteConfigured = appConfig.parseServiceUrl.isNotBlank() &&
+                    appConfig.parseServiceToken.isNotBlank(),
+                remoteEnabled = remoteOn,
+                aiReady = aiReady,
+                autoConfirmEnabled = autoConfirmOn,
+                suppressed = suppressed,
+                dismissedThisLaunch = dismissedThisLaunch,
+            )
+        }
+            .onEach { prompt -> setState { copy(prompt = prompt) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun acceptPrompt(prompt: InboxPrompt) {
+        analytics.log(AnalyticsEvent.InboxPromptAccepted(prompt.name.lowercase()))
+        viewModelScope.launch {
+            when (prompt) {
+                InboxPrompt.OnlineParsing -> preferences.setRemoteParseEnabled(true)
+                InboxPrompt.AutoConfirm -> preferences.setAutoConfirmEnabled(true)
             }
         }
     }

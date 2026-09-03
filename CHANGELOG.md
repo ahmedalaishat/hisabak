@@ -7,6 +7,10 @@ All notable changes to Hisabak are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **The SMS inbox now offers the AI settings where they help**, rather than leaving them buried in
+  Settings: a card above the paste box explains what each does, with **Turn on**, **Not now**
+  (asks again next time you open the app), and **Don't ask again** (never asks again; the switch
+  stays in Settings). Only one is ever shown at a time.
 - **The online model is now used whenever it is switched on**, including on phones that have their
   own built-in AI. Previously the built-in model answered first and the setting had little effect
   on those devices. Your phone still falls back to its own model when the service can't be reached.

@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.hisabak.core.domain.AppPreferences
 import com.hisabak.core.domain.ThemeMode
 import com.hisabak.core.domain.backup.AutoBackupPeriod
@@ -25,6 +26,7 @@ class AppPreferencesDataStore(private val dataStore: DataStore<Preferences>) : A
     private val lastBackupAtKey = longPreferencesKey("last_backup_at")
     private val remoteParseEnabledKey = booleanPreferencesKey("remote_parse_enabled")
     private val autoConfirmEnabledKey = booleanPreferencesKey("auto_confirm_enabled")
+    private val suppressedPromptsKey = stringSetPreferencesKey("suppressed_inbox_prompts")
 
     override val onboardingCompleted: Flow<Boolean> =
         dataStore.data.map { it[onboardingKey] ?: false }
@@ -108,5 +110,12 @@ class AppPreferencesDataStore(private val dataStore: DataStore<Preferences>) : A
 
     override suspend fun setAutoConfirmEnabled(value: Boolean) {
         dataStore.edit { it[autoConfirmEnabledKey] = value }
+    }
+
+    override val suppressedInboxPrompts: Flow<Set<String>> =
+        dataStore.data.map { it[suppressedPromptsKey] ?: emptySet() }
+
+    override suspend fun suppressInboxPrompt(name: String) {
+        dataStore.edit { it[suppressedPromptsKey] = (it[suppressedPromptsKey] ?: emptySet()) + name }
     }
 }

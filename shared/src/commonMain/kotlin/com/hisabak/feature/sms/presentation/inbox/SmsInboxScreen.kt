@@ -60,6 +60,13 @@ import com.hisabak.ui.components.HisabakButton
 import com.hisabak.ui.components.ButtonVariant
 import com.hisabak.ui.components.PrimaryPillButton
 import com.hisabak.ui.components.SearchField
+import androidx.compose.material3.TextButton
+import com.hisabak.shared.resources.sms_prompt_online
+import com.hisabak.shared.resources.sms_prompt_online_accept
+import com.hisabak.shared.resources.sms_prompt_auto_confirm
+import com.hisabak.shared.resources.sms_prompt_auto_confirm_accept
+import com.hisabak.shared.resources.sms_prompt_later
+import com.hisabak.shared.resources.sms_prompt_never
 import com.hisabak.ui.components.SectionHeader
 import com.hisabak.ui.components.SmsStatus
 import com.hisabak.ui.components.StatusChip
@@ -88,6 +95,9 @@ fun SmsInboxScreen(
     onCreateTemplate: (SmsMessageId) -> Unit = {},
     onReviewTransaction: (String) -> Unit = {},
     onImportParsed: (SmsMessageId) -> Unit = {},
+    onPromptAccept: (InboxPrompt) -> Unit = {},
+    onPromptLater: (InboxPrompt) -> Unit = {},
+    onPromptNever: (InboxPrompt) -> Unit = {},
 ) {
     // Semantic dismissal point: Import means typing is done — the result appears where the
     // keyboard was. (Buttons consume their taps, so the global tap-outside can't cover this.)
@@ -104,6 +114,18 @@ fun SmsInboxScreen(
         ) {
             if (autoImportAvailable) {
                 item { AutoImportBanner(granted = state.autoImportGranted, onEnable = onEnableAutoImport) }
+            }
+            // Above the paste box on purpose: this is where an unrecognised message ends up, so
+            // it is where the offer to read it is worth making.
+            state.prompt?.let { prompt ->
+                item {
+                    InboxPromptCard(
+                        prompt = prompt,
+                        onAccept = { onPromptAccept(prompt) },
+                        onLater = { onPromptLater(prompt) },
+                        onNever = { onPromptNever(prompt) },
+                    )
+                }
             }
             item { PasteParseCard(draft = state.draftBody, preview = state.draftPreview, isProcessing = state.isProcessing, onDraftChange = onDraftChange, onIngest = ingestAndDismiss) }
             item {
@@ -551,3 +573,52 @@ fun formatMoney(money: Money): String {
 @Composable
 internal fun formatDate(instant: kotlin.time.Instant): String =
     LocalDateFormatter.current.dateTime(instant)
+
+/**
+ * An offer with three answers, because two is not enough: "not now" and "never" mean different
+ * things and collapsing them either nags the user forever or hides a feature after one glance.
+ */
+@Composable
+private fun InboxPromptCard(
+    prompt: InboxPrompt,
+    onAccept: () -> Unit,
+    onLater: () -> Unit,
+    onNever: () -> Unit,
+) {
+    val (body, acceptLabel) = when (prompt) {
+        InboxPrompt.OnlineParsing ->
+            Res.string.sms_prompt_online to Res.string.sms_prompt_online_accept
+        InboxPrompt.AutoConfirm ->
+            Res.string.sms_prompt_auto_confirm to Res.string.sms_prompt_auto_confirm_accept
+    }
+    SurfaceCard(
+        modifier = Modifier.fillMaxWidth(),
+        backgroundColor = HisabakTheme.colors.infoSoft,
+        borderColor = Color.Transparent,
+    ) {
+        Column(
+            Modifier.padding(Spacing.s4),
+            verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+        ) {
+            Text(
+                text = stringResource(body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s1),
+            ) {
+                TextButton(onClick = onAccept) { Text(stringResource(acceptLabel)) }
+                TextButton(onClick = onLater) { Text(stringResource(Res.string.sms_prompt_later)) }
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = onNever) {
+                    Text(
+                        text = stringResource(Res.string.sms_prompt_never),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
