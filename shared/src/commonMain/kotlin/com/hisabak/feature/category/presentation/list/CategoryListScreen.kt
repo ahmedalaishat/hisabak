@@ -61,13 +61,15 @@ import com.hisabak.ui.components.tintPairForColor
 import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.Sizing
 import com.hisabak.ui.theme.Spacing
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.layout.offset
 
 @Composable
 fun CategoryListScreen(
     state: CategoryListUiState,
     onSearchChange: (String) -> Unit,
     onTypeFilterChange: (CategoryType?) -> Unit,
-    onDelete: (CategoryId) -> Unit,
+    onViewTransactions: (CategoryId) -> Unit,
     onAdd: () -> Unit,
     onEdit: (CategoryId) -> Unit,
     showHeader: Boolean = true,
@@ -89,7 +91,6 @@ fun CategoryListScreen(
         return
     }
 
-    var pendingDelete by remember { mutableStateOf<CategoryRow?>(null) }
 
     val typeOptions: List<Pair<String, CategoryType?>> = listOf(
         stringResource(Res.string.common_all) to null,
@@ -165,7 +166,7 @@ fun CategoryListScreen(
                 CategoryTile(
                     row = row,
                     onEdit = { onEdit(row.id) },
-                    onDelete = { pendingDelete = row },
+                    onViewTransactions = { onViewTransactions(row.id) },
                     modifier = Modifier.animateItem(),
                 )
             }
@@ -179,34 +180,13 @@ fun CategoryListScreen(
         }
     }
 
-    pendingDelete?.let { row ->
-        val count = row.transactionCount
-        AlertDialog(
-            onDismissRequest = { pendingDelete = null },
-            title = { Text(stringResource(Res.string.common_delete_title, row.name)) },
-            text = {
-                Text(
-                    if (count > 0)
-                        pluralStringResource(Res.plurals.category_delete_body_count, count, localizedFormatArg(count))
-                    else
-                        stringResource(Res.string.category_delete_body_empty),
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { onDelete(row.id); pendingDelete = null }) { Text(stringResource(Res.string.action_delete)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text(stringResource(Res.string.action_cancel)) }
-            },
-        )
-    }
 }
 
 @Composable
 private fun CategoryTile(
     row: CategoryRow,
     onEdit: () -> Unit,
-    onDelete: () -> Unit,
+    onViewTransactions: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val (bg, fg) = tintPairForColor(row.color)
@@ -214,35 +194,47 @@ private fun CategoryTile(
         modifier = modifier.fillMaxWidth(),
         onClick = onEdit,
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top,
-        ) {
-            IconTile(
-                icon = iconForKey(row.icon),
-                background = bg,
-                foreground = fg,
-            )
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier.size(28.dp),
+        Box(Modifier.fillMaxWidth()) {
+            // Centred and larger — the glyph is what you scan a grid by.
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(
-                    HugeIcons.DeleteOutline,
-                    contentDescription = stringResource(Res.string.common_delete_named, row.name),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp),
+                IconTile(
+                    icon = iconForKey(row.icon),
+                    size = CategoryTileIcon,
+                    iconSize = CategoryTileGlyph,
+                    background = bg,
+                    foreground = fg,
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    row.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
                 )
             }
+            if (row.transactionCount > 0) {
+                IconButton(
+                    onClick = onViewTransactions,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        // An IconButton centres its glyph in a 48dp target, so without pulling it
+                        // back into the padding the icon would sit inset from the card's content
+                        // edge while everything else lines up on it.
+                        .offset(x = IconButtonInset, y = -IconButtonInset),
+                ) {
+                    Icon(
+                        HugeIcons.ReceiptLong,
+                        contentDescription = stringResource(Res.string.action_view_transactions),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(Sizing.iconSm),
+                    )
+                }
+            }
         }
-        Spacer(Modifier.height(10.dp))
-        Text(
-            row.name,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-        )
         Spacer(Modifier.height(Spacing.s2))
         Row(
             Modifier.fillMaxWidth(),
@@ -265,6 +257,12 @@ private fun CategoryTile(
         }
     }
 }
+
+/** Half the gap between an IconButton's 48dp target and its 24dp glyph. */
+private val IconButtonInset = 12.dp
+
+private val CategoryTileIcon = 56.dp
+private val CategoryTileGlyph = 28.dp
 
 @Composable
 private fun AddNewTile(onClick: () -> Unit) {

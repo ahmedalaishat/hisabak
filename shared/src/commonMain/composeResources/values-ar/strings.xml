@@ -5,6 +5,8 @@
     <string name="action_clear">مسح</string>
     <string name="action_clear_filters">مسح عوامل التصفية</string>
     <string name="action_delete">حذف</string>
+    <string name="action_view_transactions">عرض المعاملات</string>
+    <string name="action_more_for">خيارات إضافية لـ %1$s</string>
     <string name="action_ok">موافق</string>
     <string name="action_save">حفظ</string>
     <string name="action_saving">جارٍ الحفظ…</string>
@@ -17,6 +19,13 @@
     <string name="common_name">الاسم</string>
     <string name="common_none">بدون</string>
     <string name="common_selected">محدّد</string>
+    <string name="common_done">تم</string>
+    <string name="category_color_custom">مخصص</string>
+    <string name="category_color_picker_title">اختر لونا</string>
+    <string name="category_color_in_use">مستخدمة حاليا</string>
+    <string name="category_color_clash">%1$s تستخدم لونا قريبا من هذا. سيصعب التمييز بينهما في الرسوم البيانية.</string>
+    <string name="category_color_preview_light">فاتح</string>
+    <string name="category_color_preview_dark">داكن</string>
     <string name="common_no_matches">لا توجد نتائج</string>
     <string name="common_no_matches_subtitle">لا شيء يطابق "%1$s".</string>
     <string name="common_delete_title">حذف %1$s؟</string>
@@ -40,6 +49,7 @@
     <string name="transaction_delete_action">حذف المعاملة</string>
     <string name="transaction_deleting">جارٍ الحذف…</string>
     <string name="settings_group_backup_security">النسخ الاحتياطي والأمان</string>
+    <string name="settings_group_sms_parsing">تحليل الرسائل</string>
     <string name="settings_group_preferences">التفضيلات</string>
     <string name="settings_theme">المظهر</string>
     <string name="settings_appearance">المظهر</string>
@@ -168,7 +178,24 @@
     <string name="category_type_invest_short">استثمار</string>
     <string name="category_color_label">اللون</string>
     <string name="category_icon_label">الأيقونة</string>
+    <string name="category_delete_body">سيتم حذف هذه الفئة. ستبقى علاماتها التجارية لكنها ستصبح بدون فئة.</string>
     <string name="category_preview_label">معاينة</string>
+    <string name="category_icon_picker_title">اختر أيقونة</string>
+    <string name="category_icon_search_hint">ابحث عن أيقونة</string>
+    <string name="category_icon_search_empty">لا توجد أيقونات مطابقة</string>
+    <string name="category_icon_change">تغيير الأيقونة</string>
+    <string name="category_icon_clash">%1$s تستخدم هذه الأيقونة. سيصعب التمييز بينهما.</string>
+    <string name="category_icon_group_food">الطعام والشراب</string>
+    <string name="category_icon_group_transport">المواصلات</string>
+    <string name="category_icon_group_shopping">التسوق</string>
+    <string name="category_icon_group_home">المنزل والفواتير</string>
+    <string name="category_icon_group_health">الصحة</string>
+    <string name="category_icon_group_travel">السفر</string>
+    <string name="category_icon_group_work">العمل والتعليم</string>
+    <string name="category_icon_group_money">المال</string>
+    <string name="category_icon_group_leisure">الترفيه</string>
+    <string name="category_icon_group_tech">التقنية</string>
+    <string name="category_icon_group_other">أخرى</string>
     <string name="category_name_placeholder">اسم الفئة</string>
     <string name="category_limit_label">الحد الشهري (اختياري)</string>
     <string name="category_limit_hint">يُطبَّق على هذا الشهر وما بعده</string>
@@ -193,7 +220,9 @@
     <string name="brand_delete_and_move">حذف ونقل</string>
     <string name="transaction_add">إضافة معاملة</string>
     <string name="transaction_summary">الملخص</string>
-    <string name="transaction_income_ratio">نسبة الدخل %1$d%</string>
+    <string name="transaction_savings_rate">%1$s% من الدخل محتفظ به</string>
+    <string name="transaction_savings_rate_over">%1$s% تجاوز الدخل</string>
+    <string name="transaction_savings_rate_none">لا يوجد دخل مسجل في هذه الفترة</string>
     <string name="transaction_search_placeholder">ابحث في المعاملات...</string>
     <string name="transaction_no_brands">لا توجد علامات لهذا النوع. أضف واحدة من تبويب الإدارة أولاً.</string>
     <string name="transaction_note_label">ملاحظة (اختياري)</string>
@@ -206,6 +235,10 @@
     <string name="transaction_direction_withdrawal">سحب</string>
     <string name="settings_sms_templates">تحليل الرسائل</string>
     <string name="settings_sms_templates_hint">علّم التطبيق صيغ رسائل بنكك</string>
+    <string name="settings_remote_parse">التحليل بالنموذج عبر الإنترنت</string>
+    <string name="settings_remote_parse_hint">الرسائل التي لا يتعرف عليها أي قالب تُرسل إلى خدمة التحليل الخاصة بحسابك لقراءتها. تُرسل هذه الرسائل فقط، وفقط عند تفعيل هذا الخيار، ولا يتم تخزينها.</string>
+    <string name="settings_auto_confirm">التأكيد تلقائيًا</string>
+    <string name="settings_auto_confirm_hint">حفظ المعاملة دون سؤالك، عندما يُعثر على المبلغ والمتجر في نص الرسالة ويكون المتجر ضمن متاجرك الحالية. الرسائل التي تلصقها بنفسك تحتاج تأكيدك دائمًا.</string>
     <string name="sms_templates_title">تحليل الرسائل</string>
     <string name="sms_templates_hint">تحوّل القوالب رسائل البنك إلى معاملات تلقائيًا. القالب الأكثر تحديدًا هو الذي يُطبَّق، وقوالبك لها الأولوية على المدمجة.</string>
     <string name="sms_template_new">قالب جديد</string>
@@ -213,6 +246,9 @@
     <string name="sms_templates_empty_subtitle">أضف قالبًا من رسالة بنكية نموذجية</string>
     <string name="sms_template_badge_default">مدمج</string>
     <string name="sms_template_badge_custom">خاص بك</string>
+    <string name="sms_template_badge_learned">مُتعلَّم</string>
+    <string name="sms_template_learned">الرسائل المشابهة ستُحلَّل تلقائيًا من الآن</string>
+    <string name="sms_template_learned_undo">تراجع</string>
     <string name="sms_template_delete_title">حذف هذا القالب؟</string>
     <string name="sms_template_delete_body">لن تُحلَّل الرسائل المستقبلية بهذه الصيغة تلقائيًا. المعاملات الحالية لن تتأثر.</string>
     <string name="sms_template_new_title">قالب جديد</string>
@@ -285,6 +321,12 @@
     <string name="dashboard_over_limit">· تجاوز الحد</string>
     <string name="sms_search_placeholder">ابحث في الرسائل</string>
     <string name="sms_recent_section">أحدث الرسائل</string>
+    <string name="sms_prompt_online">الرسائل التي لا تتعرف عليها قوالبك يمكن أن يقرأها النموذج عبر الإنترنت، لتتحول إلى معاملات. تُرسل هذه الرسائل فقط ولا يتم تخزينها.</string>
+    <string name="sms_prompt_online_accept">تشغيل</string>
+    <string name="sms_prompt_auto_confirm">يمكن لحسابك حفظ المعاملة دون سؤالك، عندما يُعثر على المبلغ والمتجر في نص الرسالة ويكون المتجر ضمن متاجرك الحالية.</string>
+    <string name="sms_prompt_auto_confirm_accept">تشغيل</string>
+    <string name="sms_prompt_later">ليس الآن</string>
+    <string name="sms_prompt_never">لا تسأل مرة أخرى</string>
     <string name="sms_empty_title">لا توجد رسائل</string>
     <string name="sms_empty_auto">فعّل الاستيراد التلقائي لالتقاط رسائل البنك تلقائيًا.</string>
     <string name="sms_empty_manual">شارك رسالة بنكية مع حسابك، أو حدّد نصها، أو الصقها بالأسفل.</string>
@@ -353,6 +395,14 @@
     <string name="onboarding_guarantee_device">مُخزَّن على هذا الجهاز</string>
     <string name="onboarding_guarantee_no_sync">لا تتم مزامنته مع أي خادم</string>
     <string name="onboarding_guarantee_no_account">بلا حساب، بلا تتبّع</string>
+    <plurals name="transaction_count_filtered">
+        <item quantity="zero">%1$s من %2$s معاملة</item>
+        <item quantity="one">%1$s من %2$s معاملة</item>
+        <item quantity="two">%1$s من %2$s معاملتين</item>
+        <item quantity="few">%1$s من %2$s معاملات</item>
+        <item quantity="many">%1$s من %2$s معاملة</item>
+        <item quantity="other">%1$s من %2$s معاملة</item>
+    </plurals>
     <plurals name="common_transaction_count">
         <item quantity="zero">%1$d معاملة</item>
         <item quantity="one">معاملة واحدة</item>
@@ -401,5 +451,9 @@
     <string name="sms_ai_dismiss">تجاهل</string>
     <string name="sms_ai_parse_failed">تعذّرت قراءة هذه الرسالة بالذكاء الاصطناعي</string>
     <string name="sms_ai_parsed">عبر الذكاء الاصطناعي</string>
+    <string name="sms_status_linked">مرتبطة</string>
+    <string name="sms_status_unreviewed">غير مُراجَعة</string>
+    <string name="sms_status_parsed">مُحلَّلة</string>
+    <string name="sms_status_unparsed">غير مُحلَّلة</string>
     <string name="sms_review_transaction">مراجعة المعاملة</string>
 </resources>

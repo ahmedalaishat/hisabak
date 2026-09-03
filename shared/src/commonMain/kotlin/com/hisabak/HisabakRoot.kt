@@ -407,6 +407,15 @@ private fun HisabakNav(slots: PlatformSlots) {
                     onEditBrand = { id -> navigator.navigate(BrandEditKey(id = id.value)) },
                     onAddCategory = { navigator.navigate(CategoryEditKey(id = null)) },
                     onEditCategory = { id -> navigator.navigate(CategoryEditKey(id = id.value)) },
+                    // Same shape as the dashboard's uncategorized card: park the filter, then go.
+                    onViewBrandTransactions = { id ->
+                        filterBus.request(TransactionListFilterRequest.ByBrand(id))
+                        navigator.navigate(TransactionsKey)
+                    },
+                    onViewCategoryTransactions = { id ->
+                        filterBus.request(TransactionListFilterRequest.ByCategory(id))
+                        navigator.navigate(TransactionsKey)
+                    },
                 )
             }
             entry<NotificationsKey>(metadata = fullScreenTransition()) {

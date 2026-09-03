@@ -10,6 +10,7 @@ import com.hisabak.feature.sms.domain.SmsTemplateDetector
 import com.hisabak.feature.sms.domain.SmsTemplateRepository
 import com.hisabak.feature.sms.domain.SmsTransactionProcessor
 import com.hisabak.di.APPLICATION_SCOPE
+import com.hisabak.feature.sms.domain.ai.AutoConfirmSuggestionUseCase
 import com.hisabak.feature.sms.domain.ai.ConfirmAiSuggestionUseCase
 import com.hisabak.feature.sms.domain.ai.DismissAiSuggestionUseCase
 import com.hisabak.feature.sms.domain.ai.SuggestAiParseUseCase
@@ -21,8 +22,10 @@ import com.hisabak.feature.sms.domain.template.ObserveSmsTemplatesUseCase
 import com.hisabak.feature.sms.domain.template.PreviewSmsTemplateUseCase
 import com.hisabak.feature.sms.domain.template.SaveSmsTemplateUseCase
 import com.hisabak.feature.sms.domain.template.SetSmsTemplateEnabledUseCase
+import com.hisabak.feature.sms.domain.template.SynthesizeTemplateUseCase
 import com.hisabak.feature.sms.domain.usecase.DeleteSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ImportParsedSmsUseCase
+import com.hisabak.feature.sms.domain.usecase.MarkSmsReviewedUseCase
 import com.hisabak.feature.sms.domain.usecase.IngestSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ObserveSmsMessagesUseCase
 import com.hisabak.feature.sms.domain.usecase.ReparseSmsMessageUseCase
@@ -60,6 +63,7 @@ val smsModule = module {
             processor = get(),
             clock = get(),
             suggestAiParse = get(),
+            autoConfirmSuggestion = get<AutoConfirmSuggestionUseCase>()::invoke,
             appScope = get(APPLICATION_SCOPE),
         )
     }
@@ -78,10 +82,20 @@ val smsModule = module {
             smsRepository = get(),
             processor = get(),
             limitMonitor = get(),
+            synthesizeTemplate = get(),
+            learnBrandAlias = get(),
             analytics = get(),
         )
     }
     factory { DismissAiSuggestionUseCase(smsRepository = get(), analytics = get()) }
+    factory {
+        AutoConfirmSuggestionUseCase(
+            preferences = get(),
+            resolveBrand = get(),
+            confirm = get(),
+            recordedNotifier = get(),
+        )
+    }
     factory {
         CaptureTransactionUseCase(
             ingest = get(),
@@ -91,6 +105,7 @@ val smsModule = module {
         )
     }
     factory { DeleteSmsUseCase(get()) }
+    factory { MarkSmsReviewedUseCase(smsRepository = get(), analytics = get()) }
     factory {
         ImportParsedSmsUseCase(
             smsRepository = get(),
@@ -113,6 +128,15 @@ val smsModule = module {
     factory { DeleteSmsTemplateUseCase(repository = get(), analytics = get()) }
     factory { SetSmsTemplateEnabledUseCase(repository = get(), analytics = get()) }
     factory { PreviewSmsTemplateUseCase(smsRepository = get()) }
+    factory {
+        SynthesizeTemplateUseCase(
+            repository = get(),
+            saveTemplate = get(),
+            previewTemplate = get(),
+            clock = get(),
+            analytics = get(),
+        )
+    }
 
     viewModel {
         SmsTemplatesViewModel(
@@ -144,9 +168,14 @@ val smsModule = module {
             detector = get(),
             parser = get(),
             aiParser = get(),
+            markReviewed = get(),
             suggestAiParse = get(),
             confirmAiSuggestion = get(),
             dismissAiSuggestion = get(),
+            deleteTemplate = get(),
+            preferences = get(),
+            appConfig = get(),
+            analytics = get(),
         )
     }
 }

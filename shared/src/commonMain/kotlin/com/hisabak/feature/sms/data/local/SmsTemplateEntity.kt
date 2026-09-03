@@ -14,4 +14,5 @@ data class SmsTemplateEntity(
     val isDefault: Boolean,
     val enabled: Boolean = true,
     val createdAtMillis: Long,
+    @ColumnInfo(defaultValue = "0") val derivedByAi: Boolean = false,
 )

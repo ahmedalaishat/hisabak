@@ -91,7 +91,7 @@ class BrandListViewModel(
         observeCategories()
             .onEach { categories ->
                 val options = categories.map {
-                    BrandListUiState.CategoryOption(id = it.id, name = it.name, color = it.color)
+                    BrandListUiState.CategoryOption(id = it.id, name = it.name, color = it.color, icon = it.icon)
                 }
                 setState { copy(availableCategories = options) }
             }

@@ -81,6 +81,7 @@ import com.hisabak.ui.components.rememberIsArabic
 import com.hisabak.ui.components.SectionHeader
 import com.hisabak.ui.components.SkeletonCard
 import com.hisabak.ui.components.SurfaceCard
+import com.hisabak.ui.components.iconForKey
 import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.HisabakType
 import com.hisabak.ui.theme.LocalReducedMotion
@@ -271,7 +272,7 @@ private fun SummaryTab(
                 TotalPill(
                     label = stringResource(Res.string.category_type_savings),
                     money = snap.totalSavings,
-                    icon = { Icon(HugeIcons.Savings, null, modifier = Modifier.size(16.dp)) },
+                    icon = { Icon(HugeIcons.Bank, null, modifier = Modifier.size(16.dp)) },
                     bgColor = c.savingsSoft,
                     fgColor = c.savings,
                     modifier = Modifier.weight(1f),
@@ -794,7 +795,14 @@ private fun CategoryLimitCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
         ) {
-            Box(Modifier.size(10.dp).background(color, CircleShape))
+            // Each card stands alone — nothing here needs a colour key to match, so the glyph is
+            // free to do the identifying it does better than a dot.
+            Icon(
+                imageVector = iconForKey(row.option.icon),
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(Sizing.iconSm),
+            )
             Text(
                 row.option.name,
                 style = MaterialTheme.typography.bodyLarge,

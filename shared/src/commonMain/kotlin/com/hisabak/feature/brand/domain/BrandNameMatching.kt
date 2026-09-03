@@ -1,11 +1,22 @@
-package com.hisabak.feature.sms.domain.ai
+package com.hisabak.feature.brand.domain
 
 /**
- * Deterministic backstop under the prompt-side brand hints: snap the model's merchant string
- * to an existing brand name so the pre-filled result shows exactly what will be linked. Match
- * order — case-insensitive exact, then substring either way (the same containment rule
- * `FindOrCreateBrandUseCase.findByNameLike` applies at link time), then a small edit
- * distance for typos. [knownBrands] is usage-ordered, so ties go to the most-used brand.
+ * Snaps a machine-extracted merchant string to an existing brand name. Match order —
+ * case-insensitive exact, then substring either way, then a small edit distance for typos.
+ * Returns [raw] unchanged when nothing matches.
+ *
+ * Used at both ends of the pipeline so they cannot disagree: at suggest time it makes the
+ * pre-filled result show exactly what will be linked, and at link time
+ * [com.hisabak.feature.brand.domain.usecase.ResolveBrandUseCase] applies the same ladder to
+ * whatever a regex template captured. Those two used to differ — link time had containment only,
+ * via an unordered `LIKE` — which is how one merchant ended up with two brands.
+ *
+ * [knownBrands] must be usage-ordered: containment and typo distance both admit several
+ * candidates, and most-used-first is what makes the choice deterministic rather than
+ * whatever row the database happened to return first.
+ *
+ * Deliberately not applied to user-typed names: at edit distance 2 "Noon" and "Moon" are the
+ * same brand, which is fine for a bank's merchant string and wrong for something a user typed.
  */
 fun canonicalizeBrand(raw: String, knownBrands: List<String>): String {
     knownBrands.firstOrNull { it.equals(raw, ignoreCase = true) }?.let { return it }

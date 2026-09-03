@@ -5,6 +5,8 @@ import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
+import com.hisabak.feature.brand.data.local.BrandAliasDao
+import com.hisabak.feature.brand.data.local.BrandAliasEntity
 import com.hisabak.feature.brand.data.local.BrandDao
 import com.hisabak.feature.brand.data.local.BrandEntity
 import com.hisabak.feature.category.data.local.CategoryDao
@@ -27,18 +29,23 @@ import com.hisabak.feature.transaction.data.local.TransactionEntity
         CategoryEntity::class,
         CategoryLimitEntity::class,
         BrandEntity::class,
+        BrandAliasEntity::class,
         TransactionEntity::class,
         SmsMessageEntity::class,
         SmsTemplateEntity::class,
         NotificationEntity::class,
         CategoryLimitAlertEntity::class,
     ],
-    version = HisabakDatabase.SCHEMA_VERSION, // v5: sms_templates table
+    version = HisabakDatabase.SCHEMA_VERSION, // v9: brand_aliases + suggestedBrandRaw
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 2, to = 3, spec = DropSyncColumnsSpec::class),
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5),
+        AutoMigration(from = 5, to = 6),
+        AutoMigration(from = 6, to = 7),
+        AutoMigration(from = 7, to = 8),
+        AutoMigration(from = 8, to = 9),
     ],
 )
 @ConstructedBy(HisabakDatabaseConstructor::class)
@@ -46,6 +53,7 @@ abstract class HisabakDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun categoryLimitDao(): CategoryLimitDao
     abstract fun brandDao(): BrandDao
+    abstract fun brandAliasDao(): BrandAliasDao
     abstract fun transactionDao(): TransactionDao
     abstract fun smsDao(): SmsDao
     abstract fun smsTemplateDao(): SmsTemplateDao
@@ -56,7 +64,7 @@ abstract class HisabakDatabase : RoomDatabase() {
         const val NAME = "hisabak.db"
 
         /** Single source of truth for the Room schema version; also stamped into backup files. */
-        const val SCHEMA_VERSION = 5
+        const val SCHEMA_VERSION = 9
     }
 }
 

@@ -33,6 +33,10 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
+import com.hisabak.shared.resources.sms_status_linked
+import com.hisabak.shared.resources.sms_status_unreviewed
+import com.hisabak.shared.resources.sms_status_parsed
+import com.hisabak.shared.resources.sms_status_unparsed
 import com.hisabak.shared.resources.Res
 import com.hisabak.shared.resources.amount_show_exact
 import com.hisabak.shared.resources.currency_dirham_description
@@ -410,17 +414,24 @@ fun localizedFormatArg(n: Int): String = localizeDigits(n.toString(), rememberIs
 
 /**
  * StatusChip — SMS parse state. Mirrors components/core/StatusChip.
- * linked → green, parsed → blue (info), unparsed → gray.
+ * linked → green, unreviewed → amber (warning), parsed → blue (info), unparsed → gray.
+ *
+ * [Unreviewed] is amber, not the green [Linked] borrows: it is the one state that asks the
+ * user for something. Green would say the opposite.
  */
-enum class SmsStatus { Linked, Parsed, Unparsed }
+enum class SmsStatus { Linked, Unreviewed, Parsed, Unparsed }
 
 @Composable
 fun StatusChip(status: SmsStatus, modifier: Modifier = Modifier) {
     val c = HisabakTheme.colors
+    // These were hardcoded English, which never reached the Arabic build.
     val (label, bg, fg) = when (status) {
-        SmsStatus.Linked   -> Triple("Linked", c.incomeSoft, c.income)
-        SmsStatus.Parsed   -> Triple("Parsed", c.infoSoft, c.info)
-        SmsStatus.Unparsed -> Triple("Unparsed", c.surfaceSunken, c.textTertiary)
+        SmsStatus.Linked -> Triple(stringResource(Res.string.sms_status_linked), c.incomeSoft, c.income)
+        SmsStatus.Unreviewed ->
+            Triple(stringResource(Res.string.sms_status_unreviewed), c.warningSoft, c.warning)
+        SmsStatus.Parsed -> Triple(stringResource(Res.string.sms_status_parsed), c.infoSoft, c.info)
+        SmsStatus.Unparsed ->
+            Triple(stringResource(Res.string.sms_status_unparsed), c.surfaceSunken, c.textTertiary)
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,

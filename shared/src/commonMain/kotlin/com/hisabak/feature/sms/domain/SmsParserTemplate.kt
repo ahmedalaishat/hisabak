@@ -11,6 +11,8 @@ data class SmsParserTemplate(
     val isDefault: Boolean,
     val enabled: Boolean,
     val createdAt: Instant,
+    /** Learned from a confirmed AI parse rather than tagged by hand — labelled as such in Settings. */
+    val derivedByAi: Boolean = false,
 )
 
 data class SmsTemplateId(val value: String) {

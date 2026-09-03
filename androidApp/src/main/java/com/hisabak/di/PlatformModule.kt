@@ -1,5 +1,8 @@
 package com.hisabak.di
 
+import com.hisabak.feature.sms.domain.ai.RemoteParseClient
+import com.hisabak.feature.sms.domain.ai.ParseServiceConfig
+import com.hisabak.feature.sms.platform.HttpRemoteParseClient
 import com.hisabak.BuildConfig
 import com.hisabak.core.common.AppConfig
 import com.hisabak.core.data.backup.AesGcmBackupCrypto
@@ -31,6 +34,8 @@ import com.hisabak.feature.notification.domain.Notifier
 import com.hisabak.feature.brand.domain.ai.AiCategorySuggester
 import com.hisabak.feature.brand.platform.GeminiNanoCategorySuggester
 import com.hisabak.feature.sms.domain.ai.AiSmsParser
+import com.hisabak.feature.sms.domain.ai.RemoteAiSmsParser
+import com.hisabak.feature.sms.domain.ai.PreferredAiSmsParser
 import com.hisabak.feature.sms.platform.GeminiNanoSmsParser
 import com.hisabak.feature.notification.platform.AndroidNotificationStrings
 import com.hisabak.feature.notification.platform.SystemNotifier
@@ -47,6 +52,15 @@ val platformModule = module {
             isDebug = BuildConfig.DEBUG,
             versionCode = BuildConfig.VERSION_CODE,
             flavor = BuildConfig.FLAVOR,
+            parseServiceUrl = BuildConfig.PARSE_SERVICE_URL,
+            parseServiceToken = BuildConfig.PARSE_SERVICE_TOKEN,
+        )
+    }
+
+    single<RemoteParseClient> {
+        val config: AppConfig = get()
+        HttpRemoteParseClient(
+            ParseServiceConfig(config.parseServiceUrl, config.parseServiceToken),
         )
     }
 
@@ -66,7 +80,14 @@ val platformModule = module {
 
     single { BiometricAuthenticator(androidContext()) } bind BiometricAvailability::class
 
-    single<AiSmsParser> { GeminiNanoSmsParser(appScope = get(APPLICATION_SCOPE)) }
+    // The opt-in service leads when it is on: enabling it is a preference, not just consent.
+    // The on-device model is the fallback, and the reason capture still works offline.
+    single<AiSmsParser> {
+        PreferredAiSmsParser(
+            onDevice = GeminiNanoSmsParser(appScope = get(APPLICATION_SCOPE)),
+            remote = RemoteAiSmsParser(client = get(), preferences = get()),
+        )
+    }
     single<AiCategorySuggester> { GeminiNanoCategorySuggester(appScope = get(APPLICATION_SCOPE)) }
 
     single { SystemNotifier(androidContext()) } bind Notifier::class

@@ -18,6 +18,7 @@ import com.hisabak.testutil.aed
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
@@ -50,6 +51,32 @@ class SuggestAiParseUseCaseTest {
         )
         smsRepo.upsert(message)
         return message
+    }
+
+    @Test
+    fun `a stored suggestion carries a template pattern derived from the body`() = runTest {
+        val message = storedMessage()
+        aiParser.result = AiParsedSms("Noon", 12_50, "AED", null)
+
+        suggest(message.id, source = "auto")
+
+        val pattern = assertNotNull(smsRepo.current.single().suggestedPattern)
+        assertEquals("Your card was charged {amount} at {brand}", pattern)
+    }
+
+    @Test
+    fun `a pasted bank message yields a template pattern too`() = runTest {
+        val message = storedMessage()
+        aiParser.freeTextResult = AiParsedSms("Noon", 12_50, "AED", null)
+
+        // Paste is the free-text path, but on iOS it is also how bank SMS arrive — excluding it
+        // would leave the whole platform unable to learn.
+        suggest(message.id, source = "paste", freeText = true)
+
+        assertEquals(
+            "Your card was charged {amount} at {brand}",
+            smsRepo.current.single().suggestedPattern,
+        )
     }
 
     @Test

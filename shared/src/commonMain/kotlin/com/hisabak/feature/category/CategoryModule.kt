@@ -45,6 +45,7 @@ val categoryModule = module {
             prefill = prefill,
             categoryRepository = get(),
             createCategory = get(),
+            deleteCategory = get(),
             updateCategory = get(),
             observeCategoryLimits = get(),
             setCategoryLimit = get(),

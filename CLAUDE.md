@@ -110,7 +110,8 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   (user templates store their sample so editing re-tags via `reconstructSpans`, which
   `matchEntire`s). Save enforces a 10-char literal anchor minimum + a numeric amount tag, and
   previews how many stored messages the draft also matches. Templates ride in the backup
-  envelope (schema v5).
+  envelope (schema v6). Templates are also **learned from AI parses** — see the AI section
+  below; those carry `derivedByAi` and show a "Learned" badge in Settings.
 - **On-device AI (SMS parse fallback + smart entry):** bank SMS that match no regex template get
   parsed by the platform's on-device model into a **confirm-first suggestion** (never an
   auto-created transaction). The port is `AiSmsParser` + `SuggestAiParse/ConfirmAiSuggestion/
@@ -141,6 +142,117 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   Unsupported devices
   report `Unavailable` and every AI affordance stays hidden. Inference is fully on-device —
   SMS text never leaves the phone; analytics events (`ai_parse_*`, `ai_category_*`) stay PII-free.
+- **One brand resolver, and learned aliases:** every path that turns machine-extracted merchant
+  text into a brand goes through `ResolveBrandUseCase` (`feature/brand/domain/usecase/`) —
+  learned alias first, then `canonicalizeBrand` (`feature/brand/domain/BrandNameMatching.kt`;
+  exact → containment either way → Levenshtein ≤2) over the **usage-ordered** names, then
+  `findByExactName`. `FindOrCreateBrandUseCase` is `resolve(…) ?: create`, and
+  `AutoConfirmSuggestionUseCase`'s "brand already exists" gate calls the same resolver, so the gate
+  cannot disagree with the write it guards. The ladder is **deliberately not** applied to
+  user-typed names (at distance 2 "Noon" and "Moon" are one brand — fine for a bank string, wrong
+  for something a user typed), which is safe because the brand editor doesn't use
+  `FindOrCreateBrandUseCase`. Suggest time and link time used to differ — link time had
+  containment only, through an **unordered** `LIKE` — which is what let one merchant end up with
+  two brands. **Aliases** (`brand_aliases`, CASCADE, lowercased key) close the rest of the gap:
+  `LearnBrandAliasUseCase` records the raw merchant string → brand pair on confirm whenever the
+  raw text doesn't already resolve to that brand, since a synthesized template captures the
+  merchant **as written** while the transaction points at the canonical brand
+  ("GOOGLEYOUTUBE,US" vs "Youtube video" share no containment, so every later message minted
+  another brand — silently, on the background path, with no category). The raw string rides on
+  `SmsMessage.suggestedBrandRaw` from suggest time for the same reason `suggestedPattern` does:
+  after `sanitize` canonicalizes, it is gone. Aliases **do** ride in the backup envelope (unlike
+  the AI provenance flags): they are knowledge other devices need. `SCHEMA_VERSION` 8→9, additive
+  auto-migration.
+- **Learn-once template synthesis:** a confirmed AI parse also **teaches the regex engine**, so
+  the next message of that bank format parses offline on any device — including the majority
+  that have no on-device model at all. No extra model call: `deriveAiSpans`
+  (`feature/sms/domain/template/AiTemplateSynthesis.kt`, pure) locates the amount and brand the
+  model returned back in the body and lets `suggestSpans` handle the rest (dates, times, and the
+  other number tokens, which must become `{ignore}` or the pattern would be pinned to one
+  message). The remote parser also returns **verbatim evidence** (`brandText`/`amountText`: the
+  substrings exactly as written), which `deriveAiSpans` prefers over inference and verifies against
+  the body — `brandName` may have been snapped to an existing brand, so locating *it* matches only
+  a prefix and leaves a branch code ("TALABAT-DXB-991" → "-DXB-") literal in the rule. On-device
+  engines report no evidence and fall back to value-matching. There is deliberately **no confidence
+  score**: model self-assessment is poorly calibrated, a substring claim is checkable.
+  The candidate rides on `SmsMessage.suggestedPattern` from suggest time — the *raw*
+  merchant string is only available before `canonicalizeBrand` — and `SynthesizeTemplateUseCase`
+  installs it on confirm behind the same gate hand-made templates pass
+  (`SaveSmsTemplateUseCase.validate`, plus dedupe and a `PreviewSmsTemplateUseCase` conflict
+  check). Declining is a success with a null value: a rule that can't be trusted is simply not
+  installed, and the user's transaction is never at risk. **Pasted text is included** — notes and
+  bank SMS share one input field, and on iOS (no SMS API) pasting is how bank messages arrive, so
+  the gate rather than the source tells them apart: a note leaves too little literal anchor to
+  pass. The inbox snackbar offers **Undo**; `sms_template_synthesis_skipped` reasons say whether
+  the local locator is the bottleneck.
+- **Server-side parsing (opt-in, reaches every device):** on-device models cover a small minority
+  of phones — Gemini Nano needs AICore (flagship silicon) and Apple Foundation Models an
+  iPhone 15 Pro+ — so `RemoteAiSmsParser` (`feature/sms/domain/ai/`) implements the same
+  `AiSmsParser` port against a small self-hosted service (`server/`, FastAPI + Docker; Claude
+  Haiku 4.5 by default behind a `ParseProvider` protocol, so a self-hosted model is a swap with no
+  client change). `PreferredAiSmsParser` composes the two: **the service leads when the user has enabled it** —
+  turning that switch on is a preference, not merely consent, and the on-device models are
+  materially weaker; preferring the local model made the setting close to a no-op on the devices
+  that have one. Nothing is transmitted until the opt-in, and the fallback runs both ways, so a
+  phone with a local model still parses when the service is unreachable (offline, an outage, a
+  spent daily budget). Transport
+  follows the `BackupRemote` pattern rather than adding an HTTP dependency —
+  `RemoteParseClient` in commonMain, `HttpRemoteParseClient` (androidApp, `HttpURLConnection`) and
+  `IosRemoteParseClient` (iosMain, `NSURLSession`); every failure is `null`, so an outage degrades
+  to the regex templates. **Strictly opt-in:** the `remoteParseEnabled` pref gates it, is re-checked
+  per call so revocation is immediate, and the Settings row only appears when the build actually has
+  a service configured (`AppConfig.parseServiceUrl`/`parseServiceToken` — Android BuildConfig from
+  gradle properties, iOS Info.plist). The service never logs or stores message text, and
+  `docs/privacy.html` discloses the whole flow. Cost stays bounded because template synthesis turns
+  each parse into a regex, so it is called roughly once per bank *format*.
+- **Auto-confirm (opt-in, off by default):** a suggestion may become a transaction without a tap
+  when `shouldAutoConfirm` (`feature/sms/domain/ai/AutoConfirm.kt`, pure) allows it: the setting is
+  on, the source is **not** a paste (the user is on the screen anyway), `suggestedPattern != null`
+  (so `deriveAiSpans` located *both* the amount and the merchant in the message — nothing was
+  invented), the brand already exists (never create one unattended), and the amount is under
+  `AUTO_CONFIRM_CEILING_MINOR`. `AutoConfirmSuggestionUseCase` delegates to
+  `ConfirmAiSuggestionUseCase` rather than writing its own path, so the transaction, message link,
+  template synthesis, and limit re-check stay identical; `IngestSmsUseCase` calls it through a
+  function seam on the background path only, and the result is announced via
+  `TransactionRecordedNotifier`. **What the gate cannot catch is a misreading** — a message saying
+  "USD 42.10 (AED 154.62)" was read as 42.10 with the evidence genuinely present, so verification
+  passes; `server/evals` is how that error rate gets measured.
+- **Who waits for the AI fallback:** `CaptureSource.awaitsAiFallback` is true wherever something
+  reports the outcome the moment capture returns — a Shortcut result, a share-sheet toast. Those
+  **await** the AI parse and auto-confirm before answering; detaching made them claim "saved for
+  review" while the parse that would have said "recorded" was still running, and on iOS the app
+  suspends when the Shortcut ends, so that work only resumed at the next launch (the user watched
+  a background capture parse itself in front of them). Only `SMS_BROADCAST` keeps the detached
+  fallback — nothing is waiting on it and the notification is the channel. `MANUAL_PASTE` returns
+  early either way, since the inbox drives its own suggestion with a spinner.
+- **Provenance on a linked row:** the "AI parsed" badge says the parse came from a model; the
+  **status chip** says whether anyone checked it — `Linked` vs `Unreviewed` (amber `warning`, the
+  one state that asks the user for something, so never green). `SmsMessage.autoConfirmed` carries
+  it, written by `SmsTransactionProcessor.commit` in the same write; `SCHEMA_VERSION` 6→7,
+  additive. The chip deliberately tracks **verified vs not**, not who tapped: a regex template
+  match is unattended too, but it is deterministic and user-authored/vetted, so it stays `Linked`.
+  `Unreviewed` is reserved for the one risky quadrant — a model inferred it and nobody checked —
+  because the auto-confirm gate verifies *evidence*, not meaning, and a badge on the majority of
+  rows (regex is the dominant path, and the only one on iOS) would flag nothing.
+  **The tag is dischargeable**, or it would accumulate until it marked everything and signalled
+  nothing: opening the row's transaction ("Review transaction") fires
+  `MarkSmsReviewedUseCase` → `SmsMessage.reviewed` (a **separate** flag, `SCHEMA_VERSION` 7→8
+  additive auto-migration — `autoConfirmed` stays true forever, since who created the row is
+  history and whether anyone checked it is not). The chip reads
+  `autoConfirmed && !reviewed`. Marking happens **on the way in, not on return**: seeing the
+  amount and brand *is* the review, and there is no nav result to wait for. Clearing on *save*
+  was rejected — a correct auto-confirm needs no edit, so the common case would back out unsaved
+  and stay tagged forever. Neither flag rides in the backup envelope (`SmsMessageRecord` carries
+  neither), so a restored row reads as `Linked`.
+- **Inbox offers (discoverability):** both AI settings are also offered where they matter — a card
+  above the paste box in the SMS inbox, since that is where an unrecognised message lands. Three
+  answers, because two are not enough: **Turn on**, **Not now** (returns next launch — held in the
+  ViewModel, deliberately not persisted), and **Don't ask again** (persisted in
+  `suppressedInboxPrompts`; Settings keeps the switch). `choosePrompt`
+  (`feature/sms/presentation/inbox/InboxPromptPolicy.kt`, pure) shows **at most one** — online
+  parsing first, auto-confirm after it is on — and offers neither where it would be a promise the
+  build can't keep (no parse service configured) or pointless (no engine to produce a suggestion).
+  `inbox_prompt_accepted` / `inbox_prompt_suppressed` say whether the offer is welcome or noise.
 - **Platform:** Android only, portrait, edge-to-edge. `minSdk 29`.
 - **Dates & times: use kotlinx-datetime** (`kotlin.time.Instant`, `kotlinx.datetime.LocalDate` /
   `YearMonth` / `TimeZone`), **not `java.time`** — the code is KMP-bound and java.time doesn't
@@ -331,8 +443,12 @@ Pattern: `List` → tap row or FAB → push `Edit(id?)` destination → Save/Can
 ### Category
 - `id`, `name`, `type: CategoryType`, `color: String`, `icon: String`
 - `CategoryType`: INCOME | EXPENSES | SAVINGS | INVESTMENT
-- `color` options: green, blue, orange, red, teal, purple, pink, gray
-- `icon` options: wallet, cart, briefcase, car, utensils, piggy-bank, home, film, book, heart, gift, plane
+- `color` options: the 8 named palette keys (green, blue, orange, red, teal, purple, pink, gray)
+  **or a custom hue** — `h<0-359>`, e.g. `h210`. See Color below; parsing lives in
+  `CategoryColor` (domain), so validation never needs presentation.
+- `icon` options: 144 keys across 11 groups — see `CategoryVocabulary.icons` (generated from
+  `tools/category-icons.mjs`). Keys are persisted, so they are **append-only**: never rename or
+  remove one, or existing rows and restored backups lose their glyph.
 
 ### Budget
 - `id`, `name`, `amount: Money`, `startAt`, `endAt?`, `saving`, `period`, `reoccurrence`, `categoryIds`
@@ -406,6 +522,23 @@ Category dots/tiles use the 8 `cat*` colors.
 | pink | `#FCE7F3` | `#DB2777` |
 | gray | `#F3F4F6` | `#4B5563` |
 
+**Custom hues.** A category may also store `h<0-359>` instead of a palette key — the user picks
+a hue and **the app derives the shades**. Only the hue is persisted: a hex would have one value,
+and every surface needs a different one per theme. The derivation is `ui/theme/HueColor.kt`
+(pure, commonMain) in **OKLCH, not HSL** — HSL lightness isn't perceptual, so a fixed-lightness
+rule would make yellow glare and blue vanish; out-of-gamut results drop chroma rather than clip
+channels, which would shift the chosen hue. Foreground L is 0.55 light / 0.78 dark at C 0.15;
+tiles use that at 15% alpha, and `hueTintOpaque` gives the opaque version notification tiles need.
+`HueColorTest` asserts ≥3:1 contrast on both surfaces for every hue — **keep it green if you
+retune the constants**. Resolution runs through `tintPairForColor` / `CategoryStyle.color`
+(both read `HisabakTheme.isDark`) and `CategoryGlyphIcon.notificationTileColors` on Android.
+The AI suggester stays on **named keys only** (`CategoryVocabulary.colors`).
+
+New categories default to `CategoryColor.mostDistinctHue(...)` — the hue in the widest gap
+between those already used — because the dashboard donut colors its slices by category color,
+so two categories on one color become two indistinguishable slices. The picker also warns when
+a hue lands within `COLLISION_DEGREES` of an existing category.
+
 ### Icons
 
 **Hugeicons** (free, MIT) — a single-weight **stroke** set (1.5, round caps/joins), vendored as
@@ -416,6 +549,27 @@ reads via color + the selected pill indicator** (bottom nav active tab = green),
 Directional icons (`ArrowBack`, chevrons, `List`, `Message`) set `autoMirror` so they flip in RTL.
 Category icons sit on a tinted rounded-square tile in the category color (the notification large-icon
 rasterizer in `CategoryGlyphIcon.kt` strokes the same vector).
+
+**Category icon catalogue.** The 144 pickable category icons are curated in
+`tools/category-icons.mjs` — key, group, glyph source, and English + Arabic search keywords —
+and the generator emits three files from it: the vectors into `HugeIcons.kt`, the picker data
+into `ui/icons/CategoryIconCatalog.kt`, and the key list into
+`feature/category/domain/CategoryIconKeys.kt` (which `CategoryVocabulary.icons` re-exports, so
+domain validation never reaches into presentation). To add an icon, add a row there and re-run
+`node tools/gen-hugeicons.mjs` — never hand-edit the generated files. `iconForKey` resolves a
+stored key through the catalogue and falls back to a plain circle for unknown keys, which is what
+a backup from a newer build restores as. Search is the pure `searchCategoryIcons` (Arabic is
+normalized — hamza forms, taa marbuta, alef maqsura, diacritics — so unpointed typing matches).
+
+**The AI proposes a name and type; the app decides how it looks.** `sanitizeCategorySuggestion`
+derives the **icon** from the suggested name (`iconForCategoryName`, matching the catalogue's own
+keywords) and the **colour** from `CategoryColor.mostDistinctHue` over the categories already in
+use — the model's colour was removed from both prompts entirely, since distinctness is something
+only the app can know. `CategoryVocabulary.aiIcons` holds only the original 12, because the
+on-device prompts inline that list (`GeminiNanoCategorySuggester.kt`,
+`FoundationModelsCategorySuggester.swift`) and a 144-way choice both bloats the prompt and costs
+accuracy — it is a fallback for when the name matches nothing. Suggestions are still *validated*
+against the full set.
 
 ### Voice & Copy
 
@@ -448,8 +602,17 @@ Each component has a `.prompt.md` (what/when + usage) and `.d.ts` (props) — re
 
 `HisabakTopBar`, `HisabakBottomNav`, `CreateActionButton`, `PrimaryPillButton`,
 `SurfaceCard`, `IconTile`, `CircleIconTile`, `ListRow`, `ListRowContent`, `StatCard`, `SearchField`,
-`SectionHeader`, `FilterChipRow`, `GradientBanner`, `DarkPromoBanner`, `MostUsedCard`,
+`SectionHeader`, `FilterChipRow`, `ChipLaneGrid`, `GradientBanner`, `DarkPromoBanner`, `MostUsedCard`,
 `EmptyStatePanel`, `NoticeCard`, `ProgressBar`, `AreaLineChart`, `BarSparkline`, `DonutChart`
+
+Long chip rows (brands, categories) use **`ChipLaneGrid`**, not a bare `LazyRow`: it wraps into
+`chipLaneCount` lanes — one row up to 4 chips, two to 8, three beyond — and still scrolls
+sideways. It sizes its band from the type scale, so it grows with the user's font setting.
+
+A category dot is a **glyph** wherever the colour identifies rather than references: chips, filter
+rows, and the Manage/Categories cards all show `iconForKey`. The dashboard's **donut legends keep
+plain dots** — there the colour is a key matching a row to its arc, and a stroke glyph carries
+less colour to match with.
 
 ---
 

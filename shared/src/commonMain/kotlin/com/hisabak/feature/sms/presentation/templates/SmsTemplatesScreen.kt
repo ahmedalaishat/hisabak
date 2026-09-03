@@ -32,6 +32,7 @@ import com.hisabak.shared.resources.action_delete
 import com.hisabak.shared.resources.common_delete_named
 import com.hisabak.shared.resources.sms_template_badge_default
 import com.hisabak.shared.resources.sms_template_badge_custom
+import com.hisabak.shared.resources.sms_template_badge_learned
 import com.hisabak.shared.resources.sms_template_delete_body
 import com.hisabak.shared.resources.sms_template_delete_title
 import com.hisabak.shared.resources.sms_template_new
@@ -142,8 +143,13 @@ private fun TemplateRowCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Badge(
                     label = stringResource(
-                        if (row.isDefault) Res.string.sms_template_badge_default
-                        else Res.string.sms_template_badge_custom,
+                        when {
+                            row.isDefault -> Res.string.sms_template_badge_default
+                            // Learned rules read as "yours" too, but the user never wrote one —
+                            // say where it came from so it isn't a mystery entry in the list.
+                            row.derivedByAi -> Res.string.sms_template_badge_learned
+                            else -> Res.string.sms_template_badge_custom
+                        },
                     ),
                     tone = if (row.isDefault) BadgeTone.Neutral else BadgeTone.Info,
                 )

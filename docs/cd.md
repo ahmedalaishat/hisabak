@@ -33,6 +33,12 @@ group via the [Firebase Distribution GitHub Action](https://github.com/wzieba/Fi
 > The Firebase App Distribution **Gradle plugin** is not used — it requires the legacy AGP
 > `AppExtension` that AGP 9 removed. The GitHub Action uploads the built APK directly instead.
 
+Tester-facing **release notes** are the head commit message, capped at 900 characters by the
+*Compose release notes* step. The cap is load-bearing: Firebase allows 1,000 and rejects more
+with a 400 *after* the binary has uploaded, which shows as a failed run even though testers
+already have the build. Squash bodies concatenate every commit message on the branch, so the
+note grows with branch length — one branch produced 23,278 characters.
+
 **Required GitHub secret**
 - `FIREBASE_SERVICE_ACCOUNT_JSON` — a Google Cloud service account (role: **Firebase App
   Distribution Admin**) JSON key, for `hisabak-finance-tracking`. Create it under
@@ -59,6 +65,13 @@ section by `scripts/changelog-to-whatsnew.sh` (flattened to plain bullets, cappe
 500-char limit) into `distribution/whatsnew/whatsnew-en-US`, which the upload step pushes via
 `whatsNewDirectory`. So the storefront notes always track the CHANGELOG — keep that section
 user-facing and concise. (The generated file is git-ignored.)
+
+**Bullets are whole or absent.** A bullet that would take the note past 500 chars is skipped
+and the next one tried, so only entries that fit appear — order the CHANGELOG section by
+significance, because the leading entries are the ones that reach the storefront. Hisabak's
+entries run 250–700 chars each, so in practice **one** of them makes it; if every bullet
+exceeds the limit alone the generator falls back to a truncated first bullet, so the note is
+never empty (it silently was, before that fallback existed).
 
 Distribution channels: **demo** = staging via Firebase (sample data); **direct APK** = the
 GitHub Release here; **live** = Play.

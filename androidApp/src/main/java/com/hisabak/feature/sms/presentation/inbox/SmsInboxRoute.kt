@@ -4,7 +4,9 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -17,6 +19,8 @@ import com.hisabak.BuildConfig
 import com.hisabak.core.presentation.LaunchedViewEffectHandler
 import com.hisabak.shared.resources.Res
 import com.hisabak.shared.resources.sms_ai_parse_failed
+import com.hisabak.shared.resources.sms_template_learned
+import com.hisabak.shared.resources.sms_template_learned_undo
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -48,6 +52,8 @@ fun SmsInboxRoute(
     }
 
     val aiParseFailedText = stringResource(Res.string.sms_ai_parse_failed)
+    val templateLearnedText = stringResource(Res.string.sms_template_learned)
+    val undoText = stringResource(Res.string.sms_template_learned_undo)
     LaunchedViewEffectHandler(
         effectFlow = viewModel.effect,
         onConsumeEffect = { viewModel.onIntent(SmsInboxIntent.ConsumeEffect) },
@@ -55,8 +61,20 @@ fun SmsInboxRoute(
             when (effect) {
                 is SmsInboxEffect.ParseFailed ->
                     snackbarHostState.showSnackbar("Could not parse: ${effect.reason}")
-                is SmsInboxEffect.TransactionCreated ->
-                    snackbarHostState.showSnackbar("Transaction created: ${formatMoney(effect.amount)}")
+                is SmsInboxEffect.TransactionCreated -> {
+                    val learned = effect.learnedTemplateId
+                    val created = "Transaction created: ${formatMoney(effect.amount)}"
+                    // One snackbar, not two: the learned rule is a footnote to the confirm the
+                    // user just made, and queuing a second would make them wait through it.
+                    val result = snackbarHostState.showSnackbar(
+                        message = if (learned == null) created else "$created. $templateLearnedText",
+                        actionLabel = undoText.takeIf { learned != null },
+                        duration = if (learned == null) SnackbarDuration.Short else SnackbarDuration.Long,
+                    )
+                    if (learned != null && result == SnackbarResult.ActionPerformed) {
+                        viewModel.onIntent(SmsInboxIntent.UndoLearnedTemplate(learned))
+                    }
+                }
                 SmsInboxEffect.AiParseFailed ->
                     snackbarHostState.showSnackbar(aiParseFailedText)
             }
@@ -67,6 +85,7 @@ fun SmsInboxRoute(
         state = state,
         onCreateTemplate = { onCreateTemplate(it.value) },
         onReviewTransaction = onReviewTransaction,
+        onMarkReviewed = { viewModel.onIntent(SmsInboxIntent.MarkReviewed(it)) },
         onImportParsed = { viewModel.onIntent(SmsInboxIntent.ImportParsed(it)) },
         snackbarHostState = snackbarHostState,
         autoImportAvailable = BuildConfig.SMS_AUTO_CAPTURE,
@@ -78,6 +97,9 @@ fun SmsInboxRoute(
         modifier = modifier,
         onSuggestParse = { viewModel.onIntent(SmsInboxIntent.SuggestParse(it)) },
         onConfirmSuggestion = { viewModel.onIntent(SmsInboxIntent.ConfirmSuggestion(it)) },
+        onPromptAccept = { viewModel.onIntent(SmsInboxIntent.AcceptPrompt(it)) },
+        onPromptLater = { viewModel.onIntent(SmsInboxIntent.DismissPrompt(it)) },
+        onPromptNever = { viewModel.onIntent(SmsInboxIntent.SuppressPrompt(it)) },
         onDismissSuggestion = { viewModel.onIntent(SmsInboxIntent.DismissSuggestion(it)) },
     )
 }

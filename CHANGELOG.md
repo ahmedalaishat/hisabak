@@ -6,6 +6,79 @@ All notable changes to Hisabak are documented here. Format based on
 
 ## [Unreleased]
 
+## [2.2.0] — 2026-09-03
+
+### Added
+- **Parsing that works on every phone** — on-device AI only exists on flagship Androids and
+  iPhone 15 Pro or newer, so most phones never saw it. You can now point Hisabak at a small parsing
+  service (self-hosted; see `server/`) and have unrecognised bank messages read by a proper model
+  instead. It is **off by default** and lives in Settings → SMS parsing: only messages no template
+  recognises are sent, only while the setting is on, and nothing is stored. Because Hisabak learns a
+  template from each parse, the same bank format is only ever sent once.
+- **A real icon library for categories** — 144 icons across 11 groups (food, transport,
+  shopping, home and bills, health, travel, work, money, leisure, tech, other) replace the
+  original 12. Tap the icon tile in the category editor to open a picker with search; it
+  matches English and Arabic terms whichever language the app is in, and Arabic matches
+  without hamza or diacritics, so "اكل" finds the restaurant icon. Naming a category picks its
+  icon for you — the picker opens on matches for the name you typed, and an AI-suggested
+  category arrives with a fitting glyph and a colour that doesn't clash with the ones you
+  already use.
+- **Any color you like for a category** — alongside the eight preset swatches there's now a
+  custom hue picker. You choose the hue; the app works out the exact shades, so the color stays
+  readable in light mode, dark mode, and on notification tiles. The picker previews both themes
+  side by side, shows the colors your other categories already use, and tells you when your pick
+  is too close to one of them — the dashboard donut colors its slices by category, so
+  near-duplicates are genuinely hard to read. New categories now start on the color furthest
+  from the ones you already have.
+
+- **Bank messages no longer create duplicate shops.** When Hisabak learns a message format, it now
+  also remembers that the merchant name your bank writes ("GOOGLEYOUTUBE,US") means the shop you
+  picked ("Youtube video"). Before, the next message of that format quietly created a second shop
+  with no category, which then sat outside your budgets and dashboard. Brand matching is also
+  consistent everywhere now, and prefers your most-used shop when a merchant name could match
+  several.
+- **Confirm automatically (off by default)** — when a bank message arrives in the background and
+  the amount and shop were both found in the message text, and the shop is one you already have,
+  Hisabak can save the transaction and tell you rather than waiting for a tap. Pasted messages
+  always wait for you, new shops are never created this way, and larger amounts still ask. Anything
+  saved this way is tagged **Unreviewed** in the inbox until you look at it, so the handful of
+  messages nobody checked are easy to find — messages matched by one of your templates stay
+  **Linked**, since those are read by a rule you set up rather than guessed at. Tapping **Review
+  transaction** on a tagged row clears the tag.
+- **The SMS inbox now offers the AI settings where they help**, rather than leaving them buried in
+  Settings: a card above the paste box explains what each does, with **Turn on**, **Not now**
+  (asks again next time you open the app), and **Don't ask again** (never asks again; the switch
+  stays in Settings). Only one is ever shown at a time.
+- **The online model is now used whenever it is switched on**, including on phones that have their
+  own built-in AI. Previously the built-in model answered first and the setting had little effect
+  on those devices. Your phone still falls back to its own model when the service can't be reached.
+- **Settings now has an SMS parsing section**, gathering the three things that decide how messages
+  are read: your parsing templates, whether unrecognised messages may be sent to the online model,
+  and whether a confirmed-looking result may be saved without asking you.
+- **The app learns your bank's message format** — when you confirm an AI-parsed message, Hisabak
+  saves the pattern behind it as a parsing rule. The next message from that bank in the same
+  format is read instantly, with no AI involved, and it keeps working on devices that have no
+  on-device AI at all. The rule appears in Settings → SMS parsing marked "Learned", where you can
+  edit or delete it like any other, and the confirmation snackbar offers Undo straight away. A
+  rule is only kept if it is specific enough to be safe and doesn't contradict messages you have
+  already captured.
+### Changed
+- **The transactions summary now shows a savings rate** instead of an "income ratio". It reads
+  what share of the period's income you kept — break-even is 0%, and overspending shows as a
+  red bar rather than a shorter green one. The old measure put break-even at 50% and could
+  never show a deficit as a loss. Periods with no income yet say so rather than reading 0%.
+- **Long chip rows wrap instead of scrolling forever** — the brand picker in the transaction
+  sheet, the category picker in the brand editor, and the category filter on the Brands
+  screen now split into two rows past four chips and three past eight, still scrolling
+  sideways. Short lists stay a single row.
+
+### Fixed
+- **The keyboard no longer closes the instant you tap a note.** Tapping the note field in the
+  transaction sheet opened the keyboard and dismissed it again immediately. Tapping a field low
+  enough on a screen to need scrolling into view made the app mistake its own scroll for you
+  scrolling to read, and it hides the keyboard when you do that. It now only hides it when you
+  actually drag.
+
 ## [2.1.0] — 2026-09-01
 
 ### Highlights

@@ -66,6 +66,19 @@ sealed class AnalyticsEvent(
 
     data object AiSuggestionDismissed : AnalyticsEvent("ai_suggestion_dismissed")
 
+    /**
+     * The user reviewed a row the auto-confirm gate had saved. Watch this against
+     * [AutoConfirmToggled]: if auto-confirmed rows are never reviewed, the gate is being trusted
+     * blindly and its error rate matters more than the eval set suggests.
+     */
+    data object AutoConfirmReviewed : AnalyticsEvent("auto_confirm_reviewed")
+
+    /**
+     * A merchant string was mapped to a brand it does not resolve to on its own. Frequent firing
+     * means the models are renaming merchants rather than reusing the brand hints.
+     */
+    data object BrandAliasLearned : AnalyticsEvent("brand_alias_learned")
+
     /** The AI proposed a category in the brand editor. [kind] is "existing" or "new". */
     class AiCategorySuggested(kind: String) : AnalyticsEvent(
         name = "ai_category_suggested",
@@ -95,6 +108,46 @@ sealed class AnalyticsEvent(
     class SmsTemplateToggled(enabled: Boolean) : AnalyticsEvent(
         name = "sms_template_toggled",
         params = mapOf("enabled" to enabled),
+    )
+
+    /** A confirmed AI parse was turned into a reusable template. */
+    data object SmsTemplateSynthesized : AnalyticsEvent("sms_template_synthesized")
+
+    /**
+     * Synthesis declined. [reason] is "no_amount_span", "no_brand_span", "weak_anchor",
+     * "duplicate", or "conflict" — the mix says whether the local span locator is the
+     * bottleneck, which is what decides if a server-side tagger is worth building.
+     */
+    class SmsTemplateSynthesisSkipped(reason: String) : AnalyticsEvent(
+        name = "sms_template_synthesis_skipped",
+        params = mapOf("reason" to reason),
+    )
+
+    /** The user undid a just-learned template from the inbox snackbar. */
+    data object SmsTemplateSynthesisUndone : AnalyticsEvent("sms_template_synthesis_undone")
+
+    /** The user turned server-side parsing on or off. Consent state only — never message text. */
+    class RemoteParseToggled(enabled: Boolean) : AnalyticsEvent(
+        name = "remote_parse_toggled",
+        params = mapOf("enabled" to enabled),
+    )
+
+    /** The user turned unattended confirmation on or off. Setting state only. */
+    class AutoConfirmToggled(enabled: Boolean) : AnalyticsEvent(
+        name = "auto_confirm_toggled",
+        params = mapOf("enabled" to enabled),
+    )
+
+    /** [prompt] is an InboxPrompt name, lowercased — which offer, never any message content. */
+    class InboxPromptAccepted(prompt: String) : AnalyticsEvent(
+        name = "inbox_prompt_accepted",
+        params = mapOf("prompt" to prompt),
+    )
+
+    /** "Don't ask again". The ratio against accepted says whether the offer is welcome or noise. */
+    class InboxPromptSuppressed(prompt: String) : AnalyticsEvent(
+        name = "inbox_prompt_suppressed",
+        params = mapOf("prompt" to prompt),
     )
 
     /** [type] is a [CategoryType] name, lowercased. */

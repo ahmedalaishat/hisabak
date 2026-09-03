@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.compose.runtime.Composable
+import com.hisabak.core.common.AppConfig
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -36,6 +37,9 @@ fun SettingsRoute(
     val authenticator = koinInject<BiometricAuthenticator>()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
     val appLockEnabled by viewModel.appLockEnabled.collectAsStateWithLifecycle(initialValue = false)
+    val remoteParseEnabled by viewModel.remoteParseEnabled.collectAsStateWithLifecycle(initialValue = false)
+    val autoConfirmEnabled by viewModel.autoConfirmEnabled.collectAsStateWithLifecycle(initialValue = false)
+    val appConfig: AppConfig = koinInject()
     val passphraseReminderVisible by viewModel.passphraseReminderVisible.collectAsStateWithLifecycle(initialValue = false)
     // The effective UI language follows the current configuration, so the selection reflects
     // what's actually on screen after a locale switch recreates the activity.
@@ -64,6 +68,14 @@ fun SettingsRoute(
         themeMode = themeMode,
         language = language,
         appLockEnabled = appLockEnabled,
+        remoteParseEnabled = remoteParseEnabled,
+        // No service configured in this build -> the row stays hidden rather than offering
+        // an opt-in that would do nothing.
+        remoteParseSupported = appConfig.parseServiceUrl.isNotBlank() &&
+            appConfig.parseServiceToken.isNotBlank(),
+        onRemoteParseChange = viewModel::setRemoteParseEnabled,
+        autoConfirmEnabled = autoConfirmEnabled,
+        onAutoConfirmChange = viewModel::setAutoConfirmEnabled,
         appLockSupported = appLockSupported,
         onThemeChange = viewModel::setThemeMode,
         onLanguageChange = { tag ->

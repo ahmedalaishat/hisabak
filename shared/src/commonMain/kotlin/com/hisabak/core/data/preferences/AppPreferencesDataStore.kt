@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.hisabak.core.domain.AppPreferences
 import com.hisabak.core.domain.ThemeMode
 import com.hisabak.core.domain.backup.AutoBackupPeriod
@@ -23,6 +24,9 @@ class AppPreferencesDataStore(private val dataStore: DataStore<Preferences>) : A
     private val restoreOfferedKey = booleanPreferencesKey("restore_offered")
     private val passphraseConfirmedAtKey = longPreferencesKey("passphrase_confirmed_at")
     private val lastBackupAtKey = longPreferencesKey("last_backup_at")
+    private val remoteParseEnabledKey = booleanPreferencesKey("remote_parse_enabled")
+    private val autoConfirmEnabledKey = booleanPreferencesKey("auto_confirm_enabled")
+    private val suppressedPromptsKey = stringSetPreferencesKey("suppressed_inbox_prompts")
 
     override val onboardingCompleted: Flow<Boolean> =
         dataStore.data.map { it[onboardingKey] ?: false }
@@ -90,5 +94,28 @@ class AppPreferencesDataStore(private val dataStore: DataStore<Preferences>) : A
 
     override suspend fun setLastBackupAt(value: Long) {
         dataStore.edit { it[lastBackupAtKey] = value }
+    }
+
+    // Defaults to false: this is the consent gate for sending message text off the device.
+    override val remoteParseEnabled: Flow<Boolean> =
+        dataStore.data.map { it[remoteParseEnabledKey] ?: false }
+
+    override suspend fun setRemoteParseEnabled(value: Boolean) {
+        dataStore.edit { it[remoteParseEnabledKey] = value }
+    }
+
+    // Defaults to false: acting on a parse without asking is opt-in.
+    override val autoConfirmEnabled: Flow<Boolean> =
+        dataStore.data.map { it[autoConfirmEnabledKey] ?: false }
+
+    override suspend fun setAutoConfirmEnabled(value: Boolean) {
+        dataStore.edit { it[autoConfirmEnabledKey] = value }
+    }
+
+    override val suppressedInboxPrompts: Flow<Set<String>> =
+        dataStore.data.map { it[suppressedPromptsKey] ?: emptySet() }
+
+    override suspend fun suppressInboxPrompt(name: String) {
+        dataStore.edit { it[suppressedPromptsKey] = (it[suppressedPromptsKey] ?: emptySet()) + name }
     }
 }

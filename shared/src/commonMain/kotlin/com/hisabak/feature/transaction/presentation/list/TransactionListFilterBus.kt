@@ -1,10 +1,18 @@
 package com.hisabak.feature.transaction.presentation.list
 
+import com.hisabak.feature.brand.domain.BrandId
+import com.hisabak.feature.category.domain.CategoryId
 import kotlinx.coroutines.flow.MutableStateFlow
 
 sealed interface TransactionListFilterRequest {
     /** Show only transactions whose brand has no category. */
     data object Uncategorized : TransactionListFilterRequest
+
+    /** Show only this brand's transactions — the "view transactions" action on a brand row. */
+    data class ByBrand(val id: BrandId) : TransactionListFilterRequest
+
+    /** Show only this category's transactions — the same action on a category row. */
+    data class ByCategory(val id: CategoryId) : TransactionListFilterRequest
 }
 
 /**

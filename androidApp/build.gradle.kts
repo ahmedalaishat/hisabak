@@ -37,6 +37,13 @@ if (requireReleaseSigning && !hasReleaseSigning) {
     )
 }
 
+// Parse-service endpoint. Supplied via ~/.gradle/gradle.properties or CI env so the token is
+// never committed; blank disables the remote parser entirely (AiParserAvailability.Unavailable).
+val parseServiceUrl = (project.findProperty("parseServiceUrl") as String?)
+    ?: System.getenv("HISABAK_PARSE_URL") ?: ""
+val parseServiceToken = (project.findProperty("parseServiceToken") as String?)
+    ?: System.getenv("HISABAK_PARSE_TOKEN") ?: ""
+
 android {
     namespace = "com.hisabak"
     // 37: Vico's multiplatform 2.5.x android artifacts require compiling against API 37.
@@ -48,10 +55,13 @@ android {
         applicationId = "com.hisabak"
         minSdk = 29
         targetSdk = 36
-        versionCode = 14
-        versionName = "2.1.0"
+        versionCode = 15
+        versionName = "2.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "PARSE_SERVICE_URL", "\"$parseServiceUrl\"")
+        buildConfigField("String", "PARSE_SERVICE_TOKEN", "\"$parseServiceToken\"")
     }
 
     signingConfigs {

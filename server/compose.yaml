@@ -1,0 +1,23 @@
+services:
+  parse:
+    build: .
+    restart: unless-stopped
+    # Loopback only: your reverse proxy terminates TLS and forwards here. Never expose this
+    # port publicly — the app sends message text over it. HISABAK_PORT avoids clashing with
+    # whatever else is already on the box.
+    ports:
+      - "127.0.0.1:${HISABAK_PORT:-8080}:8080"
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?set ANTHROPIC_API_KEY in .env}
+      HISABAK_API_TOKEN: ${HISABAK_API_TOKEN:?set HISABAK_API_TOKEN in .env}
+      HISABAK_API_TOKEN_PREVIOUS: ${HISABAK_API_TOKEN_PREVIOUS:-}
+      HISABAK_MODEL: ${HISABAK_MODEL:-claude-haiku-4-5}
+      ANTHROPIC_WORKSPACE_ID: ${ANTHROPIC_WORKSPACE_ID:-}
+      HISABAK_RATE_LIMIT_PER_MINUTE: ${HISABAK_RATE_LIMIT_PER_MINUTE:-30}
+      HISABAK_DAILY_PER_IP: ${HISABAK_DAILY_PER_IP:-200}
+      HISABAK_DAILY_BUDGET: ${HISABAK_DAILY_BUDGET:-2000}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8080/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

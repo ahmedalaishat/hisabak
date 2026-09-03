@@ -28,6 +28,7 @@ data class BrandListUiState(
         val id: CategoryId,
         val name: String,
         val color: String,
+        val icon: String,
     )
 }
 

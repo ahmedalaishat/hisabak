@@ -45,4 +45,16 @@ class FakeAppPreferences(
     private val lastBackupAtFlow = MutableStateFlow(0L)
     override val lastBackupAt: Flow<Long> = lastBackupAtFlow
     override suspend fun setLastBackupAt(value: Long) { lastBackupAtFlow.value = value }
+
+    private val remoteParseEnabledFlow = MutableStateFlow(false)
+    override val remoteParseEnabled: Flow<Boolean> = remoteParseEnabledFlow
+    override suspend fun setRemoteParseEnabled(value: Boolean) { remoteParseEnabledFlow.value = value }
+
+    private val autoConfirmEnabledFlow = MutableStateFlow(false)
+    override val autoConfirmEnabled: Flow<Boolean> = autoConfirmEnabledFlow
+    override suspend fun setAutoConfirmEnabled(value: Boolean) { autoConfirmEnabledFlow.value = value }
+
+    private val suppressedPromptsFlow = MutableStateFlow(emptySet<String>())
+    override val suppressedInboxPrompts: Flow<Set<String>> = suppressedPromptsFlow
+    override suspend fun suppressInboxPrompt(name: String) { suppressedPromptsFlow.value += name }
 }

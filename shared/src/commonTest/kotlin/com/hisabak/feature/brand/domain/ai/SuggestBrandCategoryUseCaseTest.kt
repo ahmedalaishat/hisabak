@@ -10,6 +10,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
+import kotlin.test.assertNotNull
+import com.hisabak.feature.category.domain.CategoryColor
 
 class SuggestBrandCategoryUseCaseTest {
 
@@ -29,7 +31,7 @@ class SuggestBrandCategoryUseCaseTest {
 
     @Test
     fun `an existing-category answer is snapped and reported`() = runTest {
-        suggester.result = AiRawCategorySuggestion("groceries", null, null, null, null)
+        suggester.result = AiRawCategorySuggestion("groceries", null, null, null)
 
         val result = useCase("  Carrefour ")
 
@@ -44,14 +46,18 @@ class SuggestBrandCategoryUseCaseTest {
 
     @Test
     fun `a new-category answer is sanitized and reported`() = runTest {
-        suggester.result = AiRawCategorySuggestion(null, "Pharmacy", "expenses", "teal", "heart")
+        suggester.result = AiRawCategorySuggestion(null, "Pharmacy", "expenses", "heart")
 
         val result = useCase("Life Pharmacy")
 
-        assertEquals(
-            CategorySuggestion.New("Pharmacy", com.hisabak.feature.category.domain.CategoryType.EXPENSES, "teal", "heart"),
-            result,
-        )
+        // "heart" is the best the model can do from its short prompt list; the catalogue has a
+        // medicine glyph and the suggested name is enough to find it. The colour is derived, so
+        // it is asserted by shape rather than pinned to a constant.
+        val new = result as CategorySuggestion.New
+        assertEquals("Pharmacy", new.name)
+        assertEquals(com.hisabak.feature.category.domain.CategoryType.EXPENSES, new.type)
+        assertEquals("medicine", new.icon)
+        assertNotNull(CategoryColor.hueOf(new.color), "expected a derived hue")
         assertEquals("new", (analytics.logged.single() as AnalyticsEvent.AiCategorySuggested).params["kind"])
     }
 

@@ -18,6 +18,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun BrandListRoute(
     onAdd: () -> Unit,
     onEdit: (BrandId) -> Unit,
+    onViewTransactions: (BrandId) -> Unit,
     showHeader: Boolean = true,
     viewModel: BrandListViewModel = koinViewModel(),
 ) {
@@ -39,10 +40,9 @@ fun BrandListRoute(
             state = state,
             onSearchChange = { viewModel.onIntent(BrandListIntent.SearchChanged(it)) },
             onCategoryFilterChange = { viewModel.onIntent(BrandListIntent.CategoryFilterChanged(it)) },
-            onDelete = { viewModel.onIntent(BrandListIntent.Delete(it)) },
-            onMerge = { source, target -> viewModel.onIntent(BrandListIntent.MergeAndDelete(source, target)) },
             onAdd = onAdd,
             onEdit = onEdit,
+            onViewTransactions = onViewTransactions,
             showHeader = showHeader,
         )
         SnackbarHost(snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))

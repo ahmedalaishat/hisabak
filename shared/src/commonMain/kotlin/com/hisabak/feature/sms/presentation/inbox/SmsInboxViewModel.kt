@@ -3,11 +3,18 @@ package com.hisabak.feature.sms.presentation.inbox
 import androidx.lifecycle.viewModelScope
 import com.hisabak.core.common.DomainError
 import com.hisabak.core.common.DomainResult
+import com.hisabak.core.domain.analytics.Analytics
+import com.hisabak.core.domain.analytics.AnalyticsEvent
+import com.hisabak.core.common.AppConfig
+import com.hisabak.core.domain.AppPreferences
+import kotlinx.coroutines.flow.combine
 import com.hisabak.core.presentation.BaseViewModel
 import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessage
+import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsParser
 import com.hisabak.feature.sms.domain.SmsTemplateDetector
+import com.hisabak.feature.sms.domain.SmsTemplateId
 import com.hisabak.feature.sms.domain.ai.AiParserAvailability
 import com.hisabak.feature.sms.domain.ai.AiSmsParser
 import com.hisabak.feature.sms.domain.ai.ConfirmAiSuggestionUseCase
@@ -16,10 +23,11 @@ import com.hisabak.feature.sms.domain.ai.SuggestAiParseUseCase
 import com.hisabak.feature.sms.domain.capture.CaptureResult
 import com.hisabak.feature.sms.domain.capture.CaptureSource
 import com.hisabak.feature.sms.domain.capture.CaptureTransactionUseCase
+import com.hisabak.feature.sms.domain.template.DeleteSmsTemplateUseCase
 import com.hisabak.feature.sms.domain.usecase.DeleteSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ImportParsedSmsUseCase
+import com.hisabak.feature.sms.domain.usecase.MarkSmsReviewedUseCase
 import com.hisabak.feature.sms.domain.usecase.ObserveSmsMessagesUseCase
-import com.hisabak.feature.sms.domain.SmsMessageId
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -36,9 +44,14 @@ class SmsInboxViewModel(
     private val detector: SmsTemplateDetector,
     private val parser: SmsParser,
     private val aiParser: AiSmsParser,
+    private val markReviewed: MarkSmsReviewedUseCase,
     private val suggestAiParse: SuggestAiParseUseCase,
     private val confirmAiSuggestion: ConfirmAiSuggestionUseCase,
     private val dismissAiSuggestion: DismissAiSuggestionUseCase,
+    private val deleteTemplate: DeleteSmsTemplateUseCase,
+    private val preferences: AppPreferences,
+    private val appConfig: AppConfig,
+    private val analytics: Analytics,
 ) : BaseViewModel<SmsInboxIntent, SmsInboxUiState, SmsInboxEffect>() {
 
     override fun initialState() = SmsInboxUiState()
@@ -48,6 +61,7 @@ class SmsInboxViewModel(
         viewModelScope.launch {
             val ready = aiParser.availability() == AiParserAvailability.Ready
             setState { copy(aiAvailable = ready) }
+            observePrompt(ready)
         }
     }
 
@@ -68,12 +82,20 @@ class SmsInboxViewModel(
             }
             is SmsInboxIntent.Delete ->
                 viewModelScope.launch { deleteSms(intent.id) }
+            is SmsInboxIntent.MarkReviewed -> viewModelScope.launch { markReviewed(intent.id) }
             is SmsInboxIntent.SuggestParse -> suggestParse(intent.id)
             is SmsInboxIntent.ConfirmSuggestion -> confirmSuggestion(intent.id)
             is SmsInboxIntent.DismissSuggestion ->
                 viewModelScope.launch { dismissAiSuggestion(intent.id) }
             is SmsInboxIntent.PermissionChanged ->
                 setState { copy(autoImportGranted = intent.granted) }
+            is SmsInboxIntent.UndoLearnedTemplate -> undoLearnedTemplate(intent.id)
+            is SmsInboxIntent.AcceptPrompt -> acceptPrompt(intent.prompt)
+            is SmsInboxIntent.DismissPrompt -> dismissedThisLaunch += intent.prompt
+            is SmsInboxIntent.SuppressPrompt -> viewModelScope.launch {
+                analytics.log(AnalyticsEvent.InboxPromptSuppressed(intent.prompt.name.lowercase()))
+                preferences.suppressInboxPrompt(intent.prompt.name)
+            }
             SmsInboxIntent.ConsumeEffect -> clearEffect()
         }
     }
@@ -154,10 +176,59 @@ class SmsInboxViewModel(
     private fun confirmSuggestion(id: SmsMessageId) {
         viewModelScope.launch {
             when (val result = confirmAiSuggestion(id)) {
-                is DomainResult.Success ->
-                    sendEffect(SmsInboxEffect.TransactionCreated(amount = result.value.amount))
+                is DomainResult.Success -> sendEffect(
+                    SmsInboxEffect.TransactionCreated(
+                        amount = result.value.transaction.amount,
+                        learnedTemplateId = result.value.learnedTemplateId,
+                    ),
+                )
                 is DomainResult.Failure ->
                     sendEffect(SmsInboxEffect.ParseFailed(reasonFor(result.error)))
+            }
+        }
+    }
+
+    /**
+     * "Not now" lives here rather than in storage: the user said not now, not never, so the offer
+     * should return on the next launch. This ViewModel is scoped to the nav entry, so it survives
+     * tab switches and dies with the process — which is exactly the lifetime wanted.
+     */
+    private val dismissedThisLaunch = mutableSetOf<InboxPrompt>()
+
+    private fun observePrompt(aiReady: Boolean) {
+        combine(
+            preferences.remoteParseEnabled,
+            preferences.autoConfirmEnabled,
+            preferences.suppressedInboxPrompts,
+        ) { remoteOn, autoConfirmOn, suppressed ->
+            choosePrompt(
+                remoteConfigured = appConfig.parseServiceUrl.isNotBlank() &&
+                    appConfig.parseServiceToken.isNotBlank(),
+                remoteEnabled = remoteOn,
+                aiReady = aiReady,
+                autoConfirmEnabled = autoConfirmOn,
+                suppressed = suppressed,
+                dismissedThisLaunch = dismissedThisLaunch,
+            )
+        }
+            .onEach { prompt -> setState { copy(prompt = prompt) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun acceptPrompt(prompt: InboxPrompt) {
+        analytics.log(AnalyticsEvent.InboxPromptAccepted(prompt.name.lowercase()))
+        viewModelScope.launch {
+            when (prompt) {
+                InboxPrompt.OnlineParsing -> preferences.setRemoteParseEnabled(true)
+                InboxPrompt.AutoConfirm -> preferences.setAutoConfirmEnabled(true)
+            }
+        }
+    }
+
+    private fun undoLearnedTemplate(id: SmsTemplateId) {
+        viewModelScope.launch {
+            if (deleteTemplate(id) is DomainResult.Success) {
+                analytics.log(AnalyticsEvent.SmsTemplateSynthesisUndone)
             }
         }
     }
@@ -173,6 +244,8 @@ class SmsInboxViewModel(
         suggestedBrand = msg.suggested?.brandName,
         suggestedAmount = msg.suggested?.amount,
         suggestedOccurredAt = msg.suggested?.occurredAt,
+        autoConfirmed = msg.autoConfirmed,
+        reviewed = msg.reviewed,
     )
 
     private fun reasonFor(error: DomainError): String = when (error) {

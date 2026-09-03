@@ -47,6 +47,8 @@ fun ManageRoute(
     onEditBrand: (BrandId) -> Unit,
     onAddCategory: () -> Unit,
     onEditCategory: (CategoryId) -> Unit,
+    onViewBrandTransactions: (BrandId) -> Unit,
+    onViewCategoryTransactions: (CategoryId) -> Unit,
     viewModel: ManageViewModel = koinViewModel(),
 ) {
     var tab by rememberSaveable { mutableStateOf(ManageTab.Brands) }
@@ -83,11 +85,13 @@ fun ManageRoute(
                 ManageTab.Brands -> BrandListRoute(
                     onAdd = onAddBrand,
                     onEdit = onEditBrand,
+                    onViewTransactions = onViewBrandTransactions,
                     showHeader = false,
                 )
                 ManageTab.Categories -> CategoryListRoute(
                     onAdd = onAddCategory,
                     onEdit = onEditCategory,
+                    onViewTransactions = onViewCategoryTransactions,
                     showHeader = false,
                 )
             }

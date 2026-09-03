@@ -1,0 +1,127 @@
+{
+  "_comment": [
+    "Expected values are DECISIONS, not guesses. Every case says why in `note`.",
+    "Twice while probing by hand I wrote an expectation that was simply wrong and only",
+    "noticed by reading output; a reviewed file is the fix for that.",
+    "",
+    "`expect` is matched field-by-field: name only the fields the case is actually about.",
+    "`open_question: true` marks a case whose correct answer is a product decision nobody",
+    "has made yet. Those are reported but never fail the run."
+  ],
+  "cases": [
+    {
+      "id": "basic-purchase",
+      "text": "Purchase of AED 125.50 with card 1234 at SPINNEYS DUBAI MARINA",
+      "expect": {"amount_minor": 12550, "currency": "AED", "amount_text": "125.50"},
+      "note": "The plain shape. If this breaks, something is badly wrong."
+    },
+    {
+      "id": "balance-decoy",
+      "text": "AED 245.75 spent at SPINNEYS. Ref 88213. Balance AED 3,190.40",
+      "expect": {"amount_minor": 24575},
+      "note": "Must pick the spend, not the larger balance and not the reference number."
+    },
+    {
+      "id": "fx-billed-amount",
+      "text": "USD 42.10 (AED 154.62) spent at AMAZON.COM on card 4417",
+      "expect": {"amount_minor": 15462, "currency": "AED"},
+      "note": "Regression guard. Recorded 42.10 until 2026-09-03 - wrong by 3.7x on a shape UAE cards produce constantly. The billed amount is what leaves the account."
+    },
+    {
+      "id": "fx-converted-wording",
+      "text": "Purchase USD 100.00 at APPLE.COM. Converted AED 367.25 incl 2.5% fee",
+      "expect": {"amount_minor": 36725, "currency": "AED"},
+      "note": "Same rule via different wording: 'converted' rather than brackets."
+    },
+    {
+      "id": "fx-foreign-only",
+      "text": "USD 42.10 spent at AMAZON.COM on card 4417",
+      "expect": {"amount_minor": 4210, "currency": "USD"},
+      "note": "The counterpart guard: with no local amount stated, keep the foreign currency. The fix must not invent a conversion."
+    },
+    {
+      "id": "income-salary",
+      "text": "Salary of AED 12,500.00 has been credited to your account 5678 on 01/09/2026",
+      "expect": {"amount_minor": 1250000, "currency": "AED"},
+      "note": "Regression guard. Returned null and was silently discarded until 2026-09-03. Hisabak has an INCOME type and ships a template for this shape."
+    },
+    {
+      "id": "income-refund",
+      "text": "Refund of AED 120.00 from NOON has been credited to your card 4417",
+      "expect": {"amount_minor": 12000},
+      "note": "A credit with a real merchant. Direction is the category's job, not the parser's."
+    },
+    {
+      "id": "brand-snapped-to-known",
+      "text": "Purchase of AED 89.00 at TALABAT-DXB-991 with card 1234",
+      "known_brands": ["Talabat", "Noon", "Carrefour"],
+      "expect": {"brand": "Talabat", "brand_text": "TALABAT-DXB-991", "amount_minor": 8900},
+      "note": "The two brand fields must diverge. brand links the transaction; brand_text is what template synthesis replaces. Using brand for both baked '-DXB-' into learned rules."
+    },
+    {
+      "id": "amount-comma-grouped",
+      "text": "AED 1,255.00 has been debited at IKEA DUBAI using card 7788",
+      "expect": {"amount_minor": 125500, "amount_text": "1,255.00"},
+      "note": "amount_text must stay verbatim including the separator - deriveAiSpans locates it literally."
+    },
+    {
+      "id": "amount-no-decimals",
+      "text": "Your card was used for AED 400 at ADNOC STATION 42 today",
+      "expect": {"amount_minor": 40000},
+      "note": "Whole-number amounts, and a merchant whose name ends in digits."
+    },
+    {
+      "id": "arabic-bank-sms",
+      "text": "تم خصم ٢٥٠٫٧٥ درهم من بطاقتك لدى كارفور",
+      "expect": {"amount_minor": 25075},
+      "note": "Arabic with Arabic-Indic digits and an Arabic decimal separator. Nano's worst failure mode."
+    },
+    {
+      "id": "not-a-transaction-otp",
+      "text": "Your OTP is 458213. Do not share it with anyone.",
+      "expect": {"amount_minor": null, "brand": null},
+      "note": "Contains a number and arrives from a bank. A false positive here creates a junk transaction unprompted."
+    },
+    {
+      "id": "not-a-transaction-statement",
+      "text": "Dear customer, your statement for August 2026 is ready in the app.",
+      "expect": {"amount_minor": null},
+      "note": "Bank-shaped, no money moved."
+    },
+    {
+      "id": "no-amount-stated",
+      "text": "Your card 4417 was used at CARREFOUR. Check the app for details",
+      "expect": {"amount_minor": null},
+      "note": "A real transaction with no amount. Better to return nothing than to invent one."
+    },
+    {
+      "id": "free-text-relative-date",
+      "text": "lunch 45 yesterday at noon",
+      "free_text": true,
+      "today_iso": "2026-09-03, Thursday",
+      "expect": {"amount_minor": 4500, "date_iso": "2026-09-02"},
+      "note": "The note path: relative dates resolve against today. Only here - a bank alert must never invent a date."
+    },
+    {
+      "id": "free-text-shorthand",
+      "text": "rent 15k last friday",
+      "free_text": true,
+      "today_iso": "2026-09-03, Thursday",
+      "expect": {"amount_minor": 1500000},
+      "note": "Shorthand magnitudes expand. 15k is 15,000 not 15."
+    },
+    {
+      "id": "installment-total",
+      "text": "Your purchase of AED 3,600.00 at EMAX is split into 12 monthly payments of AED 300.00",
+      "expect": {"amount_minor": 360000},
+      "note": "The purchase is what happened now; the instalment schedule is not a separate transaction."
+    },
+    {
+      "id": "cashback-vs-purchase",
+      "text": "AED 50.00 cashback earned on your AED 500.00 purchase at NOON",
+      "open_question": true,
+      "expect": {"amount_minor": 5000},
+      "note": "UNDECIDED. Record the 50 cashback (income) or the 500 purchase (expense, which likely already arrived as its own SMS)? Currently the cashback. Decide, then drop this flag."
+    }
+  ]
+}

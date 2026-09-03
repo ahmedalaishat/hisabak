@@ -4,10 +4,13 @@ import com.hisabak.core.common.DomainError
 import com.hisabak.core.common.DomainResult
 import com.hisabak.core.domain.analytics.Analytics
 import com.hisabak.core.domain.analytics.AnalyticsEvent
+import com.hisabak.feature.brand.domain.usecase.LearnBrandAliasUseCase
 import com.hisabak.feature.notification.domain.CategoryLimitMonitor
 import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsRepository
+import com.hisabak.feature.sms.domain.SmsTemplateId
 import com.hisabak.feature.sms.domain.SmsTransactionProcessor
+import com.hisabak.feature.sms.domain.template.SynthesizeTemplateUseCase
 import com.hisabak.feature.transaction.domain.Transaction
 
 /**
@@ -16,14 +19,28 @@ import com.hisabak.feature.transaction.domain.Transaction
  * and records the suggestion as its confirmed parse. The suggestion itself is deliberately
  * retained: on a linked message it serves as the "AI parsed" provenance marker in the inbox.
  * No recorded notification: the user is in-app, watching the row flip to Linked.
+ *
+ * Confirming also installs the template derived at suggest time, so the next message of this bank
+ * format never needs the model. That is a bonus, never a precondition — a synthesis failure leaves
+ * the transaction untouched and simply reports no learned template.
+ *
+ * And it learns the brand alias, because the template captures the merchant *as written* while
+ * this transaction points at the canonical brand. Teaching one without the other is what made a
+ * second brand appear on the next message of an already-learned format.
  */
 class ConfirmAiSuggestionUseCase(
     private val smsRepository: SmsRepository,
     private val processor: SmsTransactionProcessor,
     private val limitMonitor: CategoryLimitMonitor,
+    private val synthesizeTemplate: SynthesizeTemplateUseCase,
+    private val learnBrandAlias: LearnBrandAliasUseCase,
     private val analytics: Analytics,
 ) {
-    suspend operator fun invoke(messageId: SmsMessageId): DomainResult<Transaction> {
+    /** [automatic] means the auto-confirm gate decided, not the user; the row is labelled with it. */
+    suspend operator fun invoke(
+        messageId: SmsMessageId,
+        automatic: Boolean = false,
+    ): DomainResult<ConfirmedSuggestion> {
         val message = when (val result = smsRepository.getById(messageId)) {
             is DomainResult.Success -> result.value
             is DomainResult.Failure -> return result
@@ -34,11 +51,23 @@ class ConfirmAiSuggestionUseCase(
         val suggestion = message.suggested
             ?: return DomainResult.Failure(DomainError.ValidationFailed("No suggestion to confirm"))
 
-        val result = processor.commit(message, suggestion)
-        if (result is DomainResult.Success) {
-            analytics.log(AnalyticsEvent.AiSuggestionConfirmed(result.value.amount))
-            limitMonitor.evaluateNow()
+        val transaction = when (val result = processor.commit(message, suggestion, automatic)) {
+            is DomainResult.Success -> result.value
+            is DomainResult.Failure -> return result
         }
-        return result
+        analytics.log(AnalyticsEvent.AiSuggestionConfirmed(transaction.amount))
+        limitMonitor.evaluateNow()
+
+        learnBrandAlias(message.suggestedBrandRaw, transaction.brandId)
+
+        val learned = message.suggestedPattern
+            ?.let { synthesizeTemplate(message.body, it).getOrNull() }
+        return DomainResult.Success(ConfirmedSuggestion(transaction, learned?.id))
     }
 }
+
+/** [learnedTemplateId] is set only when confirming also installed a template — the inbox offers Undo for it. */
+data class ConfirmedSuggestion(
+    val transaction: Transaction,
+    val learnedTemplateId: SmsTemplateId?,
+)

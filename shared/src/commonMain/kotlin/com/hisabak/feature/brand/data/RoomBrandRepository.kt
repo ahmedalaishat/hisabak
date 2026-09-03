@@ -2,6 +2,8 @@ package com.hisabak.feature.brand.data
 
 import com.hisabak.core.common.DomainError
 import com.hisabak.core.common.DomainResult
+import com.hisabak.feature.brand.data.local.BrandAliasDao
+import com.hisabak.feature.brand.data.local.BrandAliasEntity
 import com.hisabak.feature.brand.data.local.BrandDao
 import com.hisabak.feature.brand.data.local.toDomain
 import com.hisabak.feature.brand.data.local.toEntity
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.map
 
 class RoomBrandRepository(
     private val dao: BrandDao,
+    private val aliasDao: BrandAliasDao,
     private val transactionDao: TransactionDao,
 ) : BrandRepository {
 
@@ -34,6 +37,9 @@ class RoomBrandRepository(
         return dao.findByNameLike(q)?.toDomain()
     }
 
+    override suspend fun findByExactName(name: String): Brand? =
+        name.trim().takeIf { it.isNotEmpty() }?.let { dao.findByExactName(it)?.toDomain() }
+
     override suspend fun upsert(brand: Brand): DomainResult<Unit> {
         dao.upsert(brand.toEntity())
         return DomainResult.Success(Unit)
@@ -52,4 +58,15 @@ class RoomBrandRepository(
         transactionDao.countForBrand(id.value)
 
     override suspend fun namesByUsage(limit: Int): List<String> = dao.namesByUsage(limit)
+
+    override suspend fun findByAlias(alias: String): Brand? =
+        alias.trim().lowercase().takeIf { it.isNotEmpty() }
+            ?.let { aliasDao.findBrandByAlias(it)?.toDomain() }
+
+    override suspend fun linkAlias(alias: String, brandId: BrandId): DomainResult<Unit> {
+        val key = alias.trim().lowercase()
+        if (key.isEmpty()) return DomainResult.Failure(DomainError.ValidationFailed("Alias required"))
+        aliasDao.upsert(BrandAliasEntity(alias = key, brandId = brandId.value))
+        return DomainResult.Success(Unit)
+    }
 }

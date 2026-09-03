@@ -3,6 +3,7 @@ package com.hisabak.feature.sms.domain.usecase
 import com.hisabak.core.common.Currency
 import com.hisabak.core.common.DomainResult
 import com.hisabak.feature.brand.domain.usecase.FindOrCreateBrandUseCase
+import com.hisabak.feature.brand.domain.usecase.ResolveBrandUseCase
 import com.hisabak.feature.sms.data.parser.RegexSmsTemplateDetector
 import com.hisabak.feature.sms.data.parser.TemplateSmsParser
 import com.hisabak.feature.sms.domain.SmsTransactionProcessor
@@ -36,7 +37,7 @@ class IngestSmsUseCaseTest {
     private val processor = SmsTransactionProcessor(
         detector = RegexSmsTemplateDetector(listOf("Purchase of AED {amount} at {brand} done")),
         parser = TemplateSmsParser(Currency.AED, TimeZone.UTC),
-        findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo),
+        findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo, ResolveBrandUseCase(brandRepo)),
         transactionRepository = transactionRepo,
         smsRepository = smsRepo,
         clock = clock,
@@ -45,8 +46,17 @@ class IngestSmsUseCaseTest {
     private val suggestAiParse =
         SuggestAiParseUseCase(aiParser, smsRepo, brandRepo, Currency.AED, clock, FakeAnalytics())
 
+    private val autoConfirmCalls = mutableListOf<Pair<String, CaptureSource>>()
+
     private fun TestScope.ingestUseCase() =
-        IngestSmsUseCase(smsRepo, processor, clock, suggestAiParse, this)
+        IngestSmsUseCase(
+            smsRepo, processor, clock, suggestAiParse,
+            { message, source ->
+                autoConfirmCalls += message.body to source
+                null
+            },
+            this,
+        )
 
     private suspend fun IngestSmsUseCase.broadcast(body: String, receivedAt: Instant? = null) =
         this(body, CaptureSource.SMS_BROADCAST, receivedAt)
@@ -160,5 +170,54 @@ class IngestSmsUseCaseTest {
         advanceUntilIdle()
 
         assertEquals(1, aiParser.parsedBodies.size)
+    }
+
+    @Test
+    fun `a shortcut waits for the ai fallback before reporting an outcome`() = runTest {
+        aiParser.result = AiParsedSms("Noon", 12_50, "AED", null)
+
+        val result = ingestUseCase()("Your card was charged 12.50 at Noon", CaptureSource.SHORTCUT)
+
+        // Without awaiting, the Shortcut said "needs review" while the parse was still running —
+        // and on iOS the app suspends when the Shortcut ends, so that work did not resume until
+        // the next launch and the user watched it parse in front of them.
+        assertEquals(1, autoConfirmCalls.size)
+        assertTrue(smsRepo.current.single().suggested != null)
+        assertTrue(result is DomainResult.Failure)
+    }
+
+    @Test
+    fun `a broadcast does not block on the model`() = runTest {
+        aiParser.result = AiParsedSms("Noon", 12_50, "AED", null)
+
+        ingestUseCase().broadcast("Your card was charged 12.50 at Noon")
+
+        // Nothing is waiting on a broadcast, so the fallback stays detached and the suggestion
+        // has not landed yet at this point.
+        assertTrue(autoConfirmCalls.isEmpty())
+        advanceUntilIdle()
+        assertEquals(1, autoConfirmCalls.size)
+    }
+
+    @Test
+    fun `a background capture offers its suggestion for auto-confirm`() = runTest {
+        aiParser.result = AiParsedSms("Noon", 12_50, "AED", null)
+
+        ingestUseCase().broadcast("Your card was charged 12.50 at Noon")
+        advanceUntilIdle()
+
+        // The gate itself is shouldAutoConfirm's business; what matters here is that ingest
+        // actually reaches it, and tells it which source the message came from.
+        assertEquals(1, autoConfirmCalls.size)
+        assertEquals(CaptureSource.SMS_BROADCAST, autoConfirmCalls.single().second)
+    }
+
+    @Test
+    fun `a template match never reaches auto-confirm`() = runTest {
+        ingestUseCase().broadcast("Purchase of AED 89.00 at Talabat done")
+        advanceUntilIdle()
+
+        // Already a transaction: there is no suggestion to confirm.
+        assertTrue(autoConfirmCalls.isEmpty())
     }
 }

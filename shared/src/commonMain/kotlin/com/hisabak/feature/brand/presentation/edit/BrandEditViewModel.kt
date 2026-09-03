@@ -10,6 +10,11 @@ import com.hisabak.feature.brand.domain.BrandRepository
 import com.hisabak.feature.brand.domain.ai.CategorySuggestion
 import com.hisabak.feature.brand.domain.ai.SuggestBrandCategoryUseCase
 import com.hisabak.feature.brand.domain.usecase.CreateBrandUseCase
+import com.hisabak.feature.brand.domain.usecase.DeleteBrandUseCase
+import com.hisabak.feature.brand.domain.usecase.ObserveBrandsUseCase
+import com.hisabak.feature.transaction.domain.usecase.ObserveTransactionsUseCase
+import com.hisabak.feature.transaction.domain.usecase.ReassignBrandTransactionsUseCase
+import kotlinx.coroutines.flow.combine
 import com.hisabak.feature.brand.domain.usecase.UpdateBrandUseCase
 import com.hisabak.feature.category.domain.usecase.ObserveCategoriesUseCase
 import com.hisabak.feature.category.presentation.CategoryCreatedBus
@@ -24,6 +29,10 @@ class BrandEditViewModel(
     private val observeCategories: ObserveCategoriesUseCase,
     private val createBrand: CreateBrandUseCase,
     private val updateBrand: UpdateBrandUseCase,
+    private val deleteBrand: DeleteBrandUseCase,
+    private val reassignBrandTransactions: ReassignBrandTransactionsUseCase,
+    private val observeBrands: ObserveBrandsUseCase,
+    private val observeTransactions: ObserveTransactionsUseCase,
     private val categoryCreatedBus: CategoryCreatedBus,
     private val suggestCategory: SuggestBrandCategoryUseCase,
     private val analytics: Analytics,
@@ -34,10 +43,24 @@ class BrandEditViewModel(
     override fun initialState() = BrandEditUiState(isNew = brandId == null)
 
     init {
+        // Deleting is decided here now, and the decision depends on what would be orphaned:
+        // a brand with transactions has to be merged into another rather than removed.
+        if (brandId != null) {
+            viewModelScope.launch {
+                combine(observeBrands(), observeTransactions()) { brands, txs ->
+                    brands.filter { it.id != brandId }
+                        .sortedBy { it.name.lowercase() }
+                        .map { BrandEditUiState.BrandOption(it.id, it.name) } to
+                        txs.count { it.brandId == brandId }
+                }.collect { (others, count) ->
+                    setState { copy(otherBrands = others, transactionCount = count) }
+                }
+            }
+        }
         viewModelScope.launch {
             observeCategories().collect { categories ->
                 val options = categories.map {
-                    BrandEditUiState.CategoryOption(it.id, it.name, it.color)
+                    BrandEditUiState.CategoryOption(it.id, it.name, it.color, it.icon)
                 }
                 setState { copy(categoryOptions = options) }
             }
@@ -65,6 +88,8 @@ class BrandEditViewModel(
                 setState { copy(selectedCategoryId = intent.categoryId) }
             BrandEditIntent.SuggestionAccepted -> acceptSuggestion()
             BrandEditIntent.Save -> save()
+            BrandEditIntent.Delete -> removeBrand()
+            is BrandEditIntent.MergeInto -> merge(intent.target)
             BrandEditIntent.ConsumeEffect -> clearEffect()
         }
     }
@@ -122,6 +147,38 @@ class BrandEditViewModel(
                 is DomainResult.Failure -> setState {
                     copy(isLoading = false, generalError = result.error.message)
                 }
+            }
+        }
+    }
+
+    /** No transactions to rehome — a straight delete. */
+    private fun removeBrand() {
+        val id = brandId ?: return
+        setState { copy(isDeleting = true) }
+        viewModelScope.launch {
+            if (deleteBrand(id) is DomainResult.Success) {
+                sendEffect(BrandEditEffect.Deleted)
+            } else {
+                setState { copy(isDeleting = false) }
+                sendEffect(BrandEditEffect.Message("Couldn't delete this brand — it may now have transactions."))
+            }
+        }
+    }
+
+    /** Move this brand's transactions onto [target], then remove it. */
+    private fun merge(target: BrandId) {
+        val id = brandId ?: return
+        setState { copy(isDeleting = true) }
+        viewModelScope.launch {
+            if (reassignBrandTransactions(id, target) is DomainResult.Success) {
+                analytics.log(AnalyticsEvent.BrandMerged)
+                if (deleteBrand(id) is DomainResult.Failure) {
+                    sendEffect(BrandEditEffect.Message("Moved the transactions, but couldn't delete the brand."))
+                }
+                sendEffect(BrandEditEffect.Deleted)
+            } else {
+                setState { copy(isDeleting = false) }
+                sendEffect(BrandEditEffect.Message("Couldn't move the transactions. Nothing was deleted."))
             }
         }
     }

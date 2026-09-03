@@ -81,9 +81,11 @@ Everything below is built and shipping today:
   features, ending with an SMS-permission primer.
 - [x] 💬 **SMS capture** — parse bank SMS into transactions automatically (with permission), or
   capture one on demand by sharing it into Hisabak, selecting its text → Hisabak, or pasting it.
-  Messages no template recognizes fall back to **on-device AI** (Gemini Nano / Apple
-  Intelligence, where supported): the parse is suggested on the message and you confirm it with
-  one tap — nothing ever leaves your device.
+  Messages no template recognizes fall back to **AI** — on-device (Gemini Nano / Apple
+  Intelligence) where the phone supports it, nothing leaving the device; and on the many phones
+  that don't, an **optional** parsing service you host and switch on yourself. Either way the parse
+  is suggested on the message and you confirm it with one tap, and Hisabak learns a template from
+  it so that bank format is read locally from then on.
 - [x] 🔔 **Budgets with alerts** — set a monthly limit per category and get notified at **50% /
   80% / 100%**. Alerts arrive as a system notification *and* an in-app entry; tapping one opens
   the dashboard with that category expanded.
@@ -93,8 +95,12 @@ Everything below is built and shipping today:
 - [x] 🧾 **Transactions** — searchable, filterable list (by brand, category, date range), with
   uncategorized spending surfaced for quick cleanup. Add, edit, or delete an entry (deletion is
   confirmed first, and hands any bank message that created it back to the SMS inbox).
-- [x] 🗂️ **Organize** — categories (income / expense / savings / investment) with colors and
-  icons, and brands mapped to categories. Safe deletion with brand-merge and confirmation.
+- [x] 🗂️ **Organize** — categories (income / expense / savings / investment) with **144 icons**
+  across 11 groups (searchable in English *and* Arabic) and **any colour you like** — you pick the
+  hue, the app derives shades that stay readable in light, dark, and notifications. Naming a
+  category picks its icon for you, and it warns when a colour or icon clashes with one you already
+  use. Brands map to categories, and either links straight to its transactions. Safe deletion with
+  brand-merge and confirmation.
   Create a brand right from the transaction sheet and a category right from the brand editor —
   and on devices with on-device AI, the brand editor suggests the category (existing or a
   drafted new one) as a tap-to-confirm chip.
@@ -102,9 +108,13 @@ Everything below is built and shipping today:
   paste a sample (or start from an unparsed inbox message), confirm the highlighted
   amount/brand/date, and future messages parse instantly. Specificity-ranked matching and a
   save-time preview keep a bad template from breaking the built-ins. Backed up with your data.
+  Confirming an AI-parsed message **teaches a template automatically** — the next message in that
+  format parses with no AI at all, on any device. Learned rules are marked as such and can be
+  edited, deleted, or undone on the spot.
 - [x] ✨ **Smart capture** — the SMS inbox takes anything: auto-captured bank SMS, pasted
   messages, or plain notes ("lunch 45 yesterday"). Known formats import instantly; everything
-  else gets an on-device AI suggestion you confirm with one tap. Fully on-device.
+  else gets an AI suggestion you confirm with one tap — on-device where supported, otherwise via
+  the optional parsing service (off by default).
 - [x] 📱 **iOS app** — the same app, natively on iPhone from the shared Kotlin Multiplatform
   codebase: every screen, Arabic/RTL, App Lock (Face ID), Drive backup, templates, and on-device
   AI parsing (Apple Intelligence). iOS has no SMS access by design, so capture goes through a
@@ -158,8 +168,10 @@ What's next, roughly in order:
 - **Async:** Coroutines + Flow
 - **State:** ViewModel + `collectAsStateWithLifecycle`
 - **Charts:** Vico (multiplatform)
-- **On-device AI:** Gemini Nano via the ML Kit GenAI Prompt API (Android) / Apple Foundation
-  Models (iOS) — inference never leaves the device
+- **AI parsing:** Gemini Nano via the ML Kit GenAI Prompt API (Android) / Apple Foundation Models
+  (iOS) — on-device, nothing transmitted; plus an optional self-hosted parse service (`server/`,
+  FastAPI + Docker) for the majority of phones that have no on-device model — opt-in, and it stores
+  nothing
 - **Crash reporting & analytics:** Firebase Crashlytics + Analytics (release builds only;
   disabled in debug; analytics events carry no personal or financial data)
 

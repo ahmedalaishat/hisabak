@@ -84,6 +84,7 @@ class TransactionEditViewModel(
                 selectedBrandIdFlow,
             ) { brands, categories, type, selectedBrandId ->
                 val colorById = categories.associate { it.id to it.color }
+                val iconById = categories.associate { it.id to it.icon }
                 val typeById = categories.associate { it.id to it.type }
                 brands
                     // Brands of the chosen type, plus the transaction's current brand even if it
@@ -95,6 +96,7 @@ class TransactionEditViewModel(
                             id = brand.id,
                             name = brand.name,
                             categoryColor = brand.categoryId?.let(colorById::get),
+                            categoryIcon = brand.categoryId?.let(iconById::get),
                         )
                     }
                     .sortedBy { it.name.lowercase() }

@@ -12,3 +12,12 @@ HISABAK_FLAVOR=prod
 
 // iOS OAuth client id for Google Drive backup (create per docs/google-drive-backup-setup.md §5).
 GOOGLE_OAUTH_CLIENT_ID=469916556187-5gh2l5euvu13d4e02nb3k02idf05qnhj.apps.googleusercontent.com
+
+// Parse service. Blank here on purpose — the token is a secret and this file is committed.
+// Real values go in Local.xcconfig (gitignored); see server/README.md.
+// Note: a bare // in a value starts a comment, so URLs need the $() escape:
+//   HISABAK_PARSE_SERVICE_URL = https:/$()/parse.example.com
+HISABAK_PARSE_SERVICE_URL =
+HISABAK_PARSE_SERVICE_TOKEN =
+
+#include? "Local.xcconfig"

@@ -9,11 +9,13 @@ import com.hisabak.core.common.sanitizeAmountInput
 import com.hisabak.core.domain.analytics.Analytics
 import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.core.presentation.BaseViewModel
+import com.hisabak.feature.category.domain.CategoryColor
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.CategoryRepository
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.category.domain.effectiveFor
 import com.hisabak.feature.category.domain.usecase.CreateCategoryUseCase
+import com.hisabak.feature.category.domain.usecase.DeleteCategoryUseCase
 import com.hisabak.feature.category.domain.usecase.ObserveCategoryLimitsUseCase
 import com.hisabak.feature.category.domain.usecase.SetCategoryLimitUseCase
 import com.hisabak.feature.category.domain.usecase.UpdateCategoryUseCase
@@ -26,6 +28,7 @@ class CategoryEditViewModel(
     prefill: CategoryEditPrefill?,
     private val categoryRepository: CategoryRepository,
     private val createCategory: CreateCategoryUseCase,
+    private val deleteCategory: DeleteCategoryUseCase,
     private val updateCategory: UpdateCategoryUseCase,
     private val observeCategoryLimits: ObserveCategoryLimitsUseCase,
     private val setCategoryLimit: SetCategoryLimitUseCase,
@@ -34,14 +37,42 @@ class CategoryEditViewModel(
     private val analytics: Analytics,
 ) : BaseViewModel<CategoryEditIntent, CategoryEditUiState, CategoryEditEffect>() {
 
+    private val prefilledColor: String? = prefill?.color
+
     override fun initialState() = CategoryEditUiState(isNew = categoryId == null)
 
     init {
+        loadColorsInUse()
         if (categoryId != null) {
             loadExisting(categoryId)
         } else if (prefill != null) {
             setState {
                 copy(nameInput = prefill.name, type = prefill.type, color = prefill.color, icon = prefill.icon)
+            }
+        }
+    }
+
+    /**
+     * The other categories' colors, for the picker's context strip and its clash warning. A new
+     * category with no prefill also *starts* on the hue furthest from them, so two categories
+     * don't end up as indistinguishable slices of the same donut by accident.
+     */
+    private fun loadColorsInUse() {
+        viewModelScope.launch {
+            val others = categoryRepository.observeAll().first().filter { it.id != categoryId }
+            val used = others.map { UsedCategoryColor(it.name, it.color, it.icon) }
+            setState {
+                val pickDefault = categoryId == null && prefilledColor == null
+                copy(
+                    colorsInUse = used,
+                    color = if (pickDefault) {
+                        CategoryColor.customKey(
+                            CategoryColor.mostDistinctHue(used.mapNotNull { CategoryColor.hueFor(it.colorKey) }),
+                        )
+                    } else {
+                        color
+                    },
+                )
             }
         }
     }
@@ -59,6 +90,7 @@ class CategoryEditViewModel(
             is CategoryEditIntent.LimitChanged ->
                 setState { copy(limitInput = sanitizeAmountInput(intent.value), limitError = null) }
             CategoryEditIntent.Save -> save()
+            CategoryEditIntent.Delete -> delete()
             CategoryEditIntent.ConsumeEffect -> clearEffect()
         }
     }
@@ -84,6 +116,21 @@ class CategoryEditViewModel(
                 }
                 is DomainResult.Failure -> setState {
                     copy(isLoading = false, generalError = result.error.message)
+                }
+            }
+        }
+    }
+
+    /** Only reachable for an existing category — a new one has nothing to delete. */
+    private fun delete() {
+        val id = categoryId ?: return
+        setState { copy(isDeleting = true) }
+        viewModelScope.launch {
+            when (val result = deleteCategory(id)) {
+                is DomainResult.Success -> sendEffect(CategoryEditEffect.Deleted)
+                is DomainResult.Failure -> {
+                    setState { copy(isDeleting = false) }
+                    sendEffect(CategoryEditEffect.DeleteFailed(result.error.message))
                 }
             }
         }
