@@ -33,11 +33,8 @@ import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.brand.presentation.list.BrandListRoute
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.presentation.list.CategoryListRoute
-import com.hisabak.ui.components.IconTile
-import com.hisabak.ui.components.SurfaceCard
 import com.hisabak.ui.components.localizeDigits
 import com.hisabak.ui.components.rememberIsArabic
-import com.hisabak.ui.theme.HisabakTheme
 import com.hisabak.ui.theme.Spacing
 import org.koin.compose.viewmodel.koinViewModel
 import com.hisabak.shared.resources.*
