@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
  * The narrative (layer 2) is **never fetched on its own**. A snapshot only looks the cache up: an
  * answer already on the phone for exactly these figures is shown straight away — nothing is sent
  * for that — and otherwise the screen asks. The send happens on [InsightsIntent.RequestNarrative]
- * alone, and the answer gives way to the ask again when the figures materially change. [language] is the UI language the text is
+ * alone, and the answer gives way to the ask again as soon as any figure changes. [language] is the UI language the text is
  * generated in — fixed for the screen's life, since a switch recreates it.
  */
 @OptIn(ExperimentalCoroutinesApi::class)

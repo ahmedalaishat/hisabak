@@ -139,9 +139,8 @@ async def parse(request: ParseRequest, caller: str = Depends(_authorize)) -> Par
 async def insights(request: InsightsRequest, caller: str = Depends(_authorize)) -> InsightsResponse:
     """Narrates a period from aggregates. Shares the parse limiter: one budget bounds the bill.
 
-    Cost stays bounded because the client regenerates only when its review materially changes
-    (a finding appears or disappears, or a total moves in its second significant digit), so this
-    runs roughly once per user per period rather than once per transaction.
+    Cost stays bounded because the client sends only on the user's tap and answers a repeat tap
+    for unchanged figures from its own cache.
     """
     _rate_limit(caller)
     try:

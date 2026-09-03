@@ -1,41 +1,35 @@
 package com.hisabak.feature.insights.domain.ai
 
 import com.hisabak.feature.insights.domain.InsightsSummary
-import com.hisabak.feature.insights.domain.deriveInsights
 
 /**
- * The identity of a narrative: a digest of what was explained.
+ * The identity of a narrative: a digest of **exactly** what was sent.
  *
- * Keying on the summary itself would regenerate — and pay for — a narrative per transaction. This
- * digest changes only when the review would read differently: a deterministic finding appears or
- * disappears, or a total moves in its second significant digit (roughly a 5–10% step). It also
- * covers the language the text was generated in, and the period's **concrete date window** rather
- * than its name — so "this month" and "this year" stay distinct even when every transaction is in
- * the current month and their figures coincide, and a custom range later needs no new rule.
+ * Every figure the request carries is in it — the period's concrete date window (not its name, so
+ * "this month" and "this year" stay distinct when their figures coincide and a custom range later
+ * needs no new rule), the language, both totals and their priors, the uncategorized total and
+ * count, and every category's id, name, spend, prior, and limit. Any change to any of them — one
+ * new transaction — is a different input, and a different input asks again rather than showing an
+ * answer to a question that is no longer the one on screen. A rounded key was tried and rejected:
+ * it kept yesterday's explanation on screen after today's spending.
  *
- * The digest is the cache row's primary key, so answers for different windows never overwrite
- * each other and a window whose figures change and change back finds its earlier answer.
+ * The digest is the cache row's primary key, so answers for different inputs never overwrite each
+ * other, and figures that change and change back find their earlier answer without a send.
  */
 fun narrativeKey(summary: InsightsSummary, language: String): String {
-    val findings = deriveInsights(summary).map { it.id }.sorted().joinToString(",")
-    val canonical = listOf(
-        summary.windowStart?.toString() ?: "all",
-        summary.windowEnd?.toString() ?: "all",
-        language,
-        findings,
-        roundToTwoSignificant(summary.incomeMinor),
-        roundToTwoSignificant(summary.expenseMinor),
-        roundToTwoSignificant(summary.uncategorizedMinor),
-    ).joinToString("|")
+    val canonical = buildString {
+        append(summary.windowStart?.toString() ?: "all").append('|')
+        append(summary.windowEnd?.toString() ?: "all").append('|')
+        append(language).append('|')
+        append(summary.incomeMinor).append('|').append(summary.priorIncomeMinor).append('|')
+        append(summary.expenseMinor).append('|').append(summary.priorExpenseMinor).append('|')
+        append(summary.uncategorizedMinor).append('|').append(summary.uncategorizedCount)
+        for (c in summary.categories) {
+            append('\n').append(c.id.value).append('|').append(c.name).append('|')
+            append(c.spentMinor).append('|').append(c.priorMinor).append('|').append(c.limitMinor)
+        }
+    }
     return fnv1a64(canonical)
-}
-
-internal fun roundToTwoSignificant(value: Long): Long {
-    if (value < 100) return value
-    var magnitude = 1L
-    var v = value
-    while (v >= 100) { v /= 10; magnitude *= 10 }
-    return v * magnitude
 }
 
 /** FNV-1a, 64-bit, as 16 hex chars — a stable, dependency-free digest for a cache key. */

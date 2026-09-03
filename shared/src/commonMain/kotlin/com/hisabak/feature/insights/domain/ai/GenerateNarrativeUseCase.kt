@@ -17,8 +17,8 @@ sealed interface NarrativeResult {
 }
 
 /**
- * Layer 2 of the review: the model's explanation, fetched when the user asks and cached per
- * material change.
+ * Layer 2 of the review: the model's explanation, fetched when the user asks and cached per exact
+ * input.
  *
  * The deterministic review is always shown by the caller; this only ever adds to it. Every failure
  * is a [NarrativeResult], never an exception — an outage degrades to the review the user already

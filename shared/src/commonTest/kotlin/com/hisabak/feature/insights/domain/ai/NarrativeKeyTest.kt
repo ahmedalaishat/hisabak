@@ -8,36 +8,34 @@ import kotlin.test.assertNotEquals
 class NarrativeKeyTest {
 
     @Test
-    fun `rounds to two significant digits`() {
-        assertEquals(0, roundToTwoSignificant(0))
-        assertEquals(99, roundToTwoSignificant(99))
-        assertEquals(120, roundToTwoSignificant(123))
-        assertEquals(1_200_00, roundToTwoSignificant(1_234_56))
-        assertEquals(9_900_000, roundToTwoSignificant(9_987_654))
+    fun `the same input gives the same key`() {
+        assertEquals(narrativeKey(summary(), "en"), narrativeKey(summary(), "en"))
     }
 
     @Test
-    fun `a small transaction does not change the key`() {
-        val before = summary(uncategorized = 340_00)
-        val after = summary(uncategorized = 342_50)
+    fun `any change to any figure changes the key`() {
+        val base = narrativeKey(summary(), "en")
 
-        assertEquals(narrativeKey(before, "en"), narrativeKey(after, "en"))
-    }
-
-    @Test
-    fun `a finding appearing changes the key`() {
-        val under = summary(categories = listOf(spend("dining", spent = 1_000_00, prior = 1_000_00, limit = 1_500_00)))
-        val over = summary(categories = listOf(spend("dining", spent = 1_600_00, prior = 1_000_00, limit = 1_500_00)))
-
-        assertNotEquals(narrativeKey(under, "en"), narrativeKey(over, "en"))
-    }
-
-    @Test
-    fun `a total moving in its second significant digit changes the key`() {
-        val a = summary(income = 12_000_00)
-        val b = summary(income = 13_000_00)
-
-        assertNotEquals(narrativeKey(a, "en"), narrativeKey(b, "en"))
+        assertNotEquals(base, narrativeKey(summary(uncategorized = 340_01), "en"))       // one fils
+        assertNotEquals(base, narrativeKey(summary(uncategorizedCount = 4), "en"))
+        assertNotEquals(base, narrativeKey(summary(income = 12_500_01), "en"))
+        assertNotEquals(base, narrativeKey(summary(priorExpense = 6_900_01), "en"))
+        assertNotEquals(
+            base,
+            narrativeKey(summary(categories = listOf(spend("dining", spent = 1_800_00, prior = 1_200_00, limit = 1_500_00))), "en"),
+        )
+        assertNotEquals(
+            base,
+            narrativeKey(
+                summary(
+                    categories = listOf(
+                        spend("dining", spent = 1_800_00, prior = 1_200_00, limit = 1_500_00, name = "Eating out"),
+                        spend("fuel", spent = 400_00, prior = 420_00),
+                    ),
+                ),
+                "en",
+            ),
+        )
     }
 
     @Test
@@ -52,17 +50,14 @@ class NarrativeKeyTest {
     }
 
     @Test
-    fun `the key is a fixed-width digest`() {
-        val key = narrativeKey(summary(), "en")
-
-        assertEquals(16, key.length)
-        assertEquals(key, narrativeKey(summary(), "en"))
-        assertEquals("cbf29ce484222325", fnv1a64(""))
-        assertEquals("af63dc4c8601ec8c", fnv1a64("a"))
+    fun `the language is part of the key`() {
+        assertNotEquals(narrativeKey(summary(), "en"), narrativeKey(summary(), "ar"))
     }
 
     @Test
-    fun `the language is part of the key`() {
-        assertNotEquals(narrativeKey(summary(), "en"), narrativeKey(summary(), "ar"))
+    fun `the key is a fixed-width digest`() {
+        assertEquals(16, narrativeKey(summary(), "en").length)
+        assertEquals("cbf29ce484222325", fnv1a64(""))
+        assertEquals("af63dc4c8601ec8c", fnv1a64("a"))
     }
 }
