@@ -45,8 +45,17 @@ class IngestSmsUseCaseTest {
     private val suggestAiParse =
         SuggestAiParseUseCase(aiParser, smsRepo, brandRepo, Currency.AED, clock, FakeAnalytics())
 
-    private fun TestScope.ingestUseCase() =
-        IngestSmsUseCase(smsRepo, processor, clock, suggestAiParse, this)
+    private val autoConfirmCalls = mutableListOf<Pair<String, CaptureSource>>()
+
+    private fun TestScope.ingestUseCase(autoConfirm: Boolean = false) =
+        IngestSmsUseCase(
+            smsRepo, processor, clock, suggestAiParse,
+            { message, source ->
+                autoConfirmCalls += message.body to source
+                autoConfirm
+            },
+            this,
+        )
 
     private suspend fun IngestSmsUseCase.broadcast(body: String, receivedAt: Instant? = null) =
         this(body, CaptureSource.SMS_BROADCAST, receivedAt)
@@ -160,5 +169,27 @@ class IngestSmsUseCaseTest {
         advanceUntilIdle()
 
         assertEquals(1, aiParser.parsedBodies.size)
+    }
+
+    @Test
+    fun `a background capture offers its suggestion for auto-confirm`() = runTest {
+        aiParser.result = AiParsedSms("Noon", 12_50, "AED", null)
+
+        ingestUseCase().broadcast("Your card was charged 12.50 at Noon")
+        advanceUntilIdle()
+
+        // The gate itself is shouldAutoConfirm's business; what matters here is that ingest
+        // actually reaches it, and tells it which source the message came from.
+        assertEquals(1, autoConfirmCalls.size)
+        assertEquals(CaptureSource.SMS_BROADCAST, autoConfirmCalls.single().second)
+    }
+
+    @Test
+    fun `a template match never reaches auto-confirm`() = runTest {
+        ingestUseCase().broadcast("Purchase of AED 89.00 at Talabat done")
+        advanceUntilIdle()
+
+        // Already a transaction: there is no suggestion to confirm.
+        assertTrue(autoConfirmCalls.isEmpty())
     }
 }

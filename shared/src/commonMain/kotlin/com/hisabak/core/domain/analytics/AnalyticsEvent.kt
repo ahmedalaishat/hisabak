@@ -119,6 +119,12 @@ sealed class AnalyticsEvent(
         params = mapOf("enabled" to enabled),
     )
 
+    /** The user turned unattended confirmation on or off. Setting state only. */
+    class AutoConfirmToggled(enabled: Boolean) : AnalyticsEvent(
+        name = "auto_confirm_toggled",
+        params = mapOf("enabled" to enabled),
+    )
+
     /** [type] is a [CategoryType] name, lowercased. */
     class CategoryCreated(type: String, hasLimit: Boolean) : AnalyticsEvent(
         name = "category_created",

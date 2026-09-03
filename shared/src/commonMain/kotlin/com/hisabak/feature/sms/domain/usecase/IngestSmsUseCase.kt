@@ -19,6 +19,10 @@ class IngestSmsUseCase(
     private val processor: SmsTransactionProcessor,
     private val clock: Clock,
     private val suggestAiParse: SuggestAiParseUseCase,
+    /** Called when a background capture produced a suggestion. A function rather than the use
+     *  case itself: ingest does not need the confirm graph, and tests of unrelated behaviour
+     *  should not have to build it. */
+    private val autoConfirmSuggestion: suspend (SmsMessage, CaptureSource) -> Boolean,
     private val appScope: CoroutineScope,
 ) {
     suspend operator fun invoke(
@@ -49,7 +53,15 @@ class IngestSmsUseCase(
             if (source == CaptureSource.MANUAL_PASTE) {
                 return DomainResult.Success(CaptureResult.StoredUnparsed(message.id))
             }
-            appScope.launch { suggestAiParse(message.id, source = "auto") }
+            appScope.launch {
+                val suggested = suggestAiParse(message.id, source = "auto")
+                // Auto-confirm only on this path: a background capture has no screen to confirm
+                // from, which is exactly the friction the setting exists to remove. The gate
+                // itself lives in shouldAutoConfirm.
+                if (suggested is DomainResult.Success) {
+                    autoConfirmSuggestion(suggested.value, source)
+                }
+            }
         }
         return result.map { CaptureResult.Imported(it) }
     }

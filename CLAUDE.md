@@ -180,6 +180,18 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   gradle properties, iOS Info.plist). The service never logs or stores message text, and
   `docs/privacy.html` discloses the whole flow. Cost stays bounded because template synthesis turns
   each parse into a regex, so it is called roughly once per bank *format*.
+- **Auto-confirm (opt-in, off by default):** a suggestion may become a transaction without a tap
+  when `shouldAutoConfirm` (`feature/sms/domain/ai/AutoConfirm.kt`, pure) allows it: the setting is
+  on, the source is **not** a paste (the user is on the screen anyway), `suggestedPattern != null`
+  (so `deriveAiSpans` located *both* the amount and the merchant in the message — nothing was
+  invented), the brand already exists (never create one unattended), and the amount is under
+  `AUTO_CONFIRM_CEILING_MINOR`. `AutoConfirmSuggestionUseCase` delegates to
+  `ConfirmAiSuggestionUseCase` rather than writing its own path, so the transaction, message link,
+  template synthesis, and limit re-check stay identical; `IngestSmsUseCase` calls it through a
+  function seam on the background path only, and the result is announced via
+  `TransactionRecordedNotifier`. **What the gate cannot catch is a misreading** — a message saying
+  "USD 42.10 (AED 154.62)" was read as 42.10 with the evidence genuinely present, so verification
+  passes; `server/evals` is how that error rate gets measured.
 - **Platform:** Android only, portrait, edge-to-edge. `minSdk 29`.
 - **Dates & times: use kotlinx-datetime** (`kotlin.time.Instant`, `kotlinx.datetime.LocalDate` /
   `YearMonth` / `TimeZone`), **not `java.time`** — the code is KMP-bound and java.time doesn't

@@ -7,6 +7,13 @@ All notable changes to Hisabak are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **Settings now has an SMS parsing section**, gathering the three things that decide how messages
+  are read: your parsing templates, whether unrecognised messages may be sent to the online model,
+  and whether a confirmed-looking result may be saved without asking you.
+- **Confirm automatically (off by default)** — when a bank message arrives in the background and
+  the amount and shop were both found in the message text, and the shop is one you already have,
+  Hisabak can save the transaction and tell you rather than waiting for a tap. Pasted messages
+  always wait for you, new shops are never created this way, and larger amounts still ask.
 - **Parsing that works on every phone** — on-device AI only exists on flagship Androids and
   iPhone 15 Pro or newer, so most phones never saw it. You can now point Hisabak at a small parsing
   service (self-hosted; see `server/`) and have unrecognised bank messages read by a proper model

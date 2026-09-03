@@ -10,6 +10,7 @@ import com.hisabak.feature.sms.domain.SmsTemplateDetector
 import com.hisabak.feature.sms.domain.SmsTemplateRepository
 import com.hisabak.feature.sms.domain.SmsTransactionProcessor
 import com.hisabak.di.APPLICATION_SCOPE
+import com.hisabak.feature.sms.domain.ai.AutoConfirmSuggestionUseCase
 import com.hisabak.feature.sms.domain.ai.ConfirmAiSuggestionUseCase
 import com.hisabak.feature.sms.domain.ai.DismissAiSuggestionUseCase
 import com.hisabak.feature.sms.domain.ai.SuggestAiParseUseCase
@@ -61,6 +62,7 @@ val smsModule = module {
             processor = get(),
             clock = get(),
             suggestAiParse = get(),
+            autoConfirmSuggestion = get<AutoConfirmSuggestionUseCase>()::invoke,
             appScope = get(APPLICATION_SCOPE),
         )
     }
@@ -84,6 +86,14 @@ val smsModule = module {
         )
     }
     factory { DismissAiSuggestionUseCase(smsRepository = get(), analytics = get()) }
+    factory {
+        AutoConfirmSuggestionUseCase(
+            preferences = get(),
+            brandRepository = get(),
+            confirm = get(),
+            recordedNotifier = get(),
+        )
+    }
     factory {
         CaptureTransactionUseCase(
             ingest = get(),

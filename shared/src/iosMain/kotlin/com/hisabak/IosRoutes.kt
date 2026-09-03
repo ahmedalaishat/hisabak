@@ -122,6 +122,7 @@ internal fun IosSettingsRoute(
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
     val appLockEnabled by viewModel.appLockEnabled.collectAsStateWithLifecycle(initialValue = false)
     val remoteParseEnabled by viewModel.remoteParseEnabled.collectAsStateWithLifecycle(initialValue = false)
+    val autoConfirmEnabled by viewModel.autoConfirmEnabled.collectAsStateWithLifecycle(initialValue = false)
     val appConfig: AppConfig = koinInject()
     val passphraseReminderVisible by viewModel.passphraseReminderVisible.collectAsStateWithLifecycle(initialValue = false)
 
@@ -142,6 +143,8 @@ internal fun IosSettingsRoute(
         remoteParseSupported = appConfig.parseServiceUrl.isNotBlank() &&
             appConfig.parseServiceToken.isNotBlank(),
         onRemoteParseChange = viewModel::setRemoteParseEnabled,
+        autoConfirmEnabled = autoConfirmEnabled,
+        onAutoConfirmChange = viewModel::setAutoConfirmEnabled,
         appLockSupported = appLockSupported,
         onThemeChange = viewModel::setThemeMode,
         onLanguageChange = { tag ->

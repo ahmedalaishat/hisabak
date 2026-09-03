@@ -61,4 +61,14 @@ interface AppPreferences {
     val remoteParseEnabled: Flow<Boolean>
 
     suspend fun setRemoteParseEnabled(value: Boolean)
+
+    /**
+     * Whether a verified AI suggestion may become a transaction without a tap; defaults to `false`.
+     *
+     * Separate from [remoteParseEnabled] on purpose: one decides whether text leaves the phone,
+     * this decides whether the app acts unattended. Wanting the second does not imply the first.
+     */
+    val autoConfirmEnabled: Flow<Boolean>
+
+    suspend fun setAutoConfirmEnabled(value: Boolean)
 }
