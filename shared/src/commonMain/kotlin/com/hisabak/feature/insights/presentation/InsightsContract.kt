@@ -6,7 +6,6 @@ import com.hisabak.core.presentation.ViewIntent
 import com.hisabak.core.presentation.ViewState
 import com.hisabak.feature.insights.domain.Insight
 import com.hisabak.feature.insights.domain.InsightsSummary
-import com.hisabak.feature.insights.domain.ai.AskTurn
 import com.hisabak.feature.insights.domain.ai.NarrativeInsight
 import com.hisabak.feature.insights.domain.ai.SuggestedQuestion
 
@@ -26,19 +25,6 @@ sealed interface NarrativeUi {
     data object Unavailable : NarrativeUi
 }
 
-/** The Ask sheet. [turns] live for the sheet's life only; nothing here is persisted. */
-data class AskUi(
-    val open: Boolean = false,
-    val turns: List<AskTurn> = emptyList(),
-    val draft: String = "",
-    val busy: Boolean = false,
-    /** Questions left today; null until the service is known to be available. */
-    val remaining: Int? = null,
-    val notice: AskNotice? = null,
-)
-
-enum class AskNotice { NoQuestionsLeft, Unavailable }
-
 data class InsightsUiState(
     val period: SummaryPeriod,
     val insights: List<Insight> = emptyList(),
@@ -47,9 +33,10 @@ data class InsightsUiState(
     val summary: InsightsSummary? = null,
     val narrative: NarrativeUi = NarrativeUi.Hidden,
     val showShared: Boolean = false,
-    /** Chips derived from the findings; empty when the build has no service. */
+    /** Questions derived from the findings; empty when the build has no service. */
     val suggestedQuestions: List<SuggestedQuestion> = emptyList(),
-    val ask: AskUi = AskUi(),
+    /** Questions left today, for the entry card; null until read. */
+    val askRemaining: Int? = null,
 ) : ViewState
 
 sealed interface InsightsIntent : ViewIntent {
@@ -71,15 +58,8 @@ sealed interface InsightsIntent : ViewIntent {
 
     data object HideShared : InsightsIntent
 
-    /** Opens the Ask sheet; with a [question] it also sends it (a chip tap). */
-    data class OpenAsk(val question: String? = null) : InsightsIntent
-
-    data object CloseAsk : InsightsIntent
-
-    data class AskDraftChanged(val value: String) : InsightsIntent
-
-    /** Sends the draft. Consent is this tap. */
-    data object AskSubmitted : InsightsIntent
+    /** Analytics only — the Route pushes the Ask screen, with [question] when a suggestion was tapped. */
+    data class AskOpened(val question: String?) : InsightsIntent
 }
 
 sealed interface InsightsEffect : ViewEffect
