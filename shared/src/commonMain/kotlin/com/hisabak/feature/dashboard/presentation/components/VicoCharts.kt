@@ -15,6 +15,9 @@ import androidx.compose.ui.unit.sp
 import com.hisabak.ui.components.compactAmount
 import com.hisabak.ui.components.rememberIsArabic
 import com.patrykandpatrick.vico.multiplatform.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.multiplatform.cartesian.rememberVicoZoomState
+import com.patrykandpatrick.vico.multiplatform.cartesian.rememberVicoScrollState
+import com.patrykandpatrick.vico.multiplatform.cartesian.Zoom
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.Axis
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.VerticalAxis
@@ -138,6 +141,12 @@ fun AreaLineChart(
             marker = marker,
         ),
         modelProducer = producer,
+        // Fit the period into the card. Vico's default keeps its natural bar spacing and lets the
+        // chart scroll when the series is wider than the card, which put a scroll overrun at both
+        // ends of something the user has no reason to scroll: a dashboard chart is a whole picture
+        // of a period, and half of one invites a swipe that leads nowhere.
+        scrollState = rememberVicoScrollState(scrollEnabled = false),
+        zoomState = rememberVicoZoomState(zoomEnabled = false, initialZoom = Zoom.Content),
         modifier = modifier.height(heightDp),
     )
 }
@@ -246,6 +255,12 @@ fun BarSparkline(
             marker = rememberColumnMarker(xLabels, arabic),
         ),
         modelProducer = producer,
+        // Fit the period into the card. Vico's default keeps its natural bar spacing and lets the
+        // chart scroll when the series is wider than the card, which put a scroll overrun at both
+        // ends of something the user has no reason to scroll: a dashboard chart is a whole picture
+        // of a period, and half of one invites a swipe that leads nowhere.
+        scrollState = rememberVicoScrollState(scrollEnabled = false),
+        zoomState = rememberVicoZoomState(zoomEnabled = false, initialZoom = Zoom.Content),
         modifier = modifier.height(heightDp),
     )
 }
@@ -309,6 +324,12 @@ fun GroupedBarChart(
             marker = rememberColumnMarker(xLabels, arabic),
         ),
         modelProducer = producer,
+        // Fit the period into the card. Vico's default keeps its natural bar spacing and lets the
+        // chart scroll when the series is wider than the card, which put a scroll overrun at both
+        // ends of something the user has no reason to scroll: a dashboard chart is a whole picture
+        // of a period, and half of one invites a swipe that leads nowhere.
+        scrollState = rememberVicoScrollState(scrollEnabled = false),
+        zoomState = rememberVicoZoomState(zoomEnabled = false, initialZoom = Zoom.Content),
         modifier = modifier.height(heightDp),
     )
 }
