@@ -13,7 +13,7 @@ sealed interface NarrativeUi {
     /** No service in this build: the screen shows no AI at all. */
     data object Hidden : NarrativeUi
 
-    /** A service exists; every visit starts here — nothing is shown, let alone sent, before the tap. */
+    /** A service exists and nothing is saved for these figures — the send is one tap away. */
     data object Ask : NarrativeUi
 
     data object Loading : NarrativeUi

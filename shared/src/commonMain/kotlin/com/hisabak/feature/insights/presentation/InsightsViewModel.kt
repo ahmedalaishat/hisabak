@@ -28,11 +28,10 @@ import kotlinx.coroutines.launch
  * nothing for it. [period] arrives from the key, so the screen opens on what the dashboard showed,
  * and the period chips on the screen re-scope it from there.
  *
- * The narrative (layer 2) appears **only after the user's tap** — every visit starts at the ask,
- * even when the cache already holds an answer for these figures (the tap is then answered from
- * the cache without a send). Within a visit the answer stays while the figures are unchanged and
- * gives way to the ask again when they materially change. The send happens on
- * [InsightsIntent.RequestNarrative] alone. [language] is the UI language the text is
+ * The narrative (layer 2) is **never fetched on its own**. A snapshot only looks the cache up: an
+ * answer already on the phone for exactly these figures is shown straight away — nothing is sent
+ * for that — and otherwise the screen asks. The send happens on [InsightsIntent.RequestNarrative]
+ * alone, and the answer gives way to the ask again when the figures materially change. [language] is the UI language the text is
  * generated in — fixed for the screen's life, since a switch recreates it.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -61,6 +60,8 @@ class InsightsViewModel(
                 val summary = InsightsSummary.from(snapshot, period)
                 val insights = deriveInsights(summary)
                 val key = narrativeKey(summary, language)
+                val cachedNarrative = if (appConfig.hasParseService) generateNarrative.cached(summary, language) else null
+                if (cachedNarrative != null) answeredKey = key
                 setState {
                     val narrative = when {
                         !appConfig.hasParseService -> NarrativeUi.Hidden
@@ -68,7 +69,7 @@ class InsightsViewModel(
                         // longer being asked.
                         request?.isActive == true -> { request?.cancel(); NarrativeUi.Ask }
                         this.narrative is NarrativeUi.Ready && answeredKey == key -> this.narrative
-                        else -> NarrativeUi.Ask
+                        else -> cachedNarrative?.let(NarrativeUi::Ready) ?: NarrativeUi.Ask
                     }
                     copy(period = period, insights = insights, summary = summary, isLoading = false, narrative = narrative)
                 }
