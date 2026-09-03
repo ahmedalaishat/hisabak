@@ -1124,10 +1124,12 @@ private fun ReviewCard(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Same title treatment as the net-worth hero's label, so the card reads as a peer of
+            // the cards around it rather than a heading over them.
             Text(
                 text = stringResource(Res.string.insights_review_title, stringResource(period.labelRes())),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
             TextButton(onClick = onSeeAll) { Text(stringResource(Res.string.insights_see_all)) }

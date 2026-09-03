@@ -87,8 +87,9 @@ Ships to every user. The parent spec is the source of truth; this PR's doc scope
 - **Presentation:**
   - `DashboardUiState.review: List<Insight>` — `DashboardViewModel` maps each snapshot through
     `deriveInsights(InsightsSummary.from(...))` in the same `onEach`. `ReviewCard` in
-    `DashboardScreen`'s Summary tab (a `SurfaceCard`: `SectionHeader`-style title row with the
-    period label and a **See all** action, then up to three `InsightRow`s — `IconTile` in the
+    `DashboardScreen`'s Summary tab (a `SurfaceCard`: a title row styled like the net-worth
+    hero's label — `labelMedium`, `onSurfaceVariant` — with the period label and a **See all**
+    action, then up to three `InsightRow`s — `IconTile` in the
     category tint via `tintPairForColor`/`iconForKey`, or a semantic icon for non-category
     insights, plus the one-line text). Hidden when `review` is empty. The **whole card** taps
     through to the review — it is a teaser, and per-insight deep links live on the screen; rows
