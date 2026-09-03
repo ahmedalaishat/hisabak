@@ -163,6 +163,21 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   after `sanitize` canonicalizes, it is gone. Aliases **do** ride in the backup envelope (unlike
   the AI provenance flags): they are knowledge other devices need. `SCHEMA_VERSION` 8→9, additive
   auto-migration.
+- **Insights review (deterministic, layer 1 of `docs/features/ai-insights.md`):** the dashboard's
+  Summary tab shows a **Review** card — top three findings for the selected period, **See all** →
+  `InsightsKey(period)` full-screen list, tap → the transaction list filtered by category (or the
+  uncategorized filter) via `TransactionListFilterBus`. Everything is pure and on-device:
+  `InsightsSummary.from(DashboardSnapshot, period)` (`feature/insights/domain/`) selects what the
+  rules need from the snapshot the dashboard already computed — so the review can never disagree
+  with the numbers above it — and `deriveInsights(summary)` applies six rules (over/near limit,
+  spend up/down/new vs prior, largest category, savings rate, uncategorized), each degrading to
+  *absent* when its inputs are missing. Thresholds are constants in `DeriveInsights.kt`
+  (`NEAR_LIMIT_RATIO` 0.8, `CHANGE_THRESHOLD_PCT` 25, `MATERIAL_SHARE` 0.05). `Insight` carries
+  figures, never copy — `InsightRow` renders text from `type` + fields via `insights_*` strings, so
+  the rules test without resources and Arabic gets the same treatment. `InsightsSummary` is also
+  the exact payload the opt-in AI layers will send later: its shape *is* the privacy boundary (no
+  rows, no notes). Both the dashboard and `InsightsViewModel` recompute it — one pure pass beats a
+  bus or a fat nav key.
 - **Learn-once template synthesis:** a confirmed AI parse also **teaches the regex engine**, so
   the next message of that bank format parses offline on any device — including the majority
   that have no on-device model at all. No extra model call: `deriveAiSpans`
@@ -416,7 +431,7 @@ retained per tab when switching; the user always exits the app through the **Das
 
 | Tab | Top-level key | Internal screens |
 |-----|---------------|-----------------|
-| Dashboard | DashboardKey | Single screen |
+| Dashboard | DashboardKey | Summary/Trends/Categories tabs → Insights (full screen, from the Review card) |
 | Transactions | TransactionsKey | List → Edit (bottom sheet; the "New brand" chip and the uncategorized-brand note detour to the brand editor — the sheet closes/reopens around it with its typed input parked in `TransactionDraftBus`, and a created brand auto-selects via `BrandCreatedBus`) |
 | SMS | SmsKey | Inbox → template editor (full screen) / transaction sheet (review of an AI-parsed entry) |
 | Manage | ManageKey | Brands/Categories list → Edit (full screen; the brand editor's "+ New category" chip pushes the category editor and auto-selects the result via `CategoryCreatedBus`) |

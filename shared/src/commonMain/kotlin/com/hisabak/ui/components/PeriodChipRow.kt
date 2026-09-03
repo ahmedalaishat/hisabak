@@ -51,7 +51,7 @@ fun PeriodChipRow(
 }
 
 /** String resource for a period chip label — UI-side so the shared enum stays platform-free. */
-private fun SummaryPeriod.labelRes(): StringResource = when (this) {
+internal fun SummaryPeriod.labelRes(): StringResource = when (this) {
     SummaryPeriod.CURRENT_MONTH -> Res.string.period_this_month
     SummaryPeriod.LAST_MONTH -> Res.string.period_last_month
     SummaryPeriod.CURRENT_YEAR -> Res.string.period_this_year

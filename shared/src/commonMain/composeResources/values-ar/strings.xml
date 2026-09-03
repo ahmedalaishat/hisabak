@@ -456,4 +456,29 @@
     <string name="sms_status_parsed">مُحلَّلة</string>
     <string name="sms_status_unparsed">غير مُحلَّلة</string>
     <string name="sms_review_transaction">مراجعة المعاملة</string>
+
+    <!-- Insights review (deterministic, on-device) -->
+    <string name="insights_title">الرؤى</string>
+    <string name="insights_review_title">المراجعة · %1$s</string>
+    <string name="insights_see_all">عرض الكل</string>
+    <string name="insights_empty_title">لا شيء للمراجعة بعد</string>
+    <string name="insights_empty_subtitle">أضف بعض المعاملات وستُبرز المراجعة ما تغيّر.</string>
+    <string name="insights_savings_title">المدخرات</string>
+    <string name="insights_uncategorized_title">بدون تصنيف</string>
+    <string name="insights_detail_over_limit">تجاوز الحد بمقدار</string>
+    <string name="insights_detail_near_limit">استُخدم %1$s من الحد</string>
+    <string name="insights_detail_spend_up">ارتفاع %1$s مقارنةً بالفترة السابقة</string>
+    <string name="insights_detail_spend_down">انخفاض %1$s مقارنةً بالفترة السابقة</string>
+    <string name="insights_detail_new_spend">إنفاق جديد في هذه الفترة</string>
+    <string name="insights_detail_largest">أكبر مصروف · %1$s من الإنفاق</string>
+    <string name="insights_detail_savings_rate">نسبة الادخار %1$s</string>
+    <string name="insights_detail_savings_rate_delta">نسبة الادخار %1$s · %2$s نقطة مقارنةً بالفترة السابقة</string>
+    <plurals name="insights_detail_uncategorized">
+        <item quantity="zero">%1$s معاملة بدون تصنيف</item>
+        <item quantity="one">معاملة واحدة بدون تصنيف</item>
+        <item quantity="two">معاملتان بدون تصنيف</item>
+        <item quantity="few">%1$s معاملات بدون تصنيف</item>
+        <item quantity="many">%1$s معاملة بدون تصنيف</item>
+        <item quantity="other">%1$s معاملة بدون تصنيف</item>
+    </plurals>
 </resources>
