@@ -22,6 +22,8 @@ data class SmsInboxRow(
     val suggestedBrand: String? = null,
     val suggestedAmount: Money? = null,
     val suggestedOccurredAt: Instant? = null,
+    /** Saved by the app rather than approved by the user — the row says which. */
+    val autoConfirmed: Boolean = false,
 )
 
 data class SmsInboxUiState(

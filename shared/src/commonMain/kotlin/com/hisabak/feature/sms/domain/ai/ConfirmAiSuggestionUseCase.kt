@@ -30,7 +30,11 @@ class ConfirmAiSuggestionUseCase(
     private val synthesizeTemplate: SynthesizeTemplateUseCase,
     private val analytics: Analytics,
 ) {
-    suspend operator fun invoke(messageId: SmsMessageId): DomainResult<ConfirmedSuggestion> {
+    /** [automatic] means the auto-confirm gate decided, not the user; the row is labelled with it. */
+    suspend operator fun invoke(
+        messageId: SmsMessageId,
+        automatic: Boolean = false,
+    ): DomainResult<ConfirmedSuggestion> {
         val message = when (val result = smsRepository.getById(messageId)) {
             is DomainResult.Success -> result.value
             is DomainResult.Failure -> return result
@@ -41,7 +45,7 @@ class ConfirmAiSuggestionUseCase(
         val suggestion = message.suggested
             ?: return DomainResult.Failure(DomainError.ValidationFailed("No suggestion to confirm"))
 
-        val transaction = when (val result = processor.commit(message, suggestion)) {
+        val transaction = when (val result = processor.commit(message, suggestion, automatic)) {
             is DomainResult.Success -> result.value
             is DomainResult.Failure -> return result
         }

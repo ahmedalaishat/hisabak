@@ -47,12 +47,12 @@ class IngestSmsUseCaseTest {
 
     private val autoConfirmCalls = mutableListOf<Pair<String, CaptureSource>>()
 
-    private fun TestScope.ingestUseCase(autoConfirm: Boolean = false) =
+    private fun TestScope.ingestUseCase() =
         IngestSmsUseCase(
             smsRepo, processor, clock, suggestAiParse,
             { message, source ->
                 autoConfirmCalls += message.body to source
-                autoConfirm
+                null
             },
             this,
         )
@@ -169,6 +169,33 @@ class IngestSmsUseCaseTest {
         advanceUntilIdle()
 
         assertEquals(1, aiParser.parsedBodies.size)
+    }
+
+    @Test
+    fun `a shortcut waits for the ai fallback before reporting an outcome`() = runTest {
+        aiParser.result = AiParsedSms("Noon", 12_50, "AED", null)
+
+        val result = ingestUseCase()("Your card was charged 12.50 at Noon", CaptureSource.SHORTCUT)
+
+        // Without awaiting, the Shortcut said "needs review" while the parse was still running —
+        // and on iOS the app suspends when the Shortcut ends, so that work did not resume until
+        // the next launch and the user watched it parse in front of them.
+        assertEquals(1, autoConfirmCalls.size)
+        assertTrue(smsRepo.current.single().suggested != null)
+        assertTrue(result is DomainResult.Failure)
+    }
+
+    @Test
+    fun `a broadcast does not block on the model`() = runTest {
+        aiParser.result = AiParsedSms("Noon", 12_50, "AED", null)
+
+        ingestUseCase().broadcast("Your card was charged 12.50 at Noon")
+
+        // Nothing is waiting on a broadcast, so the fallback stays detached and the suggestion
+        // has not landed yet at this point.
+        assertTrue(autoConfirmCalls.isEmpty())
+        advanceUntilIdle()
+        assertEquals(1, autoConfirmCalls.size)
     }
 
     @Test

@@ -104,7 +104,7 @@ class SmsInboxViewModelTest : MainDispatcherTest() {
         processor = processor,
         clock = clock,
         suggestAiParse = suggestAiParse,
-        autoConfirmSuggestion = { _, _ -> false },
+        autoConfirmSuggestion = { _, _ -> null },
         appScope = CoroutineScope(Dispatchers.Unconfined),
     )
     private val capture = CaptureTransactionUseCase(

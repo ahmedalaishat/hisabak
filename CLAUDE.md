@@ -196,6 +196,18 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   `TransactionRecordedNotifier`. **What the gate cannot catch is a misreading** — a message saying
   "USD 42.10 (AED 154.62)" was read as 42.10 with the evidence genuinely present, so verification
   passes; `server/evals` is how that error rate gets measured.
+- **Who waits for the AI fallback:** `CaptureSource.awaitsAiFallback` is true wherever something
+  reports the outcome the moment capture returns — a Shortcut result, a share-sheet toast. Those
+  **await** the AI parse and auto-confirm before answering; detaching made them claim "saved for
+  review" while the parse that would have said "recorded" was still running, and on iOS the app
+  suspends when the Shortcut ends, so that work only resumed at the next launch (the user watched
+  a background capture parse itself in front of them). Only `SMS_BROADCAST` keeps the detached
+  fallback — nothing is waiting on it and the notification is the channel. `MANUAL_PASTE` returns
+  early either way, since the inbox drives its own suggestion with a spinner.
+- **Provenance on a linked row:** the "AI parsed" badge says the parse came from a model; the
+  **status chip** says who approved it — `Linked` (the user confirmed) vs `AutoLinked`
+  ("Auto linked", the gate did). `SmsMessage.autoConfirmed` carries it, written by
+  `SmsTransactionProcessor.commit` in the same write; `SCHEMA_VERSION` 6→7, additive.
 - **Inbox offers (discoverability):** both AI settings are also offered where they matter — a card
   above the paste box in the SMS inbox, since that is where an unrecognised message lands. Three
   answers, because two are not enough: **Turn on**, **Not now** (returns next launch — held in the

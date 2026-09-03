@@ -7,10 +7,16 @@ package com.hisabak.feature.sms.domain.capture
  *
  * [notifiesOnRecord] is true for sources that capture while the user is *outside* the app, where a
  * "transaction recorded" heads-up is useful; false for in-app actions where it would just be noise.
+ *
+ * [awaitsAiFallback] is true where something reports the outcome back to the user the moment the
+ * call returns — a Shortcut result, a share-sheet toast. Those must wait for the AI fallback, or
+ * they announce "saved for review" while the parse that would have contradicted them is still
+ * running. Only a broadcast has nobody waiting: it has no UI at all and the notification is the
+ * channel, so it keeps the detached fallback.
  */
-enum class CaptureSource(val notifiesOnRecord: Boolean) {
+enum class CaptureSource(val notifiesOnRecord: Boolean, val awaitsAiFallback: Boolean = true) {
     /** Android SMS broadcast — auto-capture, present in the sideload build only. */
-    SMS_BROADCAST(notifiesOnRecord = true),
+    SMS_BROADCAST(notifiesOnRecord = true, awaitsAiFallback = false),
 
     /** Text shared into the app from another app (share sheet, `text/plain`). */
     SHARE(notifiesOnRecord = true),
@@ -19,7 +25,8 @@ enum class CaptureSource(val notifiesOnRecord: Boolean) {
     PROCESS_TEXT(notifiesOnRecord = true),
 
     /** Pasted by the user inside the SMS inbox. */
-    MANUAL_PASTE(notifiesOnRecord = false),
+    /** The inbox drives its own suggestion with a visible spinner, so ingest returns early. */
+    MANUAL_PASTE(notifiesOnRecord = false, awaitsAiFallback = false),
 
     /**
      * iOS Shortcuts "Capture transaction" App Intent — typically fired by a

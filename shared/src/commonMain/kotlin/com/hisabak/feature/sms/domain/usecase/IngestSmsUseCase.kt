@@ -6,6 +6,7 @@ import com.hisabak.core.common.DomainResult
 import com.hisabak.feature.sms.domain.SmsMessage
 import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsRepository
+import com.hisabak.feature.transaction.domain.Transaction
 import com.hisabak.feature.sms.domain.SmsTransactionProcessor
 import com.hisabak.feature.sms.domain.ai.SuggestAiParseUseCase
 import com.hisabak.feature.sms.domain.capture.CaptureResult
@@ -22,7 +23,7 @@ class IngestSmsUseCase(
     /** Called when a background capture produced a suggestion. A function rather than the use
      *  case itself: ingest does not need the confirm graph, and tests of unrelated behaviour
      *  should not have to build it. */
-    private val autoConfirmSuggestion: suspend (SmsMessage, CaptureSource) -> Boolean,
+    private val autoConfirmSuggestion: suspend (SmsMessage, CaptureSource) -> Transaction?,
     private val appScope: CoroutineScope,
 ) {
     suspend operator fun invoke(
@@ -53,11 +54,24 @@ class IngestSmsUseCase(
             if (source == CaptureSource.MANUAL_PASTE) {
                 return DomainResult.Success(CaptureResult.StoredUnparsed(message.id))
             }
+            // A Shortcut result or a share-sheet toast reports the outcome the instant this
+            // returns, so the answer has to be true by then. Detaching told the user "saved for
+            // review" while the parse that would have said "recorded" was still running - and on
+            // iOS the app is suspended the moment the Shortcut ends, so that work did not resume
+            // until the next launch, which is how a background capture ended up parsing itself
+            // in front of the user.
+            if (source.awaitsAiFallback) {
+                val suggested = suggestAiParse(message.id, source = "auto")
+                if (suggested is DomainResult.Success) {
+                    autoConfirmSuggestion(suggested.value, source)?.let {
+                        return DomainResult.Success(CaptureResult.Imported(it))
+                    }
+                }
+                // Still needs review - but the suggestion is on the row now, not pending.
+                return result
+            }
             appScope.launch {
                 val suggested = suggestAiParse(message.id, source = "auto")
-                // Auto-confirm only on this path: a background capture has no screen to confirm
-                // from, which is exactly the friction the setting exists to remove. The gate
-                // itself lives in shouldAutoConfirm.
                 if (suggested is DomainResult.Success) {
                     autoConfirmSuggestion(suggested.value, source)
                 }

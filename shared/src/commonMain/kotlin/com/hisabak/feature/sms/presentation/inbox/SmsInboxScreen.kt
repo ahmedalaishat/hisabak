@@ -309,6 +309,9 @@ private fun SmsRowCard(
     modifier: Modifier = Modifier,
 ) {
     val status = when {
+        // Distinct from Linked so a row the app saved on its own is visible at a glance: those
+        // are the ones worth spot-checking, and they are the only ones the user never approved.
+        row.isLinked && row.autoConfirmed -> SmsStatus.AutoLinked
         row.isLinked -> SmsStatus.Linked
         row.parsedAmount != null -> SmsStatus.Parsed
         else -> SmsStatus.Unparsed
@@ -471,7 +474,8 @@ private fun SmsRowCard(
             ) {
                 if (row.isLinked) {
                     if (row.suggestedBrand != null) {
-                        // Provenance: this linked transaction came from a confirmed AI parse.
+                        // Provenance: this linked transaction came from an AI parse. Who approved
+                        // it - the user or the auto-confirm gate - is on the status chip.
                         Badge(
                             label = stringResource(Res.string.sms_ai_parsed),
                             tone = BadgeTone.Info,

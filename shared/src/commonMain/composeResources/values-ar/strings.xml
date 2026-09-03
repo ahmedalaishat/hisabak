@@ -451,5 +451,9 @@
     <string name="sms_ai_dismiss">تجاهل</string>
     <string name="sms_ai_parse_failed">تعذّرت قراءة هذه الرسالة بالذكاء الاصطناعي</string>
     <string name="sms_ai_parsed">عبر الذكاء الاصطناعي</string>
+    <string name="sms_status_linked">مرتبطة</string>
+    <string name="sms_status_auto_linked">مرتبطة تلقائيًا</string>
+    <string name="sms_status_parsed">مُحلَّلة</string>
+    <string name="sms_status_unparsed">غير مُحلَّلة</string>
     <string name="sms_review_transaction">مراجعة المعاملة</string>
 </resources>

@@ -38,7 +38,12 @@ class SmsTransactionProcessor(
      * the message (writing [parsed] as its confirmed parse) in one upsert. Also the entry point
      * for confirming an AI suggestion — the caller passes the suggestion as [parsed].
      */
-    suspend fun commit(message: SmsMessage, parsed: ParsedSmsData): DomainResult<Transaction> {
+    /** [autoConfirmed] records that the app decided rather than the user, in the same write. */
+    suspend fun commit(
+        message: SmsMessage,
+        parsed: ParsedSmsData,
+        autoConfirmed: Boolean = false,
+    ): DomainResult<Transaction> {
         val brandName = parsed.brandName
             ?: return DomainResult.Failure(DomainError.ValidationFailed("SMS parse missing brand"))
         val amount = parsed.amount
@@ -54,7 +59,9 @@ class SmsTransactionProcessor(
                 sourceSmsId = message.id.value,
             )
             transactionRepository.upsert(tx).flatMap {
-                smsRepository.upsert(message.copy(parsed = parsed, transactionId = tx.id)).map { tx }
+                smsRepository.upsert(
+                    message.copy(parsed = parsed, transactionId = tx.id, autoConfirmed = autoConfirmed),
+                ).map { tx }
             }
         }
     }

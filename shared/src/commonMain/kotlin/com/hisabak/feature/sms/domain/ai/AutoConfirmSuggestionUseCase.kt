@@ -5,6 +5,7 @@ import com.hisabak.core.domain.AppPreferences
 import com.hisabak.feature.brand.domain.BrandRepository
 import com.hisabak.feature.sms.domain.SmsMessage
 import com.hisabak.feature.sms.domain.capture.CaptureSource
+import com.hisabak.feature.transaction.domain.Transaction
 import com.hisabak.feature.notification.domain.TransactionRecordedNotifier
 import kotlinx.coroutines.flow.first
 
@@ -24,10 +25,10 @@ class AutoConfirmSuggestionUseCase(
     private val confirm: ConfirmAiSuggestionUseCase,
     private val recordedNotifier: TransactionRecordedNotifier,
 ) {
-    /** True when a transaction was created. Never throws: this runs detached from any screen. */
-    suspend operator fun invoke(message: SmsMessage, source: CaptureSource): Boolean {
-        val suggestion = message.suggested ?: return false
-        val amount = suggestion.amount ?: return false
+    /** The created transaction, or null when the gate refused. Never throws. */
+    suspend operator fun invoke(message: SmsMessage, source: CaptureSource): Transaction? {
+        val suggestion = message.suggested ?: return null
+        val amount = suggestion.amount ?: return null
         val brand = suggestion.brandName?.trim().orEmpty()
 
         // findByNameLike is the same containment rule the commit path uses to link a brand, so
@@ -42,14 +43,14 @@ class AutoConfirmSuggestionUseCase(
             brandIsKnown = brandIsKnown,
             amountMinor = amount.amountMinor,
         )
-        if (!allowed) return false
+        if (!allowed) return null
 
-        return when (val result = confirm(message.id)) {
+        return when (val result = confirm(message.id, automatic = true)) {
             is DomainResult.Success -> {
                 recordedNotifier.notify(result.value.transaction)
-                true
+                result.value.transaction
             }
-            is DomainResult.Failure -> false
+            is DomainResult.Failure -> null
         }
     }
 }

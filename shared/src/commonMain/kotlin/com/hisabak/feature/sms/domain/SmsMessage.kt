@@ -13,6 +13,8 @@ data class SmsMessage(
     val suggested: ParsedSmsData? = null,
     /** Template pattern derived from [suggested] at parse time, installed if the user confirms. */
     val suggestedPattern: String? = null,
+    /** The app saved this without asking. The row says so: the user did not approve it. */
+    val autoConfirmed: Boolean = false,
 ) {
     val isLinked: Boolean get() = transactionId != null
 }

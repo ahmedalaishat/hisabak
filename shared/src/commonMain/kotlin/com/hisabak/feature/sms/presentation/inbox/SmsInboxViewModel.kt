@@ -241,6 +241,7 @@ class SmsInboxViewModel(
         suggestedBrand = msg.suggested?.brandName,
         suggestedAmount = msg.suggested?.amount,
         suggestedOccurredAt = msg.suggested?.occurredAt,
+        autoConfirmed = msg.autoConfirmed,
     )
 
     private fun reasonFor(error: DomainError): String = when (error) {
