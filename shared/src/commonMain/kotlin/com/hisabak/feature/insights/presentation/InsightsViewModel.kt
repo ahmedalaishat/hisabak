@@ -48,8 +48,8 @@ class InsightsViewModel(
     private var opened = false
     private var request: Job? = null
 
-    /** The key the shown answer was produced for; a snapshot with another key asks again. */
-    private var answeredKey: String? = null
+    /** The key of the request in flight, so a snapshot for the same figures keeps its Loading state. */
+    private var requestKey: String? = null
 
     override fun initialState() = InsightsUiState(period = period)
 
@@ -61,15 +61,16 @@ class InsightsViewModel(
                 val insights = deriveInsights(summary)
                 val key = narrativeKey(summary, language)
                 val cachedNarrative = if (appConfig.hasParseService) generateNarrative.cached(summary, language) else null
-                if (cachedNarrative != null) answeredKey = key
                 setState {
                     val narrative = when {
                         !appConfig.hasParseService -> NarrativeUi.Hidden
-                        // A fetch in flight for the previous figures answers a question that is no
-                        // longer being asked.
-                        request?.isActive == true -> { request?.cancel(); NarrativeUi.Ask }
-                        this.narrative is NarrativeUi.Ready && answeredKey == key -> this.narrative
-                        else -> cachedNarrative?.let(NarrativeUi::Ready) ?: NarrativeUi.Ask
+                        // The saved answer for exactly these figures always wins: it is what this
+                        // period was told, whatever was on screen for the previous one.
+                        cachedNarrative != null -> NarrativeUi.Ready(cachedNarrative)
+                        // Same figures as the request in flight (or its failed outcome): keep it.
+                        requestKey == key && (request?.isActive == true || this.narrative is NarrativeUi.Unavailable) -> this.narrative
+                        // A fetch in flight for other figures answers a question no longer asked.
+                        else -> { request?.cancel(); NarrativeUi.Ask }
                     }
                     copy(period = period, insights = insights, summary = summary, isLoading = false, narrative = narrative)
                 }
@@ -99,10 +100,10 @@ class InsightsViewModel(
     private fun requestNarrative() {
         val summary = state.value.summary ?: return
         if (request?.isActive == true) return
+        requestKey = narrativeKey(summary, language)
         setState { copy(narrative = NarrativeUi.Loading) }
         request = viewModelScope.launch {
             val result = generateNarrative(summary, language)
-            answeredKey = narrativeKey(summary, language)
             setState { copy(narrative = result.toUi()) }
         }
     }
