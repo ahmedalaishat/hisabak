@@ -20,7 +20,17 @@ All notable changes to Hisabak are documented here. Format based on
 - **Confirm automatically (off by default)** — when a bank message arrives in the background and
   the amount and shop were both found in the message text, and the shop is one you already have,
   Hisabak can save the transaction and tell you rather than waiting for a tap. Pasted messages
-  always wait for you, new shops are never created this way, and larger amounts still ask.
+  always wait for you, new shops are never created this way, and larger amounts still ask. Anything
+  saved this way is tagged **Unreviewed** in the inbox until you look at it, so the handful of
+  messages nobody checked are easy to find — messages matched by one of your templates stay
+  **Linked**, since those are read by a rule you set up rather than guessed at. Tapping **Review
+  transaction** on a tagged row clears the tag.
+- **Bank messages no longer create duplicate shops.** When Hisabak learns a message format, it now
+  also remembers that the merchant name your bank writes ("GOOGLEYOUTUBE,US") means the shop you
+  picked ("Youtube video"). Before, the next message of that format quietly created a second shop
+  with no category, which then sat outside your budgets and dashboard. Brand matching is also
+  consistent everywhere now, and prefers your most-used shop when a merchant name could match
+  several.
 - **Parsing that works on every phone** — on-device AI only exists on flagship Androids and
   iPhone 15 Pro or newer, so most phones never saw it. You can now point Hisabak at a small parsing
   service (self-hosted; see `server/`) and have unrecognised bank messages read by a proper model

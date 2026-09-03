@@ -112,6 +112,19 @@ class FakeBrandRepository(initial: List<Brand> = emptyList()) : BrandRepository 
             it.name.contains(name, ignoreCase = true) || name.contains(it.name, ignoreCase = true)
         }
 
+    override suspend fun findByExactName(name: String): Brand? =
+        items.value.firstOrNull { it.name.equals(name.trim(), ignoreCase = true) }
+
+    private val aliases = mutableMapOf<String, BrandId>()
+
+    override suspend fun findByAlias(alias: String): Brand? =
+        aliases[alias.trim().lowercase()]?.let { id -> items.value.firstOrNull { it.id == id } }
+
+    override suspend fun linkAlias(alias: String, brandId: BrandId): DomainResult<Unit> {
+        aliases[alias.trim().lowercase()] = brandId
+        return DomainResult.Success(Unit)
+    }
+
     override suspend fun upsert(brand: Brand): DomainResult<Unit> {
         items.value = items.value.filterNot { it.id == brand.id } + brand
         return DomainResult.Success(Unit)

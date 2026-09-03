@@ -1,17 +1,19 @@
 import React from 'react';
 
 /**
- * SMS parse-status chip. Three states with distinct color + icon so they are
+ * SMS parse-status chip. Four states with distinct color + icon so they are
  * unmistakable at a glance.
- *   linked   → green, already imported
- *   parsed   → blue, ready to import
- *   unparsed → gray, no data extracted
+ *   linked     → green, already imported (a human confirmed it, or a deterministic rule matched)
+ *   unreviewed → amber, imported but nobody checked it (an AI parse the auto-confirm gate took)
+ *   parsed     → blue, ready to import
+ *   unparsed   → gray, no data extracted
  */
 export function StatusChip({ status = 'parsed', style, ...rest }) {
   const map = {
-    linked:   ['Linked',   'var(--income-soft)',  'var(--income)',  'link'],
-    parsed:   ['Parsed',   'var(--info-soft)',    'var(--info)',    'bolt'],
-    unparsed: ['Unparsed', 'var(--surface-sunken)', 'var(--text-tertiary)', 'help'],
+    linked:     ['Linked',     'var(--income-soft)',  'var(--income)',  'link'],
+    unreviewed: ['Unreviewed', 'var(--warning-soft)', 'var(--warning)', 'help'],
+    parsed:     ['Parsed',     'var(--info-soft)',    'var(--info)',    'bolt'],
+    unparsed:   ['Unparsed',   'var(--surface-sunken)', 'var(--text-tertiary)', 'help'],
   };
   const [label, bg, fg, icon] = map[status] || map.parsed;
   return (

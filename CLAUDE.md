@@ -142,6 +142,27 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   Unsupported devices
   report `Unavailable` and every AI affordance stays hidden. Inference is fully on-device —
   SMS text never leaves the phone; analytics events (`ai_parse_*`, `ai_category_*`) stay PII-free.
+- **One brand resolver, and learned aliases:** every path that turns machine-extracted merchant
+  text into a brand goes through `ResolveBrandUseCase` (`feature/brand/domain/usecase/`) —
+  learned alias first, then `canonicalizeBrand` (`feature/brand/domain/BrandNameMatching.kt`;
+  exact → containment either way → Levenshtein ≤2) over the **usage-ordered** names, then
+  `findByExactName`. `FindOrCreateBrandUseCase` is `resolve(…) ?: create`, and
+  `AutoConfirmSuggestionUseCase`'s "brand already exists" gate calls the same resolver, so the gate
+  cannot disagree with the write it guards. The ladder is **deliberately not** applied to
+  user-typed names (at distance 2 "Noon" and "Moon" are one brand — fine for a bank string, wrong
+  for something a user typed), which is safe because the brand editor doesn't use
+  `FindOrCreateBrandUseCase`. Suggest time and link time used to differ — link time had
+  containment only, through an **unordered** `LIKE` — which is what let one merchant end up with
+  two brands. **Aliases** (`brand_aliases`, CASCADE, lowercased key) close the rest of the gap:
+  `LearnBrandAliasUseCase` records the raw merchant string → brand pair on confirm whenever the
+  raw text doesn't already resolve to that brand, since a synthesized template captures the
+  merchant **as written** while the transaction points at the canonical brand
+  ("GOOGLEYOUTUBE,US" vs "Youtube video" share no containment, so every later message minted
+  another brand — silently, on the background path, with no category). The raw string rides on
+  `SmsMessage.suggestedBrandRaw` from suggest time for the same reason `suggestedPattern` does:
+  after `sanitize` canonicalizes, it is gone. Aliases **do** ride in the backup envelope (unlike
+  the AI provenance flags): they are knowledge other devices need. `SCHEMA_VERSION` 8→9, additive
+  auto-migration.
 - **Learn-once template synthesis:** a confirmed AI parse also **teaches the regex engine**, so
   the next message of that bank format parses offline on any device — including the majority
   that have no on-device model at all. No extra model call: `deriveAiSpans`
@@ -205,9 +226,24 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   fallback — nothing is waiting on it and the notification is the channel. `MANUAL_PASTE` returns
   early either way, since the inbox drives its own suggestion with a spinner.
 - **Provenance on a linked row:** the "AI parsed" badge says the parse came from a model; the
-  **status chip** says who approved it — `Linked` (the user confirmed) vs `AutoLinked`
-  ("Auto linked", the gate did). `SmsMessage.autoConfirmed` carries it, written by
-  `SmsTransactionProcessor.commit` in the same write; `SCHEMA_VERSION` 6→7, additive.
+  **status chip** says whether anyone checked it — `Linked` vs `Unreviewed` (amber `warning`, the
+  one state that asks the user for something, so never green). `SmsMessage.autoConfirmed` carries
+  it, written by `SmsTransactionProcessor.commit` in the same write; `SCHEMA_VERSION` 6→7,
+  additive. The chip deliberately tracks **verified vs not**, not who tapped: a regex template
+  match is unattended too, but it is deterministic and user-authored/vetted, so it stays `Linked`.
+  `Unreviewed` is reserved for the one risky quadrant — a model inferred it and nobody checked —
+  because the auto-confirm gate verifies *evidence*, not meaning, and a badge on the majority of
+  rows (regex is the dominant path, and the only one on iOS) would flag nothing.
+  **The tag is dischargeable**, or it would accumulate until it marked everything and signalled
+  nothing: opening the row's transaction ("Review transaction") fires
+  `MarkSmsReviewedUseCase` → `SmsMessage.reviewed` (a **separate** flag, `SCHEMA_VERSION` 7→8
+  additive auto-migration — `autoConfirmed` stays true forever, since who created the row is
+  history and whether anyone checked it is not). The chip reads
+  `autoConfirmed && !reviewed`. Marking happens **on the way in, not on return**: seeing the
+  amount and brand *is* the review, and there is no nav result to wait for. Clearing on *save*
+  was rejected — a correct auto-confirm needs no edit, so the common case would back out unsaved
+  and stay tagged forever. Neither flag rides in the backup envelope (`SmsMessageRecord` carries
+  neither), so a restored row reads as `Linked`.
 - **Inbox offers (discoverability):** both AI settings are also offered where they matter — a card
   above the paste box in the SMS inbox, since that is where an unrecognised message lands. Three
   answers, because two are not enough: **Turn on**, **Not now** (returns next launch — held in the

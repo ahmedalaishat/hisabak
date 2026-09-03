@@ -2,6 +2,8 @@ package com.hisabak.feature.sms.presentation.inbox
 
 import com.hisabak.core.common.Currency
 import com.hisabak.feature.brand.domain.usecase.FindOrCreateBrandUseCase
+import com.hisabak.feature.brand.domain.usecase.LearnBrandAliasUseCase
+import com.hisabak.feature.brand.domain.usecase.ResolveBrandUseCase
 import com.hisabak.feature.notification.domain.CategoryLimitMonitor
 import com.hisabak.feature.notification.domain.TransactionRecordedNotifier
 import com.hisabak.feature.sms.data.parser.RegexSmsTemplateDetector
@@ -22,8 +24,10 @@ import com.hisabak.feature.sms.domain.template.SaveSmsTemplateUseCase
 import com.hisabak.feature.sms.domain.template.SynthesizeTemplateUseCase
 import com.hisabak.feature.sms.domain.usecase.DeleteSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ImportParsedSmsUseCase
+import com.hisabak.feature.sms.domain.usecase.MarkSmsReviewedUseCase
 import com.hisabak.feature.sms.domain.usecase.IngestSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ObserveSmsMessagesUseCase
+import com.hisabak.feature.transaction.domain.TransactionId
 import com.hisabak.testutil.FakeAiSmsParser
 import com.hisabak.core.common.AppConfig
 import com.hisabak.testutil.FakeAppPreferences
@@ -79,7 +83,7 @@ class SmsInboxViewModelTest : MainDispatcherTest() {
     private val processor = SmsTransactionProcessor(
         detector = detector,
         parser = parser,
-        findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo),
+        findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo, ResolveBrandUseCase(brandRepo)),
         transactionRepository = transactionRepo,
         smsRepository = smsRepo,
         clock = clock,
@@ -130,12 +134,15 @@ class SmsInboxViewModelTest : MainDispatcherTest() {
             analytics = FakeAnalytics(),
         ),
         deleteSms = DeleteSmsUseCase(smsRepo),
+        markReviewed = MarkSmsReviewedUseCase(smsRepo, FakeAnalytics()),
         detector = detector,
         parser = parser,
         aiParser = aiParser,
         suggestAiParse = suggestAiParse,
         confirmAiSuggestion = ConfirmAiSuggestionUseCase(
-            smsRepo, processor, limitMonitor, synthesizeTemplate, FakeAnalytics(),
+            smsRepo, processor, limitMonitor, synthesizeTemplate,
+            LearnBrandAliasUseCase(brandRepo, ResolveBrandUseCase(brandRepo), FakeAnalytics()),
+            FakeAnalytics(),
         ),
         deleteTemplate = DeleteSmsTemplateUseCase(templateRepo, FakeAnalytics()),
         preferences = FakeAppPreferences(),
@@ -378,5 +385,30 @@ class SmsInboxViewModelTest : MainDispatcherTest() {
         advanceUntilIdle()
 
         assertTrue(templateRepo.current.isEmpty())
+    }
+
+    @Test
+    fun `reviewing an auto-confirmed row discharges the tag it shows`() = runTest {
+        val message = SmsMessage(
+            id = SmsMessageId.new(),
+            body = "Your card was charged 12.50 at Noon",
+            receivedAt = Instant.parse("2026-03-04T09:30:00Z"),
+            transactionId = TransactionId("t1"),
+            autoConfirmed = true,
+        )
+        smsRepo.upsert(message)
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        // The row asks to be checked: saved by the gate, nobody has looked.
+        assertTrue(vm.state.value.rows.single().let { it.autoConfirmed && !it.reviewed })
+
+        vm.onIntent(SmsInboxIntent.MarkReviewed(message.id))
+        advanceUntilIdle()
+
+        // Still the gate's work — but no longer unreviewed, so the chip reads Linked.
+        val row = vm.state.value.rows.single()
+        assertTrue(row.autoConfirmed)
+        assertTrue(row.reviewed)
     }
 }

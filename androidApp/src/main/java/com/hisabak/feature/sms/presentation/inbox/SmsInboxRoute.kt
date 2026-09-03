@@ -85,6 +85,7 @@ fun SmsInboxRoute(
         state = state,
         onCreateTemplate = { onCreateTemplate(it.value) },
         onReviewTransaction = onReviewTransaction,
+        onMarkReviewed = { viewModel.onIntent(SmsInboxIntent.MarkReviewed(it)) },
         onImportParsed = { viewModel.onIntent(SmsInboxIntent.ImportParsed(it)) },
         snackbarHostState = snackbarHostState,
         autoImportAvailable = BuildConfig.SMS_AUTO_CAPTURE,

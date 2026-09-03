@@ -3,6 +3,7 @@ package com.hisabak.feature.sms.domain.usecase
 import com.hisabak.core.common.Currency
 import com.hisabak.core.common.DomainResult
 import com.hisabak.feature.brand.domain.usecase.FindOrCreateBrandUseCase
+import com.hisabak.feature.brand.domain.usecase.ResolveBrandUseCase
 import com.hisabak.feature.sms.data.parser.RegexSmsTemplateDetector
 import com.hisabak.feature.sms.data.parser.TemplateSmsParser
 import com.hisabak.feature.sms.domain.SmsTransactionProcessor
@@ -36,7 +37,7 @@ class IngestSmsUseCaseTest {
     private val processor = SmsTransactionProcessor(
         detector = RegexSmsTemplateDetector(listOf("Purchase of AED {amount} at {brand} done")),
         parser = TemplateSmsParser(Currency.AED, TimeZone.UTC),
-        findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo),
+        findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo, ResolveBrandUseCase(brandRepo)),
         transactionRepository = transactionRepo,
         smsRepository = smsRepo,
         clock = clock,

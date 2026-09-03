@@ -24,6 +24,8 @@ data class SmsInboxRow(
     val suggestedOccurredAt: Instant? = null,
     /** Saved by the app rather than approved by the user — the row says which. */
     val autoConfirmed: Boolean = false,
+    /** The user has since opened the transaction, so the row no longer asks to be checked. */
+    val reviewed: Boolean = false,
 )
 
 data class SmsInboxUiState(
@@ -57,6 +59,8 @@ sealed interface SmsInboxIntent : ViewIntent {
     data class ImportParsed(val id: SmsMessageId) : SmsInboxIntent
     data class Delete(val id: SmsMessageId) : SmsInboxIntent
     data class SuggestParse(val id: SmsMessageId) : SmsInboxIntent
+    /** Opening an auto-confirmed row's transaction is the review — it discharges the tag. */
+    data class MarkReviewed(val id: SmsMessageId) : SmsInboxIntent
     data class ConfirmSuggestion(val id: SmsMessageId) : SmsInboxIntent
     data class DismissSuggestion(val id: SmsMessageId) : SmsInboxIntent
     /** Remove a template that confirming a suggestion just installed. */

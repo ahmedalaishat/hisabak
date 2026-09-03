@@ -66,6 +66,19 @@ sealed class AnalyticsEvent(
 
     data object AiSuggestionDismissed : AnalyticsEvent("ai_suggestion_dismissed")
 
+    /**
+     * The user reviewed a row the auto-confirm gate had saved. Watch this against
+     * [AutoConfirmToggled]: if auto-confirmed rows are never reviewed, the gate is being trusted
+     * blindly and its error rate matters more than the eval set suggests.
+     */
+    data object AutoConfirmReviewed : AnalyticsEvent("auto_confirm_reviewed")
+
+    /**
+     * A merchant string was mapped to a brand it does not resolve to on its own. Frequent firing
+     * means the models are renaming merchants rather than reusing the brand hints.
+     */
+    data object BrandAliasLearned : AnalyticsEvent("brand_alias_learned")
+
     /** The AI proposed a category in the brand editor. [kind] is "existing" or "new". */
     class AiCategorySuggested(kind: String) : AnalyticsEvent(
         name = "ai_category_suggested",

@@ -8,6 +8,7 @@ import com.hisabak.core.domain.backup.BackupRepository
 import com.hisabak.core.domain.backup.BrandRecord
 import com.hisabak.core.domain.backup.CategoryLimitRecord
 import com.hisabak.core.domain.backup.CategoryRecord
+import com.hisabak.core.domain.backup.BrandAliasRecord
 import com.hisabak.core.domain.backup.SmsMessageRecord
 import com.hisabak.core.domain.backup.SmsTemplateRecord
 import com.hisabak.core.domain.backup.TransactionRecord
@@ -17,6 +18,8 @@ import com.hisabak.feature.category.data.local.CategoryDao
 import com.hisabak.feature.category.data.local.CategoryEntity
 import com.hisabak.feature.category.data.local.CategoryLimitDao
 import com.hisabak.feature.category.data.local.CategoryLimitEntity
+import com.hisabak.feature.brand.data.local.BrandAliasDao
+import com.hisabak.feature.brand.data.local.BrandAliasEntity
 import com.hisabak.feature.sms.data.local.SmsDao
 import com.hisabak.feature.sms.data.local.SmsMessageEntity
 import com.hisabak.feature.sms.data.local.SmsTemplateDao
@@ -29,6 +32,7 @@ class RoomBackupRepository(
     private val categoryDao: CategoryDao,
     private val categoryLimitDao: CategoryLimitDao,
     private val brandDao: BrandDao,
+    private val brandAliasDao: BrandAliasDao,
     private val transactionDao: TransactionDao,
     private val smsDao: SmsDao,
     private val smsTemplateDao: SmsTemplateDao,
@@ -38,6 +42,7 @@ class RoomBackupRepository(
         categories = categoryDao.getAllForBackup().map { it.toRecord() },
         categoryLimits = categoryLimitDao.getAllForBackup().map { it.toRecord() },
         brands = brandDao.getAllForBackup().map { it.toRecord() },
+        brandAliases = brandAliasDao.getAllForBackup().map { it.toRecord() },
         transactions = transactionDao.getAllForBackup().map { it.toRecord() },
         smsMessages = smsDao.getAllForBackup().map { it.toRecord() },
         smsTemplates = smsTemplateDao.getAllForBackup().map { it.toRecord() },
@@ -49,6 +54,7 @@ class RoomBackupRepository(
             transactionDao.deleteAll()
             smsDao.deleteAll()
             categoryLimitDao.deleteAll()
+            brandAliasDao.deleteAll()
             brandDao.deleteAll()
             categoryDao.deleteAll()
             smsTemplateDao.deleteAll()
@@ -56,6 +62,7 @@ class RoomBackupRepository(
             // repository re-seeds the defaults on next read.
             categoryDao.upsertAll(data.categories.map { it.toEntity() })
             brandDao.upsertAll(data.brands.map { it.toEntity() })
+            brandAliasDao.upsertAll(data.brandAliases.map { it.toEntity() })
             transactionDao.upsertAll(data.transactions.map { it.toEntity() })
             smsDao.upsertAll(data.smsMessages.map { it.toEntity() })
             categoryLimitDao.upsertAll(data.categoryLimits.map { it.toEntity() })
@@ -63,6 +70,10 @@ class RoomBackupRepository(
         }
     }
 }
+
+private fun BrandAliasEntity.toRecord() = BrandAliasRecord(alias, brandId)
+
+private fun BrandAliasRecord.toEntity() = BrandAliasEntity(alias, brandId)
 
 private fun SmsTemplateEntity.toRecord() = SmsTemplateRecord(
     id, pattern, sampleBody, isDefault, enabled, createdAtMillis, derivedByAi,

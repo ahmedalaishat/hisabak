@@ -2,6 +2,7 @@ package com.hisabak.feature.sms.presentation.templates
 
 import com.hisabak.core.common.Currency
 import com.hisabak.feature.brand.domain.usecase.FindOrCreateBrandUseCase
+import com.hisabak.feature.brand.domain.usecase.ResolveBrandUseCase
 import com.hisabak.feature.sms.data.parser.RegexSmsTemplateDetector
 import com.hisabak.feature.sms.data.parser.TemplateSmsParser
 import com.hisabak.feature.sms.domain.SmsMessageId
@@ -61,7 +62,7 @@ class SmsTemplateEditViewModelTest : MainDispatcherTest() {
                 processor = SmsTransactionProcessor(
                     detector = RegexSmsTemplateDetector(emptyList()),
                     parser = TemplateSmsParser(Currency.AED, TimeZone.UTC),
-                    findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo),
+                    findOrCreateBrand = FindOrCreateBrandUseCase(brandRepo, ResolveBrandUseCase(brandRepo)),
                     transactionRepository = txRepo,
                     smsRepository = smsRepo,
                     clock = clock,

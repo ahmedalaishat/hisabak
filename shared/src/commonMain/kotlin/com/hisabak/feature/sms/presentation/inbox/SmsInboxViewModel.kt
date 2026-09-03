@@ -26,6 +26,7 @@ import com.hisabak.feature.sms.domain.capture.CaptureTransactionUseCase
 import com.hisabak.feature.sms.domain.template.DeleteSmsTemplateUseCase
 import com.hisabak.feature.sms.domain.usecase.DeleteSmsUseCase
 import com.hisabak.feature.sms.domain.usecase.ImportParsedSmsUseCase
+import com.hisabak.feature.sms.domain.usecase.MarkSmsReviewedUseCase
 import com.hisabak.feature.sms.domain.usecase.ObserveSmsMessagesUseCase
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -43,6 +44,7 @@ class SmsInboxViewModel(
     private val detector: SmsTemplateDetector,
     private val parser: SmsParser,
     private val aiParser: AiSmsParser,
+    private val markReviewed: MarkSmsReviewedUseCase,
     private val suggestAiParse: SuggestAiParseUseCase,
     private val confirmAiSuggestion: ConfirmAiSuggestionUseCase,
     private val dismissAiSuggestion: DismissAiSuggestionUseCase,
@@ -80,6 +82,7 @@ class SmsInboxViewModel(
             }
             is SmsInboxIntent.Delete ->
                 viewModelScope.launch { deleteSms(intent.id) }
+            is SmsInboxIntent.MarkReviewed -> viewModelScope.launch { markReviewed(intent.id) }
             is SmsInboxIntent.SuggestParse -> suggestParse(intent.id)
             is SmsInboxIntent.ConfirmSuggestion -> confirmSuggestion(intent.id)
             is SmsInboxIntent.DismissSuggestion ->
@@ -242,6 +245,7 @@ class SmsInboxViewModel(
         suggestedAmount = msg.suggested?.amount,
         suggestedOccurredAt = msg.suggested?.occurredAt,
         autoConfirmed = msg.autoConfirmed,
+        reviewed = msg.reviewed,
     )
 
     private fun reasonFor(error: DomainError): String = when (error) {

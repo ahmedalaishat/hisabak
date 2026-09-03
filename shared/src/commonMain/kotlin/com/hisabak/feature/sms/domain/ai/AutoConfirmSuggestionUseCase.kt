@@ -2,7 +2,7 @@ package com.hisabak.feature.sms.domain.ai
 
 import com.hisabak.core.common.DomainResult
 import com.hisabak.core.domain.AppPreferences
-import com.hisabak.feature.brand.domain.BrandRepository
+import com.hisabak.feature.brand.domain.usecase.ResolveBrandUseCase
 import com.hisabak.feature.sms.domain.SmsMessage
 import com.hisabak.feature.sms.domain.capture.CaptureSource
 import com.hisabak.feature.transaction.domain.Transaction
@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.first
  */
 class AutoConfirmSuggestionUseCase(
     private val preferences: AppPreferences,
-    private val brandRepository: BrandRepository,
+    private val resolveBrand: ResolveBrandUseCase,
     private val confirm: ConfirmAiSuggestionUseCase,
     private val recordedNotifier: TransactionRecordedNotifier,
 ) {
@@ -31,10 +31,11 @@ class AutoConfirmSuggestionUseCase(
         val amount = suggestion.amount ?: return null
         val brand = suggestion.brandName?.trim().orEmpty()
 
-        // findByNameLike is the same containment rule the commit path uses to link a brand, so
-        // "known" here means exactly "confirm would attach this to a brand that already exists"
-        // rather than create one.
-        val brandIsKnown = brand.isNotEmpty() && brandRepository.findByNameLike(brand) != null
+        // The same resolver the commit path uses, so "known" means exactly "confirm would attach
+        // this to a brand that already exists" rather than create one. Sharing it matters: a gate
+        // that resolved differently from the write it guards would let through the very case it
+        // exists to refuse.
+        val brandIsKnown = brand.isNotEmpty() && resolveBrand(brand) != null
 
         val allowed = shouldAutoConfirm(
             enabled = preferences.autoConfirmEnabled.first(),

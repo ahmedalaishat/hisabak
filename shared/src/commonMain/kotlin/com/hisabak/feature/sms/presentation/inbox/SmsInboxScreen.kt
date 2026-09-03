@@ -94,6 +94,7 @@ fun SmsInboxScreen(
     onDismissSuggestion: (SmsMessageId) -> Unit = {},
     onCreateTemplate: (SmsMessageId) -> Unit = {},
     onReviewTransaction: (String) -> Unit = {},
+    onMarkReviewed: (SmsMessageId) -> Unit = {},
     onImportParsed: (SmsMessageId) -> Unit = {},
     onPromptAccept: (InboxPrompt) -> Unit = {},
     onPromptLater: (InboxPrompt) -> Unit = {},
@@ -163,7 +164,12 @@ fun SmsInboxScreen(
                         onConfirmSuggestion = { onConfirmSuggestion(row.id) },
                         onDismissSuggestion = { onDismissSuggestion(row.id) },
                         onCreateTemplate = { onCreateTemplate(row.id) },
-                        onReviewTransaction = { row.transactionId?.let { onReviewTransaction(it.value) } },
+                        onReviewTransaction = {
+                            // Seeing the amount and brand is the review, so the tag is discharged
+                            // on the way out rather than on return — there is no result to wait for.
+                            onMarkReviewed(row.id)
+                            row.transactionId?.let { onReviewTransaction(it.value) }
+                        },
                         modifier = Modifier.animateItem(),
                     )
                 }
@@ -309,9 +315,12 @@ private fun SmsRowCard(
     modifier: Modifier = Modifier,
 ) {
     val status = when {
-        // Distinct from Linked so a row the app saved on its own is visible at a glance: those
-        // are the ones worth spot-checking, and they are the only ones the user never approved.
-        row.isLinked && row.autoConfirmed -> SmsStatus.AutoLinked
+        // Distinct from Linked because the gate verifies evidence, not meaning: it cannot catch
+        // a misreading (an FX line quoting two amounts passes every check). These are the rows
+        // worth spot-checking, so the chip says "unreviewed" rather than merely "automatic" —
+        // a template match is automatic too, and deterministic, so it stays Linked. Opening the
+        // transaction discharges it, or the tag would accumulate until it marked everything.
+        row.isLinked && row.autoConfirmed && !row.reviewed -> SmsStatus.Unreviewed
         row.isLinked -> SmsStatus.Linked
         row.parsedAmount != null -> SmsStatus.Parsed
         else -> SmsStatus.Unparsed

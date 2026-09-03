@@ -4,6 +4,7 @@ import com.hisabak.core.common.DomainError
 import com.hisabak.core.common.DomainResult
 import com.hisabak.core.domain.analytics.Analytics
 import com.hisabak.core.domain.analytics.AnalyticsEvent
+import com.hisabak.feature.brand.domain.usecase.LearnBrandAliasUseCase
 import com.hisabak.feature.notification.domain.CategoryLimitMonitor
 import com.hisabak.feature.sms.domain.SmsMessageId
 import com.hisabak.feature.sms.domain.SmsRepository
@@ -22,12 +23,17 @@ import com.hisabak.feature.transaction.domain.Transaction
  * Confirming also installs the template derived at suggest time, so the next message of this bank
  * format never needs the model. That is a bonus, never a precondition — a synthesis failure leaves
  * the transaction untouched and simply reports no learned template.
+ *
+ * And it learns the brand alias, because the template captures the merchant *as written* while
+ * this transaction points at the canonical brand. Teaching one without the other is what made a
+ * second brand appear on the next message of an already-learned format.
  */
 class ConfirmAiSuggestionUseCase(
     private val smsRepository: SmsRepository,
     private val processor: SmsTransactionProcessor,
     private val limitMonitor: CategoryLimitMonitor,
     private val synthesizeTemplate: SynthesizeTemplateUseCase,
+    private val learnBrandAlias: LearnBrandAliasUseCase,
     private val analytics: Analytics,
 ) {
     /** [automatic] means the auto-confirm gate decided, not the user; the row is labelled with it. */
@@ -51,6 +57,8 @@ class ConfirmAiSuggestionUseCase(
         }
         analytics.log(AnalyticsEvent.AiSuggestionConfirmed(transaction.amount))
         limitMonitor.evaluateNow()
+
+        learnBrandAlias(message.suggestedBrandRaw, transaction.brandId)
 
         val learned = message.suggestedPattern
             ?.let { synthesizeTemplate(message.body, it).getOrNull() }

@@ -8,6 +8,7 @@ import com.hisabak.core.common.Money
 import com.hisabak.core.domain.analytics.Analytics
 import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.feature.brand.domain.BrandRepository
+import com.hisabak.feature.brand.domain.canonicalizeBrand
 import com.hisabak.feature.sms.domain.ParsedSmsData
 import com.hisabak.feature.sms.domain.SmsMessage
 import com.hisabak.feature.sms.domain.SmsMessageId
@@ -91,7 +92,14 @@ class SuggestAiParseUseCase(
         // SynthesizeTemplateUseCase's call; a note like "lunch 45 yesterday" leaves too little
         // literal anchor to pass its gate.
         val candidatePattern = derivePattern(message.body, raw, amount.amountMinor)
-        val updated = message.copy(suggested = suggestion, suggestedPattern = candidatePattern)
+        // The evidence field when the engine supplies it, else the model's merchant string: both
+        // are pre-canonicalization, which is the whole point — after sanitize the raw text is gone.
+        val rawBrand = (raw.brandText ?: raw.brandName)?.trim()?.takeIf { it.isNotEmpty() }
+        val updated = message.copy(
+            suggested = suggestion,
+            suggestedPattern = candidatePattern,
+            suggestedBrandRaw = rawBrand,
+        )
         return smsRepository.upsert(updated).map { updated }
     }
 

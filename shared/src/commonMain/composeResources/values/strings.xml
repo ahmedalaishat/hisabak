@@ -432,7 +432,7 @@
     <string name="sms_ai_parse_failed">Couldn't read this message with AI</string>
     <string name="sms_ai_parsed">AI parsed</string>
     <string name="sms_status_linked">Linked</string>
-    <string name="sms_status_auto_linked">Auto linked</string>
+    <string name="sms_status_unreviewed">Unreviewed</string>
     <string name="sms_status_parsed">Parsed</string>
     <string name="sms_status_unparsed">Unparsed</string>
     <string name="sms_review_transaction">Review transaction</string>
