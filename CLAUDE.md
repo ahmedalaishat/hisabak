@@ -192,8 +192,9 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   finding ids + totals rounded to two significant digits + language, so a narrative regenerates only
   when the review would read differently (`insight_narratives` Room table, `SCHEMA_VERSION` 9→10
   additive, not in the backup envelope — a restored ledger misses and regenerates; an empty reply is
-  cached too). Unchanged figures show the last answer on reopen without a send; changed figures show
-  the ask again. The ask card (Explain with AI / **See what's shared**, which renders the exact
+  cached too). **Every visit starts at the ask** — nothing is shown before the tap; a tap for figures
+  already explained is answered from the cache without a send, and within a visit the answer gives
+  way to the ask again when the figures materially change. The ask card (Explain with AI / **See what's shared**, which renders the exact
   payload) appears only when the build has a service (`AppConfig.hasParseService`). Suggestions are **confirm-first chips**: "Set a X
   limit" opens the category editor with `CategoryEditKey.prefillLimitMinor` in the field and Save is
   the confirmation. `server/evals/run_insights.py` checks properties (over-limit leads, no invented

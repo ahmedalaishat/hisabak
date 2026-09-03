@@ -458,7 +458,7 @@
     <string name="insights_narrative_loading">Explaining what changed…</string>
     <string name="insights_narrative_unavailable">The explanation couldn't be fetched right now. The review below is complete on its own.</string>
     <string name="insights_ask_title">Want this explained?</string>
-    <string name="insights_ask_body">Tap to send these totals — not your transactions — to Hisabak's service, which writes a short explanation and suggests what to do. Nothing is sent until you tap, and you can see exactly what would be sent.</string>
+    <string name="insights_ask_body">Tap to send these totals — not your transactions — to Hisabak's service, which writes a short explanation and suggests what to do. Nothing is sent until you tap, nothing is stored by the service, and you can see exactly what would be sent.</string>
     <string name="insights_ask_accept">Explain with AI</string>
     <string name="insights_shared_action">See what's shared</string>
     <string name="insights_shared_title">What's shared</string>

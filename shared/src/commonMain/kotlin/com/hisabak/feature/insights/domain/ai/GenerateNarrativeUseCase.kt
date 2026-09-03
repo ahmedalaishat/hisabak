@@ -22,10 +22,9 @@ sealed interface NarrativeResult {
  *
  * The deterministic review is always shown by the caller; this only ever adds to it. Every failure
  * is a [NarrativeResult], never an exception — an outage degrades to the review the user already
- * has. [cached] lets the screen show the last answer for unchanged figures **without sending
- * anything**; [invoke] is the send, and only the user's tap calls it. The cache is written on every
- * reply, including an empty one: a summary the model had nothing to say about must not be re-sent
- * on the next tap.
+ * has. Only the user's tap calls this, and a tap for figures already explained is answered from
+ * the cache **without a send**. The cache is written on every reply, including an empty one: a
+ * summary the model had nothing to say about must not be re-sent on the next tap.
  */
 class GenerateNarrativeUseCase(
     private val aiInsights: AiInsights,
@@ -33,12 +32,6 @@ class GenerateNarrativeUseCase(
     private val clock: Clock,
     private val analytics: Analytics,
 ) {
-    /** The narrative already generated for exactly these figures, or null — never a call. */
-    suspend fun cached(summary: InsightsSummary, language: String): List<NarrativeInsight>? {
-        val cached = cache.get(summary.period) ?: return null
-        return cached.items.takeIf { cached.key == narrativeKey(summary, language) }
-    }
-
     suspend operator fun invoke(summary: InsightsSummary, language: String): NarrativeResult {
         if (!aiInsights.isAvailable()) return NarrativeResult.Disabled
         // Nothing to narrate; a call would only return "you have no spending".

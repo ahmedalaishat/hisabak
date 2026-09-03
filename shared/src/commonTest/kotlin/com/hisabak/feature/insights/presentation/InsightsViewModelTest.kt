@@ -176,7 +176,7 @@ class InsightsViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `unchanged figures show the last answer on reopen without a send`() = runTest {
+    fun `every visit starts at the ask - a tap for unchanged figures is answered without a send`() = runTest {
         val first = viewModel(ledger, service = true)
         advanceUntilIdle()
         first.onIntent(InsightsIntent.RequestNarrative)
@@ -184,7 +184,10 @@ class InsightsViewModelTest : MainDispatcherTest() {
 
         val second = viewModel(ledger, service = true)
         advanceUntilIdle()
+        assertEquals(NarrativeUi.Ask, second.state.value.narrative)
 
+        second.onIntent(InsightsIntent.RequestNarrative)
+        advanceUntilIdle()
         assertIs<NarrativeUi.Ready>(second.state.value.narrative)
         assertEquals(1, ai.calls)
     }
