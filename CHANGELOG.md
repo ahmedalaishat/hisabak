@@ -72,6 +72,13 @@ All notable changes to Hisabak are documented here. Format based on
   screen now split into two rows past four chips and three past eight, still scrolling
   sideways. Short lists stay a single row.
 
+### Fixed
+- **The keyboard no longer closes the instant you tap a note.** Tapping the note field in the
+  transaction sheet opened the keyboard and dismissed it again immediately. Tapping a field low
+  enough on a screen to need scrolling into view made the app mistake its own scroll for you
+  scrolling to read, and it hides the keyboard when you do that. It now only hides it when you
+  actually drag.
+
 ## [2.1.0] — 2026-09-01
 
 ### Highlights

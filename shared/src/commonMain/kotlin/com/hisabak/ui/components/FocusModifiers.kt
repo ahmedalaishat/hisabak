@@ -1,5 +1,7 @@
 package com.hisabak.ui.components
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -8,7 +10,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChangeIgnoreConsumed
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 
@@ -48,23 +53,61 @@ fun Modifier.clearFocusOnTap(): Modifier {
 /**
  * Dismisses the keyboard the moment any descendant scrollable starts a user-driven scroll —
  * scrolling means reading, not typing, and the keyboard covers half the content. Pairs with
- * [clearFocusOnTap] at the same host root; a nested-scroll observer never consumes anything,
- * so scroll behavior is untouched.
+ * [clearFocusOnTap] at the same host root; neither the nested-scroll observer nor the drag
+ * observer consumes anything, so scroll behavior is untouched.
+ *
+ * **The scroll source alone is not enough to know the user did it.** Compose brings a newly
+ * focused field into view by scrolling the ancestor, and dispatches that programmatic scroll as
+ * `NestedScrollSource.UserInput` too (`ContentInViewNode`). So focusing a field low enough in a
+ * scrollable to need scrolling looked exactly like a drag, and this dismissed the keyboard that
+ * the focus had just opened: tapping the transaction sheet's note field opened the keyboard and
+ * closed it again immediately, while fields near the top were fine because they need no scroll.
+ *
+ * Hence the drag flag: a real scroll has pointer events behind it and a bring-into-view has none.
+ * Gating on a pointer drag rather than replacing the nested-scroll observer with one also keeps
+ * dragging *inside* a field — selecting text — from dismissing anything, since that drag scrolls
+ * nothing.
  */
 @Composable
 fun Modifier.clearFocusOnScroll(): Modifier {
     val dismiss = rememberKeyboardDismiss()
-    val connection = remember(dismiss) {
+    val drag = remember { DragFlag() }
+    val connection = remember(dismiss, drag) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (source == NestedScrollSource.UserInput && available != Offset.Zero) {
+                if (drag.active && source == NestedScrollSource.UserInput && available != Offset.Zero) {
                     dismiss()
                 }
                 return Offset.Zero
             }
         }
     }
-    return this.nestedScroll(connection)
+    return this
+        .pointerInput(drag) {
+            awaitEachGesture {
+                // Initial pass and ignore-consumed throughout: the scrollable underneath consumes
+                // the drag, and this needs to observe it without taking it away.
+                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                var travel = 0f
+                try {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                        if (change.changedToUpIgnoreConsumed()) break
+                        travel += change.positionChangeIgnoreConsumed().getDistance()
+                        if (travel > viewConfiguration.touchSlop) drag.active = true
+                    }
+                } finally {
+                    drag.active = false
+                }
+            }
+        }
+        .nestedScroll(connection)
+}
+
+/** A plain holder, not snapshot state: only the nested-scroll callback reads it. */
+private class DragFlag {
+    var active = false
 }
 
 /**
