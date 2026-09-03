@@ -51,7 +51,7 @@ picture off the phone by default.
   | token bounds | summary ≤ ~3K tokens, question ≤ 500 chars, history window ~6 turns, `max_tokens` on output | cost per call is a constant, not a variable |
   | prompt caching | system prompt + summary as the cached prefix across a session | multi-turn cost collapses to question + answer |
   | scope | system prompt: this user's finances from this summary only; brief refusal otherwise | kills general-chatbot use cheaply |
-  | period cache | narrative keyed by `(period, hash(summary))`; regenerate only on material change | layer 2 is ~one call per user per month |
+  | input cache | narrative keyed by a digest of the exact input (date window + language + every figure); a repeat tap for unchanged figures costs nothing | layer 2 costs one call per tap on changed figures |
   Cost is then bounded by construction: `users × N/day × constant`, with the global budget as the
   hard stop. Size N against current model pricing at implementation time, not from memory. The
   bearer token remains the real gate — this is the same exposure `/v1/parse` already carries, and
@@ -137,14 +137,13 @@ picture off the phone by default.
   already saved on the phone for exactly these figures is shown on open without a send (briefly
   changed to always-ask when that read as an automatic send; reverted once the cache was explained —
   he wants the saved answer shown directly). Decisions made while building:
-  - **"Material change" is defined by the deterministic layer**, not by a hash of the raw summary:
-    the cache key is a digest of the period's date window + language + the sorted finding ids +
-    income/expense/uncategorized rounded to two significant digits. Hashing the raw summary would
-    have regenerated per transaction; this regenerates when the review would read differently. An
-    empty reply is cached too. **Revised 2026-09-03 evening:** the key first omitted the period
-    (rows were per period name) and the in-memory check let "this month" stand in for "this year"
-    when their figures coincided; the window is now in the digest and the digest is the row key, so
-    windows never overwrite each other and a custom range later needs no new rule.
+  - **The cache key is a digest of exactly what was sent** (decided by the user, 2026-09-03, after
+    two rounds): the period's date window + language + every figure in the request. A "material
+    change" key (finding ids + totals at two significant digits) was built first to keep a small
+    transaction from invalidating the answer; he rejected it — an explanation of figures that have
+    since changed is outdated, whatever the size of the change — so any change asks again and the
+    tap, not the key, bounds the cost. The digest is the row's primary key: windows never overwrite
+    each other and a custom range later needs no new rule. An empty reply is cached too.
   - **Language rides the request** (`en`|`ar`) and is part of the key; the text is rendered as-is,
     so an Arabic user must get Arabic. The eval asserts the script.
   - **Unknown category → drop the item**, not demote it: its text is about something the user

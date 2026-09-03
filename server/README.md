@@ -157,9 +157,7 @@ suggested cap must be within reach of the figures.
 
 It shares the parse limiter and budget. Cost per call is ~$0.002 (≈600 tokens in, ≈300 out) and
 the client sends only on a tap, and a tap for figures it has already explained is answered from
-its cache — the answer is keyed on **material** change (a finding appears or disappears, or a
-total moves in its second significant digit) — so this runs at most a few times per user per
-period. Property evals: `python -m evals.run_insights`.
+its cache (keyed on the exact input), so the bill is bounded by how often the user asks. Property evals: `python -m evals.run_insights`.
 
 ## Abuse and spend control
 

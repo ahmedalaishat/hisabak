@@ -13,8 +13,8 @@ All notable changes to Hisabak are documented here. Format based on
   so you still confirm it. Nothing is sent until you tap **Explain with AI**: that one tap sends only
   your totals by category for the period — never transactions, notes, brands, or messages — and
   **See what's shared** beside it shows the exact figures first. There is no switch to leave on; the
-  answer is kept until your numbers materially change, and if the service can't answer the review
-  below is complete on its own.
+  answer is kept on your phone for as long as those exact figures stand, and if the service can't
+  answer the review below is complete on its own.
 - **A review on the dashboard.** Under the cash, savings and investment figures, Hisabak now points out what changed
   and what needs attention for the period you're viewing: a category over or near its limit, a
   category up or down sharply on last time, your largest expense, your savings rate and how it

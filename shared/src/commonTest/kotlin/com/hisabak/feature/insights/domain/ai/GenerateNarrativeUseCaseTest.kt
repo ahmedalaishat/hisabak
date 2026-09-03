@@ -45,9 +45,9 @@ class GenerateNarrativeUseCaseTest {
         assertNull(useCase.cached(summary(), "en"))
         useCase(summary(), "en")
 
-        assertEquals(1, useCase.cached(summary(uncategorized = 341_00), "en")!!.size)   // same key
-        assertNull(useCase.cached(summary(income = 20_000_00), "en"))                   // material change
-        assertNull(useCase.cached(summary(), "ar"))                                     // other language
+        assertEquals(1, useCase.cached(summary(), "en")!!.size)                 // same input
+        assertNull(useCase.cached(summary(uncategorized = 341_00), "en"))     // any change
+        assertNull(useCase.cached(summary(), "ar"))                            // other language
         assertEquals(1, ai.calls)
     }
 
@@ -77,20 +77,20 @@ class GenerateNarrativeUseCaseTest {
     }
 
     @Test
-    fun `the same key is served from the cache without a call`() = runTest {
+    fun `the same input is served from the cache without a call`() = runTest {
         useCase(summary(), "en")
 
-        val again = useCase(summary(uncategorized = 341_00), "en")
+        val again = useCase(summary(), "en")
 
         assertEquals(1, ai.calls)
         assertEquals(false, assertIs<NarrativeResult.Ready>(again).fresh)
     }
 
     @Test
-    fun `a material change costs exactly one more call`() = runTest {
+    fun `any change to the input costs exactly one more call`() = runTest {
         useCase(summary(), "en")
 
-        useCase(summary(income = 20_000_00), "en")
+        useCase(summary(uncategorized = 341_00), "en")   // one small transaction
 
         assertEquals(2, ai.calls)
     }
