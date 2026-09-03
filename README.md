@@ -94,9 +94,10 @@ Everything below is built and shipping today:
   time) across Summary, Trends, and Categories tabs — plus a **Review** card that points out what
   changed and what needs attention (a category over or near its limit, a sharp rise or fall, your
   largest expense, savings rate, uncategorized spend), worked out on the phone with nothing sent
-  anywhere, each finding one tap from its transactions. Optionally, an **AI explanation** of that
-  review (off by default, its own switch): only the period's totals by category are sent, "See
-  what's shared" shows exactly what, and a suggested spending cap is a tap away — confirm-first.
+  anywhere, each finding one tap from its transactions. On request, an **AI explanation** of that
+  review: tap "Explain with AI" and only the period's totals by category are sent — nothing is sent
+  otherwise — "See what's shared" shows exactly what, and a suggested spending cap is a tap away,
+  confirm-first.
 - [x] 🧾 **Transactions** — searchable, filterable list (by brand, category, date range), with
   uncategorized spending surfaced for quick cleanup. Add, edit, or delete an entry (deletion is
   confirmed first, and hands any bank message that created it back to the SMS inbox).
@@ -176,8 +177,8 @@ What's next, roughly in order:
 - **AI parsing:** Gemini Nano via the ML Kit GenAI Prompt API (Android) / Apple Foundation Models
   (iOS) — on-device, nothing transmitted; plus an optional self-hosted parse service (`server/`,
   FastAPI + Docker) for the majority of phones that have no on-device model — opt-in, and it stores
-  nothing. The same service narrates the dashboard review on request (`/v1/insights`, separate
-  opt-in, aggregates only)
+  nothing. The same service narrates the dashboard review on request (`/v1/insights`, one send per
+  tap, aggregates only)
 - **Crash reporting & analytics:** Firebase Crashlytics + Analytics (release builds only;
   disabled in debug; analytics events carry no personal or financial data)
 

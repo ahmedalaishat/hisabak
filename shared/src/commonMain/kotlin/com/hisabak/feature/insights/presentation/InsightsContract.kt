@@ -10,11 +10,11 @@ import com.hisabak.feature.insights.domain.ai.NarrativeInsight
 
 /** The AI layer's place on the screen. The deterministic [InsightsUiState.insights] never depends on it. */
 sealed interface NarrativeUi {
-    /** No service in this build, or the offer was declined for this visit: the screen shows no AI at all. */
+    /** No service in this build: the screen shows no AI at all. */
     data object Hidden : NarrativeUi
 
-    /** A service exists and the user has not opted in — offer it, once, where it would apply. */
-    data object Offer : NarrativeUi
+    /** A service exists and nothing is cached for these figures — the send is one tap away. */
+    data object Ask : NarrativeUi
 
     data object Loading : NarrativeUi
 
@@ -43,10 +43,8 @@ sealed interface InsightsIntent : ViewIntent {
     /** Analytics only — the Route opens the category editor with the proposed cap. */
     data class SuggestionAccepted(val item: NarrativeInsight) : InsightsIntent
 
-    data object EnableNarrative : InsightsIntent
-
-    /** "Not now": hides the offer for this visit. Settings keeps the switch. */
-    data object DismissOffer : InsightsIntent
+    /** "Explain with AI": the one action that sends the summary. Consent is this tap. */
+    data object RequestNarrative : InsightsIntent
 
     data object ShowShared : InsightsIntent
 

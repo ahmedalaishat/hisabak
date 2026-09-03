@@ -52,10 +52,9 @@ import com.hisabak.shared.resources.insights_narrative_badge
 import com.hisabak.shared.resources.insights_narrative_footer
 import com.hisabak.shared.resources.insights_narrative_loading
 import com.hisabak.shared.resources.insights_narrative_unavailable
-import com.hisabak.shared.resources.insights_offer_accept
-import com.hisabak.shared.resources.insights_offer_body
-import com.hisabak.shared.resources.insights_offer_not_now
-import com.hisabak.shared.resources.insights_offer_title
+import com.hisabak.shared.resources.insights_ask_accept
+import com.hisabak.shared.resources.insights_ask_body
+import com.hisabak.shared.resources.insights_ask_title
 import com.hisabak.shared.resources.insights_shared_action
 import com.hisabak.shared.resources.insights_shared_expense
 import com.hisabak.shared.resources.insights_shared_income
@@ -146,7 +145,7 @@ private fun LazyListScope.narrativeItems(
 ) {
     when (narrative) {
         NarrativeUi.Hidden -> Unit
-        NarrativeUi.Offer -> item(key = "ai:offer") { NarrativeOfferCard(onIntent) }
+        NarrativeUi.Ask -> item(key = "ai:ask") { NarrativeAskCard(onIntent) }
         NarrativeUi.Loading -> item(key = "ai:loading") { NarrativeLoadingCard() }
         is NarrativeUi.Ready -> narrativeCards(narrative.items, onNarrativeClick, onSuggestionClick, onIntent)
         is NarrativeUi.Unavailable -> {
@@ -268,26 +267,26 @@ private fun NarrativeLoadingCard() {
 }
 
 /**
- * The opt-in, offered where it applies. Two answers plus a look at the payload: "Turn on" is the
- * one primary action on the screen, "Not now" hides it for this visit, and "See what's shared"
- * shows the exact figures before anything is sent — the promise, made checkable.
+ * The ask. Consent is per request: nothing is sent until "Explain with AI" is tapped, and "See
+ * what's shared" beside it shows the exact figures that tap would send. No switch to remember, so
+ * nothing to revoke — the next send is the next tap.
  */
 @Composable
-private fun NarrativeOfferCard(onIntent: (InsightsIntent) -> Unit) {
+private fun NarrativeAskCard(onIntent: (InsightsIntent) -> Unit) {
     val c = HisabakTheme.colors
     SurfaceCard {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.Top) {
             IconTile(icon = HugeIcons.Idea, background = c.infoSoft, foreground = c.info)
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(Res.string.insights_offer_title),
+                    text = stringResource(Res.string.insights_ask_title),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.height(Spacing.s1))
                 Text(
-                    text = stringResource(Res.string.insights_offer_body),
+                    text = stringResource(Res.string.insights_ask_body),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -296,14 +295,10 @@ private fun NarrativeOfferCard(onIntent: (InsightsIntent) -> Unit) {
         Spacer(Modifier.height(Spacing.s3))
         Row(verticalAlignment = Alignment.CenterVertically) {
             PrimaryPillButton(
-                text = stringResource(Res.string.insights_offer_accept),
-                onClick = { onIntent(InsightsIntent.EnableNarrative) },
+                text = stringResource(Res.string.insights_ask_accept),
+                onClick = { onIntent(InsightsIntent.RequestNarrative) },
                 vertical = Spacing.s2,
             )
-            Spacer(Modifier.width(Spacing.s2))
-            TextButton(onClick = { onIntent(InsightsIntent.DismissOffer) }) {
-                Text(stringResource(Res.string.insights_offer_not_now))
-            }
             Spacer(Modifier.weight(1f))
             TextButton(onClick = { onIntent(InsightsIntent.ShowShared) }) {
                 Text(stringResource(Res.string.insights_shared_action))

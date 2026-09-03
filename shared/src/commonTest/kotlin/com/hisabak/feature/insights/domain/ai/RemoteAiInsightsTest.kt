@@ -1,7 +1,6 @@
 package com.hisabak.feature.insights.domain.ai
 
 import com.hisabak.core.common.Currency
-import com.hisabak.testutil.FakeAppPreferences
 import com.hisabak.testutil.FakeRemoteInsightsClient
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,6 +9,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonObject
 
 class RemoteAiInsightsTest {
@@ -17,28 +17,10 @@ class RemoteAiInsightsTest {
     private val client = FakeRemoteInsightsClient(
         result = InsightsResponseDto(items = listOf(NarrativeItemDto("dining", "Over", "Detail", 1_600_00))),
     )
-    private val prefs = FakeAppPreferences()
-    private val ai = RemoteAiInsights(client, prefs, Currency.AED)
+    private val ai = RemoteAiInsights(client, Currency.AED)
 
     @Test
-    fun `nothing is sent until the user opts in`() = runTest {
-        assertFalse(ai.isEnabled())
-        assertNull(ai.narrate(summary(), "en"))
-        assertTrue(client.requests.isEmpty())
-    }
-
-    @Test
-    fun `the opt-in for parsing does not imply this one`() = runTest {
-        prefs.setRemoteParseEnabled(true)
-
-        assertFalse(ai.isEnabled())
-        assertNull(ai.narrate(summary(), "en"))
-    }
-
-    @Test
-    fun `an opted-in user reaches the service and gets raw items back`() = runTest {
-        prefs.setInsightsEnabled(true)
-
+    fun `a request reaches the service and returns raw items`() = runTest {
         val items = ai.narrate(summary(), "ar")!!
 
         assertEquals(listOf(RawNarrativeInsight("dining", "Over", "Detail", 1_600_00)), items)
@@ -49,23 +31,12 @@ class RemoteAiInsightsTest {
     }
 
     @Test
-    fun `revoking consent stops sending immediately`() = runTest {
-        prefs.setInsightsEnabled(true)
-        ai.narrate(summary(), "en")
-
-        prefs.setInsightsEnabled(false)
-        assertNull(ai.narrate(summary(), "en"))
-
-        assertEquals(1, client.requests.size)
-    }
-
-    @Test
-    fun `an unconfigured service is disabled even when opted in`() = runTest {
-        prefs.setInsightsEnabled(true)
+    fun `an unconfigured service is unavailable and never called`() = runTest {
         client.isConfigured = false
 
-        assertFalse(ai.isEnabled())
+        assertFalse(ai.isAvailable())
         assertNull(ai.narrate(summary(), "en"))
+        assertTrue(client.requests.isEmpty())
     }
 
     @Test
@@ -80,7 +51,7 @@ class RemoteAiInsightsTest {
             ),
             root.keys,
         )
-        val category = root["categories"]!!.let { Json.parseToJsonElement(it.toString()) }.let { it as kotlinx.serialization.json.JsonArray }[0].jsonObject
+        val category = (root["categories"] as JsonArray)[0].jsonObject
         assertEquals(setOf("id", "name", "spent_minor", "prior_minor", "limit_minor"), category.keys)
     }
 

@@ -212,11 +212,8 @@ sealed class AnalyticsEvent(
         params = mapOf("count" to count),
     )
 
-    /** The AI narrative opt-in was flipped — from Settings or the offer on the insights screen. */
-    class InsightsToggled(enabled: Boolean) : AnalyticsEvent(
-        name = "insights_toggled",
-        params = mapOf("enabled" to enabled),
-    )
+    /** The user tapped "Explain with AI": consent is per request, so each tap is one send. */
+    data object InsightsNarrativeRequested : AnalyticsEvent("insights_narrative_requested")
 
     /**
      * One `/v1/insights` call produced a narrative. [dropped] is how many items `sanitizeNarrative`

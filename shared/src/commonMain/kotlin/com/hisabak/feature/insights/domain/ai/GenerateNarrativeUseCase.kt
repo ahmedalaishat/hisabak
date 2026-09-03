@@ -6,7 +6,7 @@ import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.feature.insights.domain.InsightsSummary
 
 sealed interface NarrativeResult {
-    /** No service in this build, or the user has not opted in. The screen may offer the opt-in. */
+    /** No service in this build: the screen shows no AI at all. */
     data object Disabled : NarrativeResult
 
     /** [fresh] is false when the items came from the cache without a call. */
@@ -17,12 +17,15 @@ sealed interface NarrativeResult {
 }
 
 /**
- * Layer 2 of the review: the model's explanation, generated once per material change and cached.
+ * Layer 2 of the review: the model's explanation, fetched when the user asks and cached per
+ * material change.
  *
  * The deterministic review is always shown by the caller; this only ever adds to it. Every failure
  * is a [NarrativeResult], never an exception — an outage degrades to the review the user already
- * has. The cache is consulted first and written on every reply, including an empty one: a summary
- * the model had nothing to say about must not be re-sent on every screen open.
+ * has. [cached] lets the screen show the last answer for unchanged figures **without sending
+ * anything**; [invoke] is the send, and only the user's tap calls it. The cache is written on every
+ * reply, including an empty one: a summary the model had nothing to say about must not be re-sent
+ * on the next tap.
  */
 class GenerateNarrativeUseCase(
     private val aiInsights: AiInsights,
@@ -30,8 +33,14 @@ class GenerateNarrativeUseCase(
     private val clock: Clock,
     private val analytics: Analytics,
 ) {
+    /** The narrative already generated for exactly these figures, or null — never a call. */
+    suspend fun cached(summary: InsightsSummary, language: String): List<NarrativeInsight>? {
+        val cached = cache.get(summary.period) ?: return null
+        return cached.items.takeIf { cached.key == narrativeKey(summary, language) }
+    }
+
     suspend operator fun invoke(summary: InsightsSummary, language: String): NarrativeResult {
-        if (!aiInsights.isEnabled()) return NarrativeResult.Disabled
+        if (!aiInsights.isAvailable()) return NarrativeResult.Disabled
         // Nothing to narrate; a call would only return "you have no spending".
         if (summary.incomeMinor <= 0 && summary.expenseMinor <= 0) return NarrativeResult.Ready(emptyList(), fresh = false)
 
@@ -39,6 +48,7 @@ class GenerateNarrativeUseCase(
         val cached = cache.get(summary.period)
         if (cached != null && cached.key == key) return NarrativeResult.Ready(cached.items, fresh = false)
 
+        analytics.log(AnalyticsEvent.InsightsNarrativeRequested)
         val raw = aiInsights.narrate(summary, language) ?: return NarrativeResult.Unavailable(cached?.items)
         val items = sanitizeNarrative(raw, summary)
         cache.put(CachedNarrative(summary.period, key, items, clock.now()))

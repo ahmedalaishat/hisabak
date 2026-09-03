@@ -14,7 +14,7 @@ import org.koin.dsl.module
 
 val insightsModule = module {
     single<RemoteInsightsClient> { ServiceRemoteInsightsClient(transport = get()) }
-    single<AiInsights> { RemoteAiInsights(client = get(), preferences = get(), currency = get()) }
+    single<AiInsights> { RemoteAiInsights(client = get(), currency = get()) }
     single<NarrativeCache> { RoomNarrativeCache(dao = get()) }
     factory { GenerateNarrativeUseCase(aiInsights = get(), cache = get(), clock = get(), analytics = get()) }
 
@@ -22,7 +22,6 @@ val insightsModule = module {
         InsightsViewModel(
             getMetrics = get(),
             generateNarrative = get(),
-            preferences = get(),
             appConfig = get(),
             analytics = get(),
             period = period,

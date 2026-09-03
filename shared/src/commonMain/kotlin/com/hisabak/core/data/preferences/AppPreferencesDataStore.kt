@@ -25,7 +25,6 @@ class AppPreferencesDataStore(private val dataStore: DataStore<Preferences>) : A
     private val passphraseConfirmedAtKey = longPreferencesKey("passphrase_confirmed_at")
     private val lastBackupAtKey = longPreferencesKey("last_backup_at")
     private val remoteParseEnabledKey = booleanPreferencesKey("remote_parse_enabled")
-    private val insightsEnabledKey = booleanPreferencesKey("insights_enabled")
     private val autoConfirmEnabledKey = booleanPreferencesKey("auto_confirm_enabled")
     private val suppressedPromptsKey = stringSetPreferencesKey("suppressed_inbox_prompts")
 
@@ -106,13 +105,6 @@ class AppPreferencesDataStore(private val dataStore: DataStore<Preferences>) : A
     }
 
     // Defaults to false: acting on a parse without asking is opt-in.
-    override val insightsEnabled: Flow<Boolean> =
-        dataStore.data.map { it[insightsEnabledKey] ?: false }
-
-    override suspend fun setInsightsEnabled(value: Boolean) {
-        dataStore.edit { it[insightsEnabledKey] = value }
-    }
-
     override val autoConfirmEnabled: Flow<Boolean> =
         dataStore.data.map { it[autoConfirmEnabledKey] ?: false }
 

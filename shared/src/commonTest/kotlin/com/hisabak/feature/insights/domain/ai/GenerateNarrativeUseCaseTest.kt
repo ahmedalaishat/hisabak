@@ -16,11 +16,11 @@ import kotlinx.coroutines.test.runTest
 class GenerateNarrativeUseCaseTest {
 
     private class ScriptedAiInsights(
-        var enabled: Boolean = true,
+        var available: Boolean = true,
         var reply: List<RawNarrativeInsight>? = listOf(raw()),
     ) : AiInsights {
         var calls = 0
-        override suspend fun isEnabled() = enabled
+        override fun isAvailable() = available
         override suspend fun narrate(summary: InsightsSummary, language: String): List<RawNarrativeInsight>? {
             calls++
             return reply
@@ -33,12 +33,33 @@ class GenerateNarrativeUseCaseTest {
     private val useCase = GenerateNarrativeUseCase(ai, cache, TestClock(), analytics)
 
     @Test
-    fun `disabled means no call and no cache write`() = runTest {
-        ai.enabled = false
+    fun `no service means no call and no cache write`() = runTest {
+        ai.available = false
 
         assertEquals(NarrativeResult.Disabled, useCase(summary(), "en"))
         assertEquals(0, ai.calls)
         assertTrue(cache.entries.isEmpty())
+    }
+
+    @Test
+    fun `cached never calls - it answers only for exactly these figures`() = runTest {
+        assertNull(useCase.cached(summary(), "en"))
+        useCase(summary(), "en")
+
+        assertEquals(1, useCase.cached(summary(uncategorized = 341_00), "en")!!.size)   // same key
+        assertNull(useCase.cached(summary(income = 20_000_00), "en"))                   // material change
+        assertNull(useCase.cached(summary(), "ar"))                                     // other language
+        assertEquals(1, ai.calls)
+    }
+
+    @Test
+    fun `a request is counted separately from a generation`() = runTest {
+        useCase(summary(), "en")
+        ai.reply = null
+        useCase(summary(income = 20_000_00), "en")
+
+        assertEquals(2, analytics.logged.count { it is AnalyticsEvent.InsightsNarrativeRequested })
+        assertEquals(1, analytics.logged.count { it is AnalyticsEvent.InsightsNarrativeGenerated })
     }
 
     @Test

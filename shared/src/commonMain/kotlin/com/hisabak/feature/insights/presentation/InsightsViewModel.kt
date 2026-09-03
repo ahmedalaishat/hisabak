@@ -3,7 +3,6 @@ package com.hisabak.feature.insights.presentation
 import androidx.lifecycle.viewModelScope
 import com.hisabak.core.common.AppConfig
 import com.hisabak.core.common.SummaryPeriod
-import com.hisabak.core.domain.AppPreferences
 import com.hisabak.core.domain.analytics.Analytics
 import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.core.presentation.BaseViewModel
@@ -12,11 +11,10 @@ import com.hisabak.feature.insights.domain.InsightsSummary
 import com.hisabak.feature.insights.domain.ai.GenerateNarrativeUseCase
 import com.hisabak.feature.insights.domain.ai.NarrativeResult
 import com.hisabak.feature.insights.domain.deriveInsights
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 /**
@@ -24,16 +22,14 @@ import kotlinx.coroutines.launch
  * computation is one pure pass, and the alternative — a bus, or a nav key carrying a list — buys
  * nothing for it. [period] arrives from the key, so the screen reviews what the dashboard showed.
  *
- * The narrative (layer 2) rides the same stream: every snapshot re-derives the review at once and
- * then asks [GenerateNarrativeUseCase], whose cache decides whether that costs a call. `mapLatest`
- * drops an in-flight generation when the ledger changes underneath it. [language] is the UI
- * language the text is generated in — fixed for the screen's life, since a switch recreates it.
+ * The narrative (layer 2) is **never fetched on its own**. Each snapshot only looks the cache up:
+ * unchanged figures show their last explanation, changed figures show the ask again. The send
+ * happens on [InsightsIntent.RequestNarrative] alone. [language] is the UI language the text is
+ * generated in — fixed for the screen's life, since a switch recreates it.
  */
-@OptIn(ExperimentalCoroutinesApi::class)
 class InsightsViewModel(
     private val getMetrics: GetDashboardMetricsUseCase,
     private val generateNarrative: GenerateNarrativeUseCase,
-    private val preferences: AppPreferences,
     private val appConfig: AppConfig,
     private val analytics: Analytics,
     private val period: SummaryPeriod,
@@ -41,40 +37,26 @@ class InsightsViewModel(
 ) : BaseViewModel<InsightsIntent, InsightsUiState, InsightsEffect>() {
 
     private var opened = false
-
-    /** "Not now" lives here, not in prefs: the user said not now, not never, and re-entering the
-     *  screen (which scopes a fresh ViewModel) is the natural moment to ask once more. */
-    private var offerDismissed = false
+    private var request: Job? = null
 
     override fun initialState() = InsightsUiState(period = period)
 
     init {
-        combine(getMetrics(flowOf(period)), preferences.insightsEnabled) { snapshot, enabled -> snapshot to enabled }
-            .mapLatest { (snapshot, enabled) ->
+        getMetrics(flowOf(period))
+            .onEach { snapshot ->
                 val summary = InsightsSummary.from(snapshot, period)
                 val insights = deriveInsights(summary)
-                val narrativeOn = enabled && appConfig.hasParseService
-                setState {
-                    copy(
-                        insights = insights,
-                        summary = summary,
-                        isLoading = false,
-                        narrative = when {
-                            !appConfig.hasParseService -> NarrativeUi.Hidden
-                            !enabled -> if (offerDismissed) NarrativeUi.Hidden else NarrativeUi.Offer
-                            // Keep the last narrative on screen while a fresh one is fetched.
-                            narrative is NarrativeUi.Ready -> narrative
-                            else -> NarrativeUi.Loading
-                        },
-                    )
+                val narrative = when {
+                    !appConfig.hasParseService -> NarrativeUi.Hidden
+                    // A fetch in flight for the previous figures answers a question that is no
+                    // longer being asked.
+                    request?.isActive == true -> { request?.cancel(); NarrativeUi.Ask }
+                    else -> generateNarrative.cached(summary, language)?.let(NarrativeUi::Ready) ?: NarrativeUi.Ask
                 }
+                setState { copy(insights = insights, summary = summary, isLoading = false, narrative = narrative) }
                 if (!opened) {
                     opened = true
                     analytics.log(AnalyticsEvent.InsightsOpened(count = insights.size))
-                }
-                if (narrativeOn) {
-                    val result = generateNarrative(summary, language)
-                    setState { copy(narrative = result.toUi()) }
                 }
             }
             .launchIn(viewModelScope)
@@ -88,21 +70,24 @@ class InsightsViewModel(
                 analytics.log(AnalyticsEvent.InsightTapped(type = "narrative"))
             is InsightsIntent.SuggestionAccepted ->
                 analytics.log(AnalyticsEvent.InsightsSuggestionAccepted(type = "set_limit"))
-            InsightsIntent.EnableNarrative -> {
-                analytics.log(AnalyticsEvent.InsightsToggled(enabled = true))
-                viewModelScope.launch { preferences.setInsightsEnabled(true) }
-            }
-            InsightsIntent.DismissOffer -> {
-                offerDismissed = true
-                setState { copy(narrative = NarrativeUi.Hidden) }
-            }
+            InsightsIntent.RequestNarrative -> requestNarrative()
             InsightsIntent.ShowShared -> setState { copy(showShared = true) }
             InsightsIntent.HideShared -> setState { copy(showShared = false) }
         }
     }
 
+    private fun requestNarrative() {
+        val summary = state.value.summary ?: return
+        if (request?.isActive == true) return
+        setState { copy(narrative = NarrativeUi.Loading) }
+        request = viewModelScope.launch {
+            val result = generateNarrative(summary, language)
+            setState { copy(narrative = result.toUi()) }
+        }
+    }
+
     private fun NarrativeResult.toUi(): NarrativeUi = when (this) {
-        NarrativeResult.Disabled -> NarrativeUi.Offer
+        NarrativeResult.Disabled -> NarrativeUi.Hidden
         is NarrativeResult.Ready -> NarrativeUi.Ready(items)
         is NarrativeResult.Unavailable -> NarrativeUi.Unavailable(stale)
     }

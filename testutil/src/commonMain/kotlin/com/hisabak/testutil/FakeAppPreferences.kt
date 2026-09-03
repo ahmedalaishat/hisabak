@@ -50,10 +50,6 @@ class FakeAppPreferences(
     override val remoteParseEnabled: Flow<Boolean> = remoteParseEnabledFlow
     override suspend fun setRemoteParseEnabled(value: Boolean) { remoteParseEnabledFlow.value = value }
 
-    private val insightsEnabledFlow = MutableStateFlow(false)
-    override val insightsEnabled: Flow<Boolean> = insightsEnabledFlow
-    override suspend fun setInsightsEnabled(value: Boolean) { insightsEnabledFlow.value = value }
-
     private val autoConfirmEnabledFlow = MutableStateFlow(false)
     override val autoConfirmEnabled: Flow<Boolean> = autoConfirmEnabledFlow
     override suspend fun setAutoConfirmEnabled(value: Boolean) { autoConfirmEnabledFlow.value = value }

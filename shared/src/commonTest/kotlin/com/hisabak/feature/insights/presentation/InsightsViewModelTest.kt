@@ -15,7 +15,6 @@ import com.hisabak.feature.insights.domain.InsightsSummary
 import com.hisabak.feature.insights.domain.ai.AiInsights
 import com.hisabak.feature.insights.domain.ai.GenerateNarrativeUseCase
 import com.hisabak.feature.insights.domain.ai.RawNarrativeInsight
-import com.hisabak.testutil.FakeAppPreferences
 import com.hisabak.testutil.FakeNarrativeCache
 import com.hisabak.feature.transaction.domain.usecase.ObserveTransactionsUseCase
 import com.hisabak.testutil.FakeAnalytics
@@ -34,7 +33,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.time.Instant
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 
@@ -42,17 +40,16 @@ class InsightsViewModelTest : MainDispatcherTest() {
 
     private val june = Instant.parse("2026-06-10T10:00:00Z")
     private val analytics = FakeAnalytics()
-    private val prefs = FakeAppPreferences()
-
     private class ScriptedAiInsights(var reply: List<RawNarrativeInsight>?) : AiInsights {
         var calls = 0
-        override suspend fun isEnabled() = true
+        override fun isAvailable() = true
         override suspend fun narrate(summary: InsightsSummary, language: String): List<RawNarrativeInsight>? {
             calls++
             return reply
         }
     }
 
+    private val cache = FakeNarrativeCache()
     private val ai = ScriptedAiInsights(reply = listOf(RawNarrativeInsight("dining", "Dining leads", "Most of it.", null)))
 
     private fun config(service: Boolean) = AppConfig(
@@ -70,8 +67,7 @@ class InsightsViewModelTest : MainDispatcherTest() {
         service: Boolean = false,
     ) = InsightsViewModel(
         getMetrics = metrics(transactions),
-        generateNarrative = GenerateNarrativeUseCase(ai, FakeNarrativeCache(), TestClock(), analytics),
-        preferences = prefs,
+        generateNarrative = GenerateNarrativeUseCase(ai, cache, TestClock(), analytics),
         appConfig = config(service),
         analytics = analytics,
         period = SummaryPeriod.CURRENT_MONTH,
@@ -157,44 +153,48 @@ class InsightsViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `with a service but no opt-in the screen offers it and sends nothing`() = runTest {
+    fun `with a service the screen asks and sends nothing on its own`() = runTest {
         val vm = viewModel(ledger, service = true)
         advanceUntilIdle()
 
-        assertEquals(NarrativeUi.Offer, vm.state.value.narrative)
+        assertEquals(NarrativeUi.Ask, vm.state.value.narrative)
         assertEquals(0, ai.calls)
     }
 
     @Test
-    fun `not now hides the offer for this visit only`() = runTest {
+    fun `the tap is the send`() = runTest {
         val vm = viewModel(ledger, service = true)
         advanceUntilIdle()
 
-        vm.onIntent(InsightsIntent.DismissOffer)
-
-        assertEquals(NarrativeUi.Hidden, vm.state.value.narrative)
-        assertEquals(false, prefs.insightsEnabled.first())
-    }
-
-    @Test
-    fun `turning it on from the offer records consent and fetches the narrative`() = runTest {
-        val vm = viewModel(ledger, service = true)
-        advanceUntilIdle()
-
-        vm.onIntent(InsightsIntent.EnableNarrative)
+        vm.onIntent(InsightsIntent.RequestNarrative)
         advanceUntilIdle()
 
         val ready = assertIs<NarrativeUi.Ready>(vm.state.value.narrative)
         assertEquals("Dining leads", ready.items.single().headline)
         assertEquals(1, ai.calls)
-        assertTrue(analytics.logged.filterIsInstance<AnalyticsEvent.InsightsToggled>().single().params["enabled"] == true)
+        assertTrue(analytics.logged.any { it is AnalyticsEvent.InsightsNarrativeRequested })
+    }
+
+    @Test
+    fun `unchanged figures show the last answer on reopen without a send`() = runTest {
+        val first = viewModel(ledger, service = true)
+        advanceUntilIdle()
+        first.onIntent(InsightsIntent.RequestNarrative)
+        advanceUntilIdle()
+
+        val second = viewModel(ledger, service = true)
+        advanceUntilIdle()
+
+        assertIs<NarrativeUi.Ready>(second.state.value.narrative)
+        assertEquals(1, ai.calls)
     }
 
     @Test
     fun `an outage leaves the deterministic review intact`() = runTest {
-        prefs.setInsightsEnabled(true)
         ai.reply = null
         val vm = viewModel(ledger, service = true)
+        advanceUntilIdle()
+        vm.onIntent(InsightsIntent.RequestNarrative)
         advanceUntilIdle()
 
         assertIs<NarrativeUi.Unavailable>(vm.state.value.narrative)

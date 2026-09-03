@@ -1,28 +1,25 @@
 package com.hisabak.feature.insights.domain.ai
 
 import com.hisabak.core.common.Currency
-import com.hisabak.core.domain.AppPreferences
 import com.hisabak.feature.insights.domain.InsightsSummary
-import kotlinx.coroutines.flow.first
 
 /**
  * [AiInsights] backed by the service's `/v1/insights`.
  *
- * **Strictly opt-in, separately from parsing:** `insightsEnabled` is its own preference because
- * parsing sends one bank SMS and this sends a picture of the user's finances — one consent must not
- * imply the other. Re-checked per call, so turning it off takes effect at once.
+ * Deliberately no preference: a stored switch would send a picture of the user's finances on every
+ * material change without a further decision. Here the send *is* the tap — "Explain with AI" on the
+ * insights screen, next to "See what's shared" — so every transmission is one the user just asked
+ * for, and there is nothing to revoke.
  */
 class RemoteAiInsights(
     private val client: RemoteInsightsClient,
-    private val preferences: AppPreferences,
     private val currency: Currency,
 ) : AiInsights {
 
-    override suspend fun isEnabled(): Boolean =
-        client.isConfigured && preferences.insightsEnabled.first()
+    override fun isAvailable(): Boolean = client.isConfigured
 
     override suspend fun narrate(summary: InsightsSummary, language: String): List<RawNarrativeInsight>? {
-        if (!isEnabled()) return null
+        if (!isAvailable()) return null
         val response = client.narrate(summary.toRequestDto(language, currency)) ?: return null
         return response.items.map { it.toDomain() }
     }
