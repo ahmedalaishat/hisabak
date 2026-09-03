@@ -8,7 +8,14 @@ import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.core.presentation.BaseViewModel
 import com.hisabak.feature.dashboard.domain.usecase.GetDashboardMetricsUseCase
 import com.hisabak.feature.insights.domain.InsightsSummary
+import com.hisabak.feature.insights.domain.ai.AskInsightUseCase
+import com.hisabak.feature.insights.domain.ai.AskResult
+import com.hisabak.feature.insights.domain.ai.AskRole
+import com.hisabak.feature.insights.domain.ai.AskSource
+import com.hisabak.feature.insights.domain.ai.AskTurn
 import com.hisabak.feature.insights.domain.ai.GenerateNarrativeUseCase
+import com.hisabak.feature.insights.domain.ai.MAX_QUESTION_LENGTH
+import com.hisabak.feature.insights.domain.ai.suggestedQuestions
 import com.hisabak.feature.insights.domain.ai.NarrativeResult
 import com.hisabak.feature.insights.domain.ai.narrativeKey
 import com.hisabak.feature.insights.domain.deriveInsights
@@ -38,6 +45,7 @@ import kotlinx.coroutines.launch
 class InsightsViewModel(
     private val getMetrics: GetDashboardMetricsUseCase,
     private val generateNarrative: GenerateNarrativeUseCase,
+    private val askInsight: AskInsightUseCase,
     private val appConfig: AppConfig,
     private val analytics: Analytics,
     private val period: SummaryPeriod,
@@ -72,7 +80,18 @@ class InsightsViewModel(
                         // A fetch in flight for other figures answers a question no longer asked.
                         else -> { request?.cancel(); NarrativeUi.Ask }
                     }
-                    copy(period = period, insights = insights, summary = summary, isLoading = false, narrative = narrative)
+                    copy(
+                        period = period,
+                        insights = insights,
+                        summary = summary,
+                        isLoading = false,
+                        narrative = narrative,
+                        suggestedQuestions = if (appConfig.hasParseService) suggestedQuestions(insights) else emptyList(),
+                    )
+                }
+                if (appConfig.hasParseService && state.value.ask.remaining == null) {
+                    val left = askInsight.remaining()
+                    setState { copy(ask = ask.copy(remaining = left)) }
                 }
                 if (!opened) {
                     opened = true
@@ -94,6 +113,44 @@ class InsightsViewModel(
             InsightsIntent.RequestNarrative -> requestNarrative()
             InsightsIntent.ShowShared -> setState { copy(showShared = true) }
             InsightsIntent.HideShared -> setState { copy(showShared = false) }
+            is InsightsIntent.OpenAsk -> {
+                setState { copy(ask = ask.copy(open = true, notice = null)) }
+                intent.question?.let { send(it, AskSource.Chip) }
+            }
+            InsightsIntent.CloseAsk -> setState { copy(ask = ask.copy(open = false, notice = null)) }
+            is InsightsIntent.AskDraftChanged ->
+                setState { copy(ask = ask.copy(draft = intent.value.take(MAX_QUESTION_LENGTH))) }
+            InsightsIntent.AskSubmitted -> {
+                val draft = state.value.ask.draft.trim()
+                if (draft.isNotEmpty()) send(draft, AskSource.Free)
+            }
+        }
+    }
+
+    /** The send. Each question is one tap — a chip or Send — and each is counted against today. */
+    private fun send(question: String, source: AskSource) {
+        val summary = state.value.summary ?: return
+        if (state.value.ask.busy) return
+        val history = state.value.ask.turns
+        setState {
+            copy(ask = ask.copy(busy = true, draft = "", notice = null, turns = history + AskTurn(AskRole.User, question)))
+        }
+        viewModelScope.launch {
+            val result = askInsight(summary, language, question, history, source)
+            setState {
+                val ask = when (result) {
+                    is AskResult.Answered -> ask.copy(
+                        busy = false,
+                        remaining = result.remaining,
+                        turns = ask.turns + AskTurn(AskRole.Assistant, result.text),
+                    )
+                    // The question stays on screen unanswered: the user sees what was asked, and
+                    // can retry when the service is back.
+                    AskResult.NoQuestionsLeft -> ask.copy(busy = false, remaining = 0, notice = AskNotice.NoQuestionsLeft)
+                    AskResult.Unavailable -> ask.copy(busy = false, notice = AskNotice.Unavailable)
+                }
+                copy(ask = ask)
+            }
         }
     }
 

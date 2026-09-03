@@ -82,3 +82,22 @@ fun InsightsSummary.toRequestDto(language: String, currency: Currency) = Insight
     uncategorizedMinor = uncategorizedMinor,
     uncategorizedCount = uncategorizedCount,
 )
+
+// ── Ask ───────────────────────────────────────────────────────────────────────
+
+@Serializable
+data class AskTurnDto(val role: String, val text: String)
+
+/** The question rides with the same summary the narrative uses — that summary is the whole context. */
+@Serializable
+data class AskRequestDto(
+    val summary: InsightsRequestDto,
+    val question: String,
+    val history: List<AskTurnDto>,
+)
+
+@Serializable
+data class AskResponseDto(
+    val answer: String = "",
+    @SerialName("on_topic") val onTopic: Boolean = true,
+)

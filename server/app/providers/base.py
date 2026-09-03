@@ -7,7 +7,7 @@ switching costs an env var and changes nothing on the client.
 
 from typing import Protocol
 
-from app.schema import InsightsRequest, Narrative, ParsedSms, ParseRequest
+from app.schema import AskAnswer, AskRequest, InsightsRequest, Narrative, ParsedSms, ParseRequest
 
 
 class ParseProvider(Protocol):
@@ -20,3 +20,5 @@ class InsightsProvider(Protocol):
     name: str
 
     async def narrate(self, request: InsightsRequest) -> Narrative: ...
+
+    async def ask(self, request: AskRequest) -> AskAnswer: ...

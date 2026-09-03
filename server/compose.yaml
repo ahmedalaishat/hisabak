@@ -16,6 +16,8 @@ services:
       HISABAK_RATE_LIMIT_PER_MINUTE: ${HISABAK_RATE_LIMIT_PER_MINUTE:-30}
       HISABAK_DAILY_PER_IP: ${HISABAK_DAILY_PER_IP:-200}
       HISABAK_DAILY_BUDGET: ${HISABAK_DAILY_BUDGET:-2000}
+      HISABAK_ASK_PER_INSTALL_DAILY: ${HISABAK_ASK_PER_INSTALL_DAILY:-10}
+      HISABAK_ASK_NEW_IDS_PER_IP: ${HISABAK_ASK_NEW_IDS_PER_IP:-5}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8080/health')"]
       interval: 30s

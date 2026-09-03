@@ -1,6 +1,7 @@
 package com.hisabak.testutil
 
 import com.hisabak.core.domain.AppPreferences
+import com.hisabak.core.domain.AskTally
 import com.hisabak.core.domain.ThemeMode
 import com.hisabak.core.domain.backup.AutoBackupPeriod
 import kotlinx.coroutines.flow.Flow
@@ -57,4 +58,12 @@ class FakeAppPreferences(
     private val suppressedPromptsFlow = MutableStateFlow(emptySet<String>())
     override val suppressedInboxPrompts: Flow<Set<String>> = suppressedPromptsFlow
     override suspend fun suppressInboxPrompt(name: String) { suppressedPromptsFlow.value += name }
+
+    private val installIdFlow = MutableStateFlow<String?>(null)
+    override val installId: Flow<String?> = installIdFlow
+    override suspend fun setInstallId(value: String) { installIdFlow.value = value }
+
+    private val askTallyFlow = MutableStateFlow(AskTally.NONE)
+    override val askTally: Flow<AskTally> = askTallyFlow
+    override suspend fun setAskTally(value: AskTally) { askTallyFlow.value = value }
 }

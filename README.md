@@ -97,7 +97,8 @@ Everything below is built and shipping today:
   anywhere, each finding one tap from its transactions. On request, an **AI explanation** of that
   review: tap "Explain with AI" and only the period's totals by category are sent — nothing is sent
   otherwise — "See what's shared" shows exactly what, and a suggested spending cap is a tap away,
-  confirm-first.
+  confirm-first. You can also **ask** about the period — suggested questions or your own, ten a day,
+  answered from those same totals.
 - [x] 🧾 **Transactions** — searchable, filterable list (by brand, category, date range), with
   uncategorized spending surfaced for quick cleanup. Add, edit, or delete an entry (deletion is
   confirmed first, and hands any bank message that created it back to the SMS inbox).
@@ -155,8 +156,6 @@ What's next, roughly in order:
   the SMS permission (works in the Play build).
 - [ ] 💱 **Multi-currency** — track transactions and balances across more than one currency.
 - [ ] 🤖 **Auto-categorization** — automatic brand → category suggestions.
-- [ ] 💡 **AI insights assistant** — ask questions about your spending and get clear, on-point
-  answers.
 - [ ] ↩️ **Refunds** — record a refund against a transaction so returned money is reflected in
   balances and category spend.
 

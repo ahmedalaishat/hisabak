@@ -158,6 +158,19 @@ picture off the phone by default.
   - **Not done:** prompt caching (Haiku's 4096-token floor makes it inert at this payload size),
     the per-install quota and the visible counter (PR 3, where free text makes them necessary).
 
+### PR 3 (2026-09-03): Ask
+`/v1/insights/ask` + `InstallQuota`, `AskInsightUseCase`, `suggestedQuestions`, the Ask sheet
+(chips + capped free text + visible counter), `installId`/`askTally` prefs, `insights_ask` /
+`insights_quota_hit`. As specced, with these decisions:
+- **The allowance is counted twice on purpose** — on the phone, so the sheet can say "n of 10 left"
+  and refuse without a round trip, and on the server, which is the count that actually holds. The
+  phone's copy is a courtesy, not a gate.
+- **A failed question is not counted** on either side (the client only records a tally after a
+  reply), so an outage never costs the user an allowance.
+- **`on_topic` comes back from the model** rather than being inferred client-side: the refusal text
+  is still shown, and the flag is what the analytics split measures.
+- **The sheet is `// TODO: design`** — chips, plain turns, and the inbox's text field, no chat UI.
+
 ## Risks
 The deterministic layer may already deliver most of the perceived value, which would make the
 narrative layer hard to justify against its privacy cost — that is a good outcome, and PR 1

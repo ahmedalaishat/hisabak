@@ -6,7 +6,7 @@ distributed app — so each tier gets a test that proves it actually stops.
 
 import pytest
 
-from app.limits import Limiter, RateLimitExceeded
+from app.limits import InstallQuota, Limiter, RateLimitExceeded
 
 
 def _limiter(**kw):
@@ -98,3 +98,27 @@ def test_counters_reset_on_a_new_day(monkeypatch):
     limiter.check("ip-a", 0.02)
 
     assert limiter.used_today == 1
+
+
+def test_install_quota_counts_down_and_stops():
+    quota = InstallQuota(per_install_daily=3, new_ids_per_ip_daily=5)
+
+    assert [quota.check("id-a", "ip-1") for _ in range(3)] == [2, 1, 0]
+    with pytest.raises(RateLimitExceeded) as e:
+        quota.check("id-a", "ip-1")
+    assert e.value.scope == "install_daily"
+    # Another install is unaffected.
+    assert quota.check("id-b", "ip-1") == 2
+
+
+def test_install_quota_throttles_id_rotation_from_one_address():
+    quota = InstallQuota(per_install_daily=100, new_ids_per_ip_daily=2)
+    quota.check("id-a", "ip-1")
+    quota.check("id-b", "ip-1")
+
+    with pytest.raises(RateLimitExceeded) as e:
+        quota.check("id-c", "ip-1")
+    assert e.value.scope == "new_ids_per_ip"
+    # Known ids keep working, and another address has its own count.
+    quota.check("id-a", "ip-1")
+    quota.check("id-c", "ip-2")

@@ -159,6 +159,26 @@ It shares the parse limiter and budget. Cost per call is ~$0.002 (≈600 tokens 
 the client sends only on a tap, and a tap for figures it has already explained is answered from
 its cache (keyed on the exact input), so the bill is bounded by how often the user asks. Property evals: `python -m evals.run_insights`.
 
+### Ask
+
+```
+POST /v1/insights/ask   Authorization: Bearer <token>   X-Install-Id: <uuid>
+{ "summary": { …the same object as /v1/insights… }, "question": "Why is dining up?",
+  "history": [ {"role": "user", "text": "…"}, {"role": "assistant", "text": "…"} ] }
+→ { "answer": "…", "on_topic": true, "model": "…" }
+```
+
+One question about the summary, which **is** the whole context — there is no field for a
+transaction, a note, or a message, so nothing else can be asked about. The question is capped at
+500 characters and the history at 6 turns; the model is told to stay on this person's figures and
+returns `on_topic: false` with a one-line refusal otherwise.
+
+On top of the shared tiers, each install gets a fair daily allowance (`HISABAK_ASK_PER_INSTALL_DAILY`,
+default 10) keyed on the client-asserted `X-Install-Id`. That id is **fairness, not enforcement** —
+anyone with the token can mint one per call — so `HISABAK_ASK_NEW_IDS_PER_IP` (default 5) throttles
+an address that keeps presenting never-seen ids, while an honest phone presents exactly one. A
+missing or malformed id counts against the address instead, which is stricter. ~$0.003 a question.
+
 ## Abuse and spend control
 
 **The bearer token is not a secret.** It is compiled into a distributed app, so anyone with the

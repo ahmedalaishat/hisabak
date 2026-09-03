@@ -5,9 +5,11 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.hisabak.core.domain.AppPreferences
+import com.hisabak.core.domain.AskTally
 import com.hisabak.core.domain.ThemeMode
 import com.hisabak.core.domain.backup.AutoBackupPeriod
 import kotlinx.coroutines.flow.Flow
@@ -25,6 +27,9 @@ class AppPreferencesDataStore(private val dataStore: DataStore<Preferences>) : A
     private val passphraseConfirmedAtKey = longPreferencesKey("passphrase_confirmed_at")
     private val lastBackupAtKey = longPreferencesKey("last_backup_at")
     private val remoteParseEnabledKey = booleanPreferencesKey("remote_parse_enabled")
+    private val installIdKey = stringPreferencesKey("install_id")
+    private val askTallyDayKey = stringPreferencesKey("ask_tally_day")
+    private val askTallyCountKey = intPreferencesKey("ask_tally_count")
     private val autoConfirmEnabledKey = booleanPreferencesKey("auto_confirm_enabled")
     private val suppressedPromptsKey = stringSetPreferencesKey("suppressed_inbox_prompts")
 
@@ -114,6 +119,23 @@ class AppPreferencesDataStore(private val dataStore: DataStore<Preferences>) : A
 
     override val suppressedInboxPrompts: Flow<Set<String>> =
         dataStore.data.map { it[suppressedPromptsKey] ?: emptySet() }
+
+    override val installId: Flow<String?> = dataStore.data.map { it[installIdKey] }
+
+    override suspend fun setInstallId(value: String) {
+        dataStore.edit { it[installIdKey] = value }
+    }
+
+    override val askTally: Flow<AskTally> = dataStore.data.map {
+        AskTally(day = it[askTallyDayKey] ?: "", count = it[askTallyCountKey] ?: 0)
+    }
+
+    override suspend fun setAskTally(value: AskTally) {
+        dataStore.edit {
+            it[askTallyDayKey] = value.day
+            it[askTallyCountKey] = value.count
+        }
+    }
 
     override suspend fun suppressInboxPrompt(name: String) {
         dataStore.edit { it[suppressedPromptsKey] = (it[suppressedPromptsKey] ?: emptySet()) + name }

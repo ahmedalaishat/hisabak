@@ -224,6 +224,21 @@ sealed class AnalyticsEvent(
         params = mapOf("count" to count, "dropped" to dropped),
     )
 
+    /**
+     * One question sent. [source] is "chip" or "free" — the split that says whether the free-text
+     * box earns its cost; [onTopic] is the model's own flag. Never the question, never the answer.
+     */
+    class InsightsAsk(source: String, onTopic: Boolean) : AnalyticsEvent(
+        name = "insights_ask",
+        params = mapOf("source" to source, "on_topic" to onTopic),
+    )
+
+    /** The phone refused a question locally because today's allowance is spent. */
+    class InsightsQuotaHit(scope: String) : AnalyticsEvent(
+        name = "insights_quota_hit",
+        params = mapOf("scope" to scope),
+    )
+
     /** A narrative's suggestion chip was accepted; [type] names the suggestion kind ("set_limit"). */
     class InsightsSuggestionAccepted(type: String) : AnalyticsEvent(
         name = "insights_suggestion_accepted",

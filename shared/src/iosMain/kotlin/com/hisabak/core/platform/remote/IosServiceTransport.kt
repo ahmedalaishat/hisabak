@@ -31,7 +31,7 @@ class IosServiceTransport(
 
     override val isConfigured: Boolean get() = config.isConfigured
 
-    override suspend fun postJson(path: String, body: String, timeoutMs: Int): String? {
+    override suspend fun postJson(path: String, body: String, timeoutMs: Int, headers: Map<String, String>): String? {
         if (!isConfigured) return null
         val url = NSURL(string = "${config.baseUrl.trimEnd('/')}$path")
         val bytes = body.encodeToByteArray()
@@ -41,6 +41,7 @@ class IosServiceTransport(
                 setHTTPMethod("POST")
                 setValue("Bearer ${config.token}", forHTTPHeaderField = "Authorization")
                 setValue("application/json", forHTTPHeaderField = "Content-Type")
+                headers.forEach { (name, value) -> setValue(value, forHTTPHeaderField = name) }
                 setHTTPBody(bytes.toNSData())
                 setTimeoutInterval(timeoutMs / 1000.0)
             }
