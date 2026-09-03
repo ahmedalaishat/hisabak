@@ -91,7 +91,7 @@ fun InsightsScreen(
  * Shared by the dashboard's Review card and the insights screen so the copy lives in one place.
  */
 @Composable
-fun InsightRow(insight: Insight, modifier: Modifier = Modifier, compact: Boolean = false) {
+fun InsightRow(insight: Insight, modifier: Modifier = Modifier) {
     val c = HisabakTheme.colors
     val category = insight.category
     val (tileBg, tileFg) = when {
@@ -118,8 +118,7 @@ fun InsightRow(insight: Insight, modifier: Modifier = Modifier, compact: Boolean
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
     ) {
-        // Compact on the dashboard card so three rows stay a strip, not a second hero.
-        IconTile(icon = icon, background = tileBg, foreground = tileFg, size = if (compact) Spacing.s8 else Spacing.s9)
+        IconTile(icon = icon, background = tileBg, foreground = tileFg)
         Column(Modifier.weight(1f)) {
             Text(
                 text = insightTitle(insight),
@@ -132,7 +131,7 @@ fun InsightRow(insight: Insight, modifier: Modifier = Modifier, compact: Boolean
                 text = insightDetail(insight),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = if (compact) 1 else 2,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
         }
