@@ -42,7 +42,7 @@ class GenerateNarrativeUseCaseTest {
     }
 
     @Test
-    fun `a fresh narrative is sanitized, cached and counted`() = runTest {
+    fun `a fresh narrative is sanitized then cached and counted`() = runTest {
         ai.reply = listOf(raw(categoryId = "dining"), raw(categoryId = "ghost"))
 
         val result = useCase(summary(), "en")

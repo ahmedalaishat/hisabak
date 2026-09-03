@@ -29,7 +29,7 @@ class ServiceRemoteParseClientTest {
     }
 
     @Test
-    fun `a transport failure or malformed reply is null, never an exception`() = runTest {
+    fun `a transport failure or malformed reply is null and never an exception`() = runTest {
         assertNull(client.parse(request))
 
         transport.responses["/v1/parse"] = "not json"
