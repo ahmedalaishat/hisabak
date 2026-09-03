@@ -80,7 +80,7 @@ class InsightsViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `an empty period loads to an empty review, not a loading spinner`() = runTest {
+    fun `an empty period loads to an empty review rather than a loading spinner`() = runTest {
         val vm = InsightsViewModel(metrics(emptyList()), analytics, SummaryPeriod.CURRENT_MONTH)
         advanceUntilIdle()
 
@@ -89,7 +89,7 @@ class InsightsViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `logs one opened event with the count, and a tap with its type`() = runTest {
+    fun `logs one opened event with the count and a tap with its type`() = runTest {
         val vm = InsightsViewModel(
             getMetrics = metrics(listOf(transaction(id = "d", amountMinor = 300_00, brandId = "cafe", occurredAt = june))),
             analytics = analytics,

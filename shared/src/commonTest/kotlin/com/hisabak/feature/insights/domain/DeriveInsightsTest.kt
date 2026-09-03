@@ -51,7 +51,7 @@ class DeriveInsightsTest {
     // ── AC 1: ordering ──────────────────────────────────────────────────────
 
     @Test
-    fun `over limit leads, then by severity and magnitude`() {
+    fun `over limit leads and the rest follow by severity then magnitude`() {
         val total = 1_000_00L
         val insights = deriveInsights(
             summary(
@@ -69,7 +69,7 @@ class DeriveInsightsTest {
     // ── AC 2: limit thresholds ──────────────────────────────────────────────
 
     @Test
-    fun `near limit from 80 percent, over limit past 100, never both`() {
+    fun `near limit from 80 percent and over limit past 100 but never both`() {
         val total = 1_000_00L
         fun at(spent: Long) = deriveInsights(summary(listOf(spend("c", spent = spent, limit = 1_000_00, expenseTotal = total))))
 
@@ -140,7 +140,7 @@ class DeriveInsightsTest {
     }
 
     @Test
-    fun `spend on a category with no prior spend is new spend, not an infinite percentage`() {
+    fun `spend with no prior spend is new spend rather than an infinite percentage`() {
         val insights = deriveInsights(summary(listOf(spend("c", spent = 300_00, prior = 0, expenseTotal = 300_00))))
         val fresh = insights.single(InsightType.NewSpend)
         assertNull(fresh.deltaPct)
@@ -185,7 +185,7 @@ class DeriveInsightsTest {
     // ── AC 5: savings rate ──────────────────────────────────────────────────
 
     @Test
-    fun `savings rate is income minus expense over income, with the change in points`() {
+    fun `savings rate is income minus expense over income with the change in points`() {
         val insights = deriveInsights(
             summary(
                 listOf(spend("c", spent = 600_00, expenseTotal = 600_00)),

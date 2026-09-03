@@ -71,7 +71,7 @@ class InsightsSummaryTest {
     ): InsightsSummary = InsightsSummary.from(useCase(transactions, limits)(flowOf(period)).first(), period)
 
     @Test
-    fun `totals, per-category spend, and prior spend come from the snapshot`() = runTest {
+    fun `totals and per-category and prior spend come from the snapshot`() = runTest {
         val summary = summaryFor(
             FakeTransactionRepository(
                 listOf(
@@ -95,7 +95,7 @@ class InsightsSummaryTest {
     }
 
     @Test
-    fun `only expense categories are listed, ordered by id`() = runTest {
+    fun `only expense categories are listed and ordered by id`() = runTest {
         val summary = summaryFor(FakeTransactionRepository(emptyList()))
         assertEquals(listOf("dining", "fuel"), summary.categories.map { it.id.value })
     }
