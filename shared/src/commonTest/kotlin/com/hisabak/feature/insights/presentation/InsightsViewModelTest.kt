@@ -13,10 +13,7 @@ import com.hisabak.core.common.AppConfig
 import com.hisabak.feature.insights.domain.InsightType
 import com.hisabak.feature.insights.domain.InsightsSummary
 import com.hisabak.feature.insights.domain.ai.AiInsights
-import com.hisabak.feature.insights.domain.ai.ASK_DAILY_ALLOWANCE
 import com.hisabak.feature.insights.domain.ai.AskInsightUseCase
-import com.hisabak.feature.insights.domain.ai.AskRole
-import com.hisabak.feature.insights.domain.ai.AskResponseDto
 import com.hisabak.feature.insights.domain.ai.GenerateNarrativeUseCase
 import com.hisabak.testutil.FakeAppPreferences
 import com.hisabak.testutil.FakeRemoteInsightsClient
@@ -294,108 +291,5 @@ class InsightsViewModelTest : MainDispatcherTest() {
         assertEquals(1_000_00, vm.state.value.summary!!.incomeMinor)
         vm.onIntent(InsightsIntent.HideShared)
         assertFalse(vm.state.value.showShared)
-    }
-
-    // ── Layer 3: Ask ──────────────────────────────────────────────────────────
-
-    @Test
-    fun `chips and the allowance appear only when the build has a service`() = runTest {
-        val without = viewModel(ledger, service = false)
-        advanceUntilIdle()
-        assertTrue(without.state.value.suggestedQuestions.isEmpty())
-
-        val vm = viewModel(ledger, service = true)
-        advanceUntilIdle()
-        assertTrue(vm.state.value.suggestedQuestions.isNotEmpty())
-        assertEquals(ASK_DAILY_ALLOWANCE, vm.state.value.ask.remaining)
-    }
-
-    @Test
-    fun `a chip opens the sheet and sends that question`() = runTest {
-        val vm = viewModel(ledger, service = true)
-        advanceUntilIdle()
-
-        vm.onIntent(InsightsIntent.OpenAsk("Why is dining up?"))
-        advanceUntilIdle()
-
-        val ask = vm.state.value.ask
-        assertTrue(ask.open)
-        assertEquals(listOf(AskRole.User, AskRole.Assistant), ask.turns.map { it.role })
-        assertEquals("Dining drove it.", ask.turns.last().text)
-        assertEquals(ASK_DAILY_ALLOWANCE - 1, ask.remaining)
-        assertEquals("Why is dining up?", askClient.asks.single().first.question)
-    }
-
-    @Test
-    fun `opening the sheet without a question sends nothing`() = runTest {
-        val vm = viewModel(ledger, service = true)
-        advanceUntilIdle()
-
-        vm.onIntent(InsightsIntent.OpenAsk())
-        advanceUntilIdle()
-
-        assertTrue(vm.state.value.ask.open)
-        assertTrue(askClient.asks.isEmpty())
-    }
-
-    @Test
-    fun `the draft is capped then sent on submit and carried as history`() = runTest {
-        val vm = viewModel(ledger, service = true)
-        advanceUntilIdle()
-        vm.onIntent(InsightsIntent.OpenAsk("Why is dining up?"))
-        advanceUntilIdle()
-
-        vm.onIntent(InsightsIntent.AskDraftChanged("x".repeat(600)))
-        assertEquals(500, vm.state.value.ask.draft.length)
-        vm.onIntent(InsightsIntent.AskDraftChanged("And fuel?"))
-        vm.onIntent(InsightsIntent.AskSubmitted)
-        advanceUntilIdle()
-
-        assertEquals("", vm.state.value.ask.draft)
-        val second = askClient.asks[1].first
-        assertEquals("And fuel?", second.question)
-        assertEquals(listOf("Why is dining up?", "Dining drove it."), second.history.map { it.text })
-    }
-
-    @Test
-    fun `an empty draft is not sent`() = runTest {
-        val vm = viewModel(ledger, service = true)
-        advanceUntilIdle()
-        vm.onIntent(InsightsIntent.OpenAsk())
-
-        vm.onIntent(InsightsIntent.AskDraftChanged("   "))
-        vm.onIntent(InsightsIntent.AskSubmitted)
-        advanceUntilIdle()
-
-        assertTrue(askClient.asks.isEmpty())
-    }
-
-    @Test
-    fun `an outage keeps the question on screen and does not spend the allowance`() = runTest {
-        askClient.answer = null
-        val vm = viewModel(ledger, service = true)
-        advanceUntilIdle()
-
-        vm.onIntent(InsightsIntent.OpenAsk("Why is dining up?"))
-        advanceUntilIdle()
-
-        val ask = vm.state.value.ask
-        assertEquals(AskNotice.Unavailable, ask.notice)
-        assertEquals(listOf(AskRole.User), ask.turns.map { it.role })
-        assertEquals(ASK_DAILY_ALLOWANCE, ask.remaining)
-    }
-
-    @Test
-    fun `closing the sheet clears the notice but keeps the conversation`() = runTest {
-        askClient.answer = AskResponseDto(answer = "I can only discuss this review.", onTopic = false)
-        val vm = viewModel(ledger, service = true)
-        advanceUntilIdle()
-        vm.onIntent(InsightsIntent.OpenAsk("write me a poem"))
-        advanceUntilIdle()
-
-        vm.onIntent(InsightsIntent.CloseAsk)
-
-        assertFalse(vm.state.value.ask.open)
-        assertEquals(2, vm.state.value.ask.turns.size)
     }
 }

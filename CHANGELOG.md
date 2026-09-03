@@ -19,7 +19,8 @@ All notable changes to Hisabak are documented here. Format based on
   behind the dashboard: it is a tab of its own. The SMS inbox sits beside the transaction list as
   the second half of the Transactions tab, which is where the messages you capture from belong.
 - **Ask about a period.** Under the review you can now put a question to the AI — tap one of the
-  suggested questions ("Why is Dining up?", "What should I focus on?") or type your own. It sends
+  suggested questions ("Why is Dining up?", "What should I focus on?") or type your own on a screen
+  of its own. It sends
   the same totals as the explanation plus your question, never your transactions, and the service
   stores nothing. You get ten questions a day and the screen shows how many are left.
 - **A review on the dashboard.** Under the cash, savings and investment figures, Hisabak now points out what changed

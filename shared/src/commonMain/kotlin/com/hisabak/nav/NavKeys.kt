@@ -44,6 +44,11 @@ data class CategoryEditKey(
 // Full-screen child opened from the top-bar bell.
 data object NotificationsKey : NavKey
 
+// Full-screen child of the Insights tab: the conversation. [question] is the suggestion that was
+// tapped to get here — it is sent on arrival, since that tap was the send. A conversation is not a
+// sheet: it needs the keyboard, room to scroll, and its own back.
+data class InsightsAskKey(val period: String, val question: String?) : NavKey
+
 // Full-screen child opened from Settings → Data.
 data object BackupKey : NavKey
 

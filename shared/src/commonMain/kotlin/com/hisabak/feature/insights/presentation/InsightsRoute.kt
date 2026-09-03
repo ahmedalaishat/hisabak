@@ -18,6 +18,7 @@ fun InsightsRoute(
     onOpenCategory: (CategoryId) -> Unit,
     onOpenUncategorized: () -> Unit,
     onSetLimit: (CategoryId, Long) -> Unit,
+    onOpenAsk: (SummaryPeriod, String?) -> Unit,
     modifier: Modifier = Modifier,
     periodBus: InsightsPeriodBus = koinInject(),
     viewModel: InsightsViewModel = koinViewModel(
@@ -52,6 +53,10 @@ fun InsightsRoute(
             val limit = item.suggestedLimitMinor ?: return@InsightsScreen
             viewModel.onIntent(InsightsIntent.SuggestionAccepted(item))
             onSetLimit(category.id, limit)
+        },
+        onOpenAsk = { question ->
+            viewModel.onIntent(InsightsIntent.AskOpened(question))
+            onOpenAsk(state.period, question)
         },
         onIntent = viewModel::onIntent,
         modifier = modifier,

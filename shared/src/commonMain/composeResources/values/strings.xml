@@ -470,6 +470,9 @@
     <string name="insights_shared_prior">Previous period %1$s</string>
     <string name="insights_shared_limit">Limit %1$s</string>
     <string name="insights_suggest_limit">Set a %1$s limit</string>
+    <string name="insights_ask_empty_title">Ask about this period</string>
+    <string name="insights_ask_empty_body">Pick a question or type your own. Answers use only your totals for this period, never your transactions, and nothing is stored.</string>
+    <string name="insights_ask_suggestions">Or ask</string>
     <string name="insights_ask_title_sheet">Ask about this period</string>
     <string name="insights_ask_hint">Each question sends the same totals as the explanation, plus your question. Nothing is stored by the service.</string>
     <string name="insights_ask_own">Ask your own</string>

@@ -34,16 +34,10 @@ import com.hisabak.feature.insights.domain.InsightType
 import com.hisabak.feature.insights.domain.InsightsSummary
 import com.hisabak.feature.insights.domain.Severity
 import com.hisabak.feature.insights.domain.ai.ASK_DAILY_ALLOWANCE
-import com.hisabak.feature.insights.domain.ai.AskRole
-import com.hisabak.feature.insights.domain.ai.MAX_QUESTION_LENGTH
 import com.hisabak.feature.insights.domain.ai.NarrativeInsight
 import com.hisabak.feature.insights.domain.ai.SuggestedQuestion
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.foundation.lazy.staggeredgrid.items
+import com.hisabak.feature.insights.presentation.ask.questionText
 import com.hisabak.ui.components.ChipLaneGrid
 import com.hisabak.shared.resources.Res
 import com.hisabak.shared.resources.insights_detail_largest
@@ -65,11 +59,7 @@ import com.hisabak.shared.resources.insights_narrative_footer
 import com.hisabak.shared.resources.insights_narrative_loading
 import com.hisabak.shared.resources.insights_narrative_unavailable
 import com.hisabak.shared.resources.insights_ask_accept
-import com.hisabak.shared.resources.insights_ask_footer
 import com.hisabak.shared.resources.insights_ask_hint
-import com.hisabak.shared.resources.insights_ask_none_left
-import com.hisabak.shared.resources.insights_ask_own
-import com.hisabak.shared.resources.insights_ask_placeholder
 import com.hisabak.shared.resources.insights_ask_q_focus
 import com.hisabak.shared.resources.insights_ask_q_savings
 import com.hisabak.shared.resources.insights_ask_q_stay_under
@@ -77,10 +67,7 @@ import com.hisabak.shared.resources.insights_ask_q_uncategorized
 import com.hisabak.shared.resources.insights_ask_q_where_to_cut
 import com.hisabak.shared.resources.insights_ask_q_why_up
 import com.hisabak.shared.resources.insights_ask_remaining
-import com.hisabak.shared.resources.insights_ask_send
-import com.hisabak.shared.resources.insights_ask_thinking
 import com.hisabak.shared.resources.insights_ask_title_sheet
-import com.hisabak.shared.resources.insights_ask_unavailable
 import com.hisabak.shared.resources.insights_ask_body
 import com.hisabak.shared.resources.insights_ask_title
 import com.hisabak.shared.resources.insights_shared_action
@@ -133,18 +120,12 @@ fun InsightsScreen(
     onInsightClick: (Insight) -> Unit,
     onNarrativeClick: (NarrativeInsight) -> Unit,
     onSuggestionClick: (NarrativeInsight) -> Unit,
+    onOpenAsk: (String?) -> Unit,
     onIntent: (InsightsIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (state.showShared && state.summary != null) {
         SharedSummaryDialog(summary = state.summary, onDismiss = { onIntent(InsightsIntent.HideShared) })
-    }
-    if (state.ask.open) {
-        AskSheet(
-            ask = state.ask,
-            questions = state.suggestedQuestions.filter { q -> state.ask.turns.none { it.role == AskRole.User && it.text == questionText(q) } },
-            onIntent = onIntent,
-        )
     }
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -187,9 +168,9 @@ fun InsightsScreen(
             item(key = "ask:entry") {
                 AskEntryCard(
                     questions = state.suggestedQuestions,
-                    remaining = state.ask.remaining,
-                    onQuestion = { onIntent(InsightsIntent.OpenAsk(it)) },
-                    onOpen = { onIntent(InsightsIntent.OpenAsk()) },
+                    remaining = state.askRemaining,
+                    onQuestion = { question -> onOpenAsk(question) },
+                    onOpen = { onOpenAsk(null) },
                 )
             }
         }
@@ -403,33 +384,12 @@ private fun NarrativeAskCard(onIntent: (InsightsIntent) -> Unit) {
 }
 
 // ── Ask ───────────────────────────────────────────────────────────────────────
-// TODO: design — the sheet below reuses existing components (SurfaceCard, LeadingIconChip,
-// OutlinedTextField as in the SMS inbox) rather than inventing a chat UI; revisit with a design.
 
-@Composable
-private fun questionText(q: SuggestedQuestion): String {
-    val name = q.category?.name ?: ""
-    return when (q.kind) {
-        SuggestedQuestion.Kind.WhyUp -> stringResource(Res.string.insights_ask_q_why_up, name)
-        SuggestedQuestion.Kind.StayUnderLimit -> stringResource(Res.string.insights_ask_q_stay_under, name)
-        SuggestedQuestion.Kind.WhereToCut -> stringResource(Res.string.insights_ask_q_where_to_cut, name)
-        SuggestedQuestion.Kind.ImproveSavings -> stringResource(Res.string.insights_ask_q_savings)
-        SuggestedQuestion.Kind.Uncategorized -> stringResource(Res.string.insights_ask_q_uncategorized)
-        SuggestedQuestion.Kind.FocusOn -> stringResource(Res.string.insights_ask_q_focus)
-    }
-}
-
-@Composable
-private fun remainingText(remaining: Int?): String? {
-    remaining ?: return null
-    val arabic = rememberIsArabic()
-    return stringResource(
-        Res.string.insights_ask_remaining,
-        localizeDigits(remaining.toString(), arabic),
-        localizeDigits(ASK_DAILY_ALLOWANCE.toString(), arabic),
-    )
-}
-
+/**
+ * The way in to Ask: the questions worth asking about *this* review, and the day's allowance so the
+ * cost is visible before the first tap. Tapping one opens the Ask screen with that question already
+ * sent — the tap was the send.
+ */
 @Composable
 private fun AskEntryCard(
     questions: List<SuggestedQuestion>,
@@ -438,8 +398,9 @@ private fun AskEntryCard(
     onOpen: () -> Unit,
 ) {
     val c = HisabakTheme.colors
+    val arabic = rememberIsArabic()
     val texts = questions.map { questionText(it) }
-    SurfaceCard {
+    SurfaceCard(onClick = onOpen) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.CenterVertically) {
             IconTile(icon = HugeIcons.Message, background = c.infoSoft, foreground = c.info)
             Column(Modifier.weight(1f)) {
@@ -450,139 +411,35 @@ private fun AskEntryCard(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = stringResource(Res.string.insights_ask_hint),
+                    text = remaining?.let {
+                        stringResource(
+                            Res.string.insights_ask_remaining,
+                            localizeDigits(it.toString(), arabic),
+                            localizeDigits(ASK_DAILY_ALLOWANCE.toString(), arabic),
+                        )
+                    } ?: stringResource(Res.string.insights_ask_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        }
-        Spacer(Modifier.height(Spacing.s3))
-        ChipLaneGrid(chipCount = texts.size + 1) {
-            items(texts.size, key = { questions[it].id }) { i ->
-                LeadingIconChip(label = texts[i], leadingIcon = HugeIcons.Message, selected = false, onClick = { onQuestion(texts[i]) })
-            }
-            item(key = "own") {
-                LeadingIconChip(
-                    label = stringResource(Res.string.insights_ask_own),
-                    leadingIcon = HugeIcons.Add,
-                    selected = false,
-                    onClick = onOpen,
-                )
-            }
-        }
-        remainingText(remaining)?.let {
-            Spacer(Modifier.height(Spacing.s2))
-            Text(text = it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AskSheet(ask: AskUi, questions: List<SuggestedQuestion>, onIntent: (InsightsIntent) -> Unit) {
-    val texts = questions.map { questionText(it) }
-    ModalBottomSheet(onDismissRequest = { onIntent(InsightsIntent.CloseAsk) }) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = Spacing.pageMargin)
-                .padding(bottom = Spacing.s7),
-            verticalArrangement = Arrangement.spacedBy(Spacing.s3),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = stringResource(Res.string.insights_ask_title_sheet),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                )
-                remainingText(ask.remaining)?.let {
-                    Text(text = it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            ask.turns.forEach { turn ->
-                when (turn.role) {
-                    AskRole.User -> Text(
-                        text = turn.text,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    AskRole.Assistant -> SurfaceCard(contentPadding = Spacing.cardGap) {
-                        Text(
-                            text = turn.text,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                }
-            }
-            if (ask.busy) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-                    CircularProgressIndicator(modifier = Modifier.size(Spacing.s4), strokeWidth = 2.dp)
-                    Text(
-                        text = stringResource(Res.string.insights_ask_thinking),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            when (ask.notice) {
-                AskNotice.NoQuestionsLeft -> NoticeCard(text = stringResource(Res.string.insights_ask_none_left), tone = NoticeTone.Info)
-                AskNotice.Unavailable -> NoticeCard(text = stringResource(Res.string.insights_ask_unavailable), tone = NoticeTone.Info)
-                null -> Unit
-            }
-            if (texts.isNotEmpty() && !ask.busy) {
-                ChipLaneGrid(chipCount = texts.size) {
-                    items(texts.size, key = { questions[it].id }) { i ->
-                        LeadingIconChip(
-                            label = texts[i],
-                            leadingIcon = HugeIcons.Message,
-                            selected = false,
-                            onClick = { onIntent(InsightsIntent.OpenAsk(texts[i])) },
-                        )
-                    }
-                }
-            }
-            val canSend = ask.draft.isNotBlank() && !ask.busy && (ask.remaining ?: 1) > 0
-            OutlinedTextField(
-                value = ask.draft,
-                onValueChange = { onIntent(InsightsIntent.AskDraftChanged(it)) },
-                placeholder = {
-                    Text(
-                        stringResource(Res.string.insights_ask_placeholder),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-                supportingText = {
-                    val arabic = rememberIsArabic()
-                    Text(localizeDigits("${ask.draft.length}/$MAX_QUESTION_LENGTH", arabic))
-                },
-                trailingIcon = {
-                    IconButton(onClick = { onIntent(InsightsIntent.AskSubmitted) }, enabled = canSend) {
-                        Icon(imageVector = HugeIcons.ArrowUpward, contentDescription = stringResource(Res.string.insights_ask_send))
-                    }
-                },
-                enabled = !ask.busy,
-                minLines = 1,
-                maxLines = 4,
-                shape = MaterialTheme.shapes.medium,
-                textStyle = MaterialTheme.typography.bodyMedium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                ),
-                modifier = Modifier.fillMaxWidth(),
+            Icon(
+                imageVector = HugeIcons.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
-                text = stringResource(Res.string.insights_ask_footer),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        }
+        if (texts.isNotEmpty()) {
+            Spacer(Modifier.height(Spacing.s3))
+            ChipLaneGrid(chipCount = texts.size) {
+                items(texts.size, key = { questions[it].id }) { i ->
+                    LeadingIconChip(
+                        label = texts[i],
+                        leadingIcon = HugeIcons.Message,
+                        selected = false,
+                        onClick = { onQuestion(texts[i]) },
+                    )
+                }
+            }
         }
     }
 }
