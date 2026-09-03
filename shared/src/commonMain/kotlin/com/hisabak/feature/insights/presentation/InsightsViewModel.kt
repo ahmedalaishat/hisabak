@@ -10,6 +10,7 @@ import com.hisabak.feature.dashboard.domain.usecase.GetDashboardMetricsUseCase
 import com.hisabak.feature.insights.domain.InsightsSummary
 import com.hisabak.feature.insights.domain.ai.GenerateNarrativeUseCase
 import com.hisabak.feature.insights.domain.ai.NarrativeResult
+import com.hisabak.feature.insights.domain.ai.narrativeKey
 import com.hisabak.feature.insights.domain.deriveInsights
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.flowOf
@@ -22,9 +23,11 @@ import kotlinx.coroutines.launch
  * computation is one pure pass, and the alternative — a bus, or a nav key carrying a list — buys
  * nothing for it. [period] arrives from the key, so the screen reviews what the dashboard showed.
  *
- * The narrative (layer 2) is **never fetched on its own**. Each snapshot only looks the cache up:
- * unchanged figures show their last explanation, changed figures show the ask again. The send
- * happens on [InsightsIntent.RequestNarrative] alone. [language] is the UI language the text is
+ * The narrative (layer 2) appears **only after the user's tap** — every visit starts at the ask,
+ * even when the cache already holds an answer for these figures (the tap is then answered from
+ * the cache without a send). Within a visit the answer stays while the figures are unchanged and
+ * gives way to the ask again when they materially change. The send happens on
+ * [InsightsIntent.RequestNarrative] alone. [language] is the UI language the text is
  * generated in — fixed for the screen's life, since a switch recreates it.
  */
 class InsightsViewModel(
@@ -39,6 +42,9 @@ class InsightsViewModel(
     private var opened = false
     private var request: Job? = null
 
+    /** The key the shown answer was produced for; a snapshot with another key asks again. */
+    private var answeredKey: String? = null
+
     override fun initialState() = InsightsUiState(period = period)
 
     init {
@@ -46,14 +52,18 @@ class InsightsViewModel(
             .onEach { snapshot ->
                 val summary = InsightsSummary.from(snapshot, period)
                 val insights = deriveInsights(summary)
-                val narrative = when {
-                    !appConfig.hasParseService -> NarrativeUi.Hidden
-                    // A fetch in flight for the previous figures answers a question that is no
-                    // longer being asked.
-                    request?.isActive == true -> { request?.cancel(); NarrativeUi.Ask }
-                    else -> generateNarrative.cached(summary, language)?.let(NarrativeUi::Ready) ?: NarrativeUi.Ask
+                val key = narrativeKey(summary, language)
+                setState {
+                    val narrative = when {
+                        !appConfig.hasParseService -> NarrativeUi.Hidden
+                        // A fetch in flight for the previous figures answers a question that is no
+                        // longer being asked.
+                        request?.isActive == true -> { request?.cancel(); NarrativeUi.Ask }
+                        this.narrative is NarrativeUi.Ready && answeredKey == key -> this.narrative
+                        else -> NarrativeUi.Ask
+                    }
+                    copy(insights = insights, summary = summary, isLoading = false, narrative = narrative)
                 }
-                setState { copy(insights = insights, summary = summary, isLoading = false, narrative = narrative) }
                 if (!opened) {
                     opened = true
                     analytics.log(AnalyticsEvent.InsightsOpened(count = insights.size))
@@ -82,6 +92,7 @@ class InsightsViewModel(
         setState { copy(narrative = NarrativeUi.Loading) }
         request = viewModelScope.launch {
             val result = generateNarrative(summary, language)
+            answeredKey = narrativeKey(summary, language)
             setState { copy(narrative = result.toUi()) }
         }
     }

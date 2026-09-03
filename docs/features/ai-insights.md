@@ -133,8 +133,9 @@ picture off the phone by default.
   `RemoteAiInsights`, `sanitizeNarrative`, the `insight_narratives` cache (schema 9→10), the
   ask card on the screen (Explain with AI + See what's shared), the privacy section, confirm-first
   "Set a limit" chips, property evals. **Revised the same evening:** the `insightsEnabled` switch
-  (Settings → Insights) was removed at his request — consent is the tap, every time; the cache
-  still shows the last answer for unchanged figures without a send. Decisions made while building:
+  (Settings → Insights) was removed at his request — consent is the tap, every time. Every visit
+  starts at the ask (showing a cached answer on open read as an automatic send); a tap for unchanged
+  figures is answered from the cache without a send. Decisions made while building:
   - **"Material change" is defined by the deterministic layer**, not by a hash of the summary: the
     cache key is the sorted finding ids + income/expense/uncategorized rounded to two significant
     digits + language. Hashing the summary would have regenerated per transaction; this regenerates
