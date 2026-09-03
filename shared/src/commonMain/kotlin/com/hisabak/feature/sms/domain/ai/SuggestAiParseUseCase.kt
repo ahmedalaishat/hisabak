@@ -19,8 +19,10 @@ import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 
 /**
- * Runs the on-device AI parser over a stored, still-unparsed message and stores the result as a
+ * Runs the AI parser over a stored, still-unparsed message and stores the result as a
  * **suggestion** (never a transaction — confirm-first, see [ConfirmAiSuggestionUseCase]).
+ * Which engine answers is [AiSmsParser]'s business: on-device where the phone has a model,
+ * otherwise the opt-in parse service.
  * [source] is "auto" (capture-time fallback), "manual" (Parse-with-AI tap), or "paste"
  * (unmatched inbox input, driven by the ViewModel with [freeText] = true).
  */
@@ -65,13 +67,20 @@ class SuggestAiParseUseCase(
             analytics.log(AnalyticsEvent.AiParseFailed(source, "model_empty"))
             return DomainResult.Failure(DomainError.ValidationFailed("AI parse produced nothing"))
         }
-        val suggestion = sanitize(raw, message.receivedAt, knownBrands, maxDateAge = if (freeText) MAX_DATE_AGE_FREE_TEXT else MAX_DATE_AGE)
+        val suggestion = sanitize(
+            raw = raw,
+            receivedAt = message.receivedAt,
+            knownBrands = knownBrands,
+            maxDateAge = if (freeText) MAX_DATE_AGE_FREE_TEXT else MAX_DATE_AGE,
+        )
         if (suggestion == null) {
             analytics.log(AnalyticsEvent.AiParseFailed(source, "incomplete"))
             return DomainResult.Failure(DomainError.ValidationFailed("AI parse incomplete"))
         }
 
-        analytics.log(AnalyticsEvent.AiParseSucceeded(source, suggestion.amount!!))
+        // Non-null by construction: sanitize rejects a missing or out-of-range amount above.
+        val amount = requireNotNull(suggestion.amount)
+        analytics.log(AnalyticsEvent.AiParseSucceeded(source, amount))
         // Derived here rather than on confirm because it needs the model's *raw* merchant string:
         // sanitize canonicalizes the brand to an existing one, which often isn't the text the
         // message actually contains.
@@ -81,7 +90,7 @@ class SuggestAiParseUseCase(
         // API, pasting is how bank messages arrive. Whether it earns a template is
         // SynthesizeTemplateUseCase's call; a note like "lunch 45 yesterday" leaves too little
         // literal anchor to pass its gate.
-        val candidatePattern = derivePattern(message.body, raw, suggestion)
+        val candidatePattern = derivePattern(message.body, raw, amount.amountMinor)
         val updated = message.copy(suggested = suggestion, suggestedPattern = candidatePattern)
         return smsRepository.upsert(updated).map { updated }
     }
@@ -120,9 +129,16 @@ class SuggestAiParseUseCase(
         )
     }
 
-    private fun derivePattern(body: String, raw: AiParsedSms, suggestion: ParsedSmsData): String? {
+    /**
+     * The template [ConfirmAiSuggestionUseCase] installs if the user confirms.
+     *
+     * Reads [AiParsedSms.brandName], not the sanitized brand: sanitize canonicalizes
+     * "TALABAT-DXB-991" to an existing "Talabat", and locating *that* in the body matches only the
+     * prefix, leaving "-DXB-" literal and pinning the rule to one branch. The verbatim evidence
+     * fields sidestep the inference entirely when the engine supplies them.
+     */
+    private fun derivePattern(body: String, raw: AiParsedSms, amountMinor: Long): String? {
         val rawBrand = raw.brandName?.trim().orEmpty()
-        val amountMinor = suggestion.amount?.amountMinor ?: return null
         val spans = deriveAiSpans(
             body = body,
             rawBrand = rawBrand,
