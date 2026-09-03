@@ -202,9 +202,12 @@ private enum class RootTab(
     val labelRes: StringResource,
     val icon: ImageVector,
 ) {
+    // Ordered by what the tab is for, not by how often it is opened: the two you read
+    // (Dashboard, Insights) sit together, then the two you act in (Transactions, Manage), then
+    // Settings. It also puts the most-tapped tab in the middle, where the thumb lands.
     Dashboard(DashboardKey, Res.string.nav_dashboard, HugeIcons.SpaceDashboard),
-    Transactions(TransactionsKey, Res.string.nav_transactions, HugeIcons.List),
     Insights(InsightsKey, Res.string.nav_insights, HugeIcons.Insights),
+    Transactions(TransactionsKey, Res.string.nav_transactions, HugeIcons.List),
     Manage(ManageKey, Res.string.nav_manage, HugeIcons.Layers),
     Settings(SettingsKey, Res.string.nav_settings, HugeIcons.Settings),
 }
