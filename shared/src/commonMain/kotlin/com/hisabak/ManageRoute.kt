@@ -60,7 +60,7 @@ fun ManageRoute(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Spacing.pageMargin, vertical = Spacing.cardGap),
+                    .padding(horizontal = Spacing.pageMargin, vertical = Spacing.pageMargin),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
             ) {
                 ManageSwitchCard(
