@@ -12,6 +12,7 @@
     <string name="action_saving">Saving…</string>
     <string name="common_all">All</string>
     <string name="common_brand">Brand</string>
+    <string name="manage_tab_label">%1$s · %2$s</string>
     <string name="common_brands">Brands</string>
     <string name="common_categories">Categories</string>
     <string name="common_category">Category</string>

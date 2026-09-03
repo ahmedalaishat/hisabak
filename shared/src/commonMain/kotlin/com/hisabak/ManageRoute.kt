@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FloatingActionButton
+import com.hisabak.shared.resources.manage_tab_label
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -57,28 +61,34 @@ fun ManageRoute(
     // List view: count cards act as the Brands/Categories switcher; FAB adds the active type.
     Box(modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            Row(
+            // The same segmented control the dashboard, the ledger and insights use. The count
+            // rides in the label, which is the only thing the old count cards carried that a
+            // reader could not get faster from the word itself.
+            SingleChoiceSegmentedButtonRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Spacing.pageMargin, vertical = Spacing.pageMargin),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
+                    .padding(horizontal = Spacing.pageMargin)
+                    .padding(top = Spacing.pageMargin, bottom = Spacing.s3),
             ) {
-                ManageSwitchCard(
-                    label = stringResource(Res.string.common_brands),
-                    count = counts.brands,
-                    icon = HugeIcons.Storefront,
-                    selected = tab == ManageTab.Brands,
-                    onClick = { tab = ManageTab.Brands },
-                    modifier = Modifier.weight(1f),
-                )
-                ManageSwitchCard(
-                    label = stringResource(Res.string.common_categories),
-                    count = counts.categories,
-                    icon = HugeIcons.Category,
-                    selected = tab == ManageTab.Categories,
-                    onClick = { tab = ManageTab.Categories },
-                    modifier = Modifier.weight(1f),
-                )
+                val arabic = rememberIsArabic()
+                ManageTab.entries.forEachIndexed { index, entry ->
+                    val count = if (entry == ManageTab.Brands) counts.brands else counts.categories
+                    SegmentedButton(
+                        selected = tab == entry,
+                        onClick = { tab = entry },
+                        shape = SegmentedButtonDefaults.itemShape(index, ManageTab.entries.size),
+                    ) {
+                        Text(
+                            stringResource(
+                                Res.string.manage_tab_label,
+                                stringResource(
+                                    if (entry == ManageTab.Brands) Res.string.common_brands else Res.string.common_categories,
+                                ),
+                                localizeDigits(count.toString(), arabic),
+                            ),
+                        )
+                    }
+                }
             }
 
             when (tab) {
@@ -118,52 +128,3 @@ fun ManageRoute(
     }
 }
 
-@Composable
-private fun ManageSwitchCard(
-    label: String,
-    count: Int,
-    icon: ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val border = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-    // incomeSoft is a translucent tint in dark theme; composite it over the card surface so the
-    // selected card stays opaque and distinct from the page rather than blending into it.
-    val surface = MaterialTheme.colorScheme.surfaceContainerLowest
-    val bg = if (selected) HisabakTheme.colors.incomeSoft.compositeOver(surface) else surface
-    val iconBg = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-    val iconFg = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-    SurfaceCard(
-        modifier = modifier,
-        contentPadding = Spacing.s4,
-        backgroundColor = bg,
-        borderColor = border,
-        onClick = onClick,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            IconTile(
-                icon = icon,
-                size = Spacing.s8,
-                iconSize = 16.dp,
-                background = iconBg,
-                foreground = iconFg,
-            )
-            Column {
-                Text(
-                    text = localizeDigits(count.toString(), rememberIsArabic()),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
