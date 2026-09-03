@@ -20,7 +20,7 @@ Ships to every user. The parent spec is the source of truth; this PR's doc scope
     **largest change vs prior** (≥ 25% and material — see edge cases), **largest expense
     category**, **savings rate** (with its change when the prior period is derivable), and
     **uncategorized spend**.
-  - A **Review card** on the dashboard's Summary tab, under the net-worth hero: the period label,
+  - A **Review card** on the dashboard's Summary tab, under the cash / savings / investment pills: the period label,
     the top three insights as one-line rows, and **See all**.
   - An **Insights screen** (full-screen child, back arrow) listing every insight as a card;
     tapping a category-bound insight opens the transaction list filtered to that category; the
@@ -63,8 +63,10 @@ Ships to every user. The parent spec is the source of truth; this PR's doc scope
   period label so it never reads as a month when it is not. Thresholds 25% / 80% / 5% are
   constants in the rules file, chosen to avoid noise rather than measured; they are the obvious
   first thing to tune. Severity maps to the existing semantic colours (`warning`, `info`,
-  `expense`, `income`) — no new tokens. The card sits under the net-worth hero so it reads as
-  commentary on the figures above it.
+  `expense`, `income`) — no new tokens. The card sits under the cash / savings / investment pills — the hero and pills are one
+  unit (net worth and its decomposition), and the review is commentary on the *flow* that
+  follows, so it reads as the bridge between position and detail rather than splitting a total
+  from its parts. The savings row uses the same bank glyph and blue as the savings pill.
 
 ## Design
 - **Domain (`feature/insights/domain/`, pure, commonMain):**

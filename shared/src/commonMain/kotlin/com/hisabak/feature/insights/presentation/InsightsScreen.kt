@@ -97,12 +97,13 @@ fun InsightRow(insight: Insight, modifier: Modifier = Modifier) {
     val (tileBg, tileFg) = when {
         category != null -> tintPairForColor(category.color)
         insight.type == InsightType.SavingsRate && insight.severity == Severity.Warning -> c.expenseSoft to c.expense
-        insight.type == InsightType.SavingsRate -> c.incomeSoft to c.income
+        // The Summary tab's savings pill is blue with the bank glyph; the row matches it.
+        insight.type == InsightType.SavingsRate -> c.savingsSoft to c.savings
         else -> c.warningSoft to c.warning
     }
     val icon = when {
         category != null -> iconForKey(category.icon)
-        insight.type == InsightType.SavingsRate -> HugeIcons.PiggyBank
+        insight.type == InsightType.SavingsRate -> HugeIcons.Bank
         else -> HugeIcons.Tag
     }
     // Severity reads through the figure, not a stripe or a badge: the amount is what the user

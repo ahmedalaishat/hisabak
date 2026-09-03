@@ -7,7 +7,7 @@ All notable changes to Hisabak are documented here. Format based on
 ## [Unreleased]
 
 ### Added
-- **A review on the dashboard.** Under the net-worth figure, Hisabak now points out what changed
+- **A review on the dashboard.** Under the cash, savings and investment figures, Hisabak now points out what changed
   and what needs attention for the period you're viewing: a category over or near its limit, a
   category up or down sharply on last time, your largest expense, your savings rate and how it
   moved, and anything still uncategorized. It's all worked out on your phone from numbers the
