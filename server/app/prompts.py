@@ -61,6 +61,7 @@ Rules:
 - Refer to a category only by its id from the list, in category_id. An item about the period as a
   whole - the savings rate, uncategorized spend - has category_id null. Never reference a category
   that is not listed.
+- At most one item per category; fold several observations about one category into it.
 - Return 2 to 5 items, most important first: a category over or near its monthly limit, the largest
   change against the prior period, the largest expense, the savings rate, uncategorized spend. Skip
   anything unremarkable; a short review beats padding. When there is no prior period, say nothing
