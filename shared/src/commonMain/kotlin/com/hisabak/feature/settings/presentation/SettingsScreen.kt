@@ -144,7 +144,8 @@ fun SettingsScreen(
             // messages somewhere that doesn't exist would be a promise the build can't keep.
             if (remoteParseSupported) {
                 SettingCard(
-                    icon = HugeIcons.CloudSync,
+                    // Not CloudSync: that is the Backup icon, and this is not a sync.
+                    icon = HugeIcons.Brain,
                     title = stringResource(Res.string.settings_remote_parse),
                     hint = stringResource(Res.string.settings_remote_parse_hint),
                     trailing = {
@@ -153,7 +154,7 @@ fun SettingsScreen(
                 )
             }
             SettingCard(
-                icon = HugeIcons.Check,
+                icon = HugeIcons.CheckCircle,
                 title = stringResource(Res.string.settings_auto_confirm),
                 hint = stringResource(Res.string.settings_auto_confirm_hint),
                 trailing = {

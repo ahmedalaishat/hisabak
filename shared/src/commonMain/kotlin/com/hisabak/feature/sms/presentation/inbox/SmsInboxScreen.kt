@@ -585,11 +585,16 @@ private fun InboxPromptCard(
     onLater: () -> Unit,
     onNever: () -> Unit,
 ) {
+    // Same icon as the matching Settings row, so the card and the switch read as one thing.
     val (body, acceptLabel) = when (prompt) {
         InboxPrompt.OnlineParsing ->
             Res.string.sms_prompt_online to Res.string.sms_prompt_online_accept
         InboxPrompt.AutoConfirm ->
             Res.string.sms_prompt_auto_confirm to Res.string.sms_prompt_auto_confirm_accept
+    }
+    val icon = when (prompt) {
+        InboxPrompt.OnlineParsing -> HugeIcons.Brain
+        InboxPrompt.AutoConfirm -> HugeIcons.CheckCircle
     }
     SurfaceCard(
         modifier = Modifier.fillMaxWidth(),
@@ -600,11 +605,19 @@ private fun InboxPromptCard(
             Modifier.padding(Spacing.s4),
             verticalArrangement = Arrangement.spacedBy(Spacing.s2),
         ) {
-            Text(
-                text = stringResource(body),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = HisabakTheme.colors.info,
+                    modifier = Modifier.size(Sizing.iconSm),
+                )
+                Text(
+                    text = stringResource(body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.s1),
