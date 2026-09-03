@@ -33,6 +33,12 @@ group via the [Firebase Distribution GitHub Action](https://github.com/wzieba/Fi
 > The Firebase App Distribution **Gradle plugin** is not used — it requires the legacy AGP
 > `AppExtension` that AGP 9 removed. The GitHub Action uploads the built APK directly instead.
 
+Tester-facing **release notes** are the head commit message, capped at 900 characters by the
+*Compose release notes* step. The cap is load-bearing: Firebase allows 1,000 and rejects more
+with a 400 *after* the binary has uploaded, which shows as a failed run even though testers
+already have the build. Squash bodies concatenate every commit message on the branch, so the
+note grows with branch length — one branch produced 23,278 characters.
+
 **Required GitHub secret**
 - `FIREBASE_SERVICE_ACCOUNT_JSON` — a Google Cloud service account (role: **Firebase App
   Distribution Admin**) JSON key, for `hisabak-finance-tracking`. Create it under
