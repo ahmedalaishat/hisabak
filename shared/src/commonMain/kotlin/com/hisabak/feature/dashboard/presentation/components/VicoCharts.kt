@@ -15,7 +15,12 @@ import androidx.compose.ui.unit.sp
 import com.hisabak.ui.components.compactAmount
 import com.hisabak.ui.components.rememberIsArabic
 import com.patrykandpatrick.vico.multiplatform.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.multiplatform.cartesian.rememberVicoZoomState
+import com.patrykandpatrick.vico.multiplatform.cartesian.rememberVicoScrollState
+import com.patrykandpatrick.vico.multiplatform.cartesian.Zoom
+import com.patrykandpatrick.vico.multiplatform.cartesian.axis.Axis
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.HorizontalAxis
+import com.patrykandpatrick.vico.multiplatform.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.rememberAxisLabelComponent
 import com.patrykandpatrick.vico.multiplatform.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.multiplatform.cartesian.data.CartesianValueFormatter
@@ -26,6 +31,8 @@ import com.patrykandpatrick.vico.multiplatform.cartesian.layer.LineCartesianLaye
 import com.patrykandpatrick.vico.multiplatform.cartesian.layer.rememberColumnCartesianLayer
 import com.patrykandpatrick.vico.multiplatform.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.multiplatform.cartesian.layer.rememberLineCartesianLayer
+import com.patrykandpatrick.vico.multiplatform.cartesian.marker.CartesianMarker
+import com.patrykandpatrick.vico.multiplatform.cartesian.marker.ColumnCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.multiplatform.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.multiplatform.cartesian.marker.LineCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.multiplatform.cartesian.marker.rememberDefaultCartesianMarker
@@ -134,7 +141,69 @@ fun AreaLineChart(
             marker = marker,
         ),
         modelProducer = producer,
+        // Fit the period into the card. Vico's default keeps its natural bar spacing and lets the
+        // chart scroll when the series is wider than the card, which put a scroll overrun at both
+        // ends of something the user has no reason to scroll: a dashboard chart is a whole picture
+        // of a period, and half of one invites a swipe that leads nowhere.
+        scrollState = rememberVicoScrollState(scrollEnabled = false),
+        zoomState = rememberVicoZoomState(zoomEnabled = false, initialZoom = Zoom.Content),
         modifier = modifier.height(heightDp),
+    )
+}
+
+/**
+ * A marker for the column charts. The bottom axis is thinned to ~5 labels so bars stay readable, so
+ * without this a bar has a date at best and never its amount — which is the number the user came
+ * for. Multi-series charts show every column at that x, in series order.
+ */
+/**
+ * The value scale on the leading edge. [count] is the number of gridlines: three on a full-height
+ * chart, two on the 64dp sparkline, where a third label would sit almost on top of its neighbours.
+ * Labels are bare compact figures — an axis label is plain text, so it cannot carry the dirham
+ * glyph, which is the convention for charts anyway. The marker still gives a bar's exact amount.
+ */
+@Composable
+private fun rememberAmountAxis(arabic: Boolean, count: Int): VerticalAxis<Axis.Position.Vertical.Start> =
+    VerticalAxis.rememberStart(
+        label = rememberAxisLabelComponent(
+            style = TextStyle(
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 10.sp,
+            ),
+        ),
+        line = null,
+        tick = null,
+        guideline = rememberLineComponent(
+            fill = Fill(MaterialTheme.colorScheme.outlineVariant),
+            thickness = 1.dp,
+        ),
+        itemPlacer = VerticalAxis.ItemPlacer.count({ count }, shiftTopLines = false),
+        valueFormatter = CartesianValueFormatter { _, value, _ -> compactAmount(value, arabic) },
+    )
+
+@Composable
+private fun rememberColumnMarker(xLabels: List<String>, arabic: Boolean): CartesianMarker? {
+    if (xLabels.isEmpty()) return null
+    return rememberDefaultCartesianMarker(
+        label = rememberTextComponent(
+            style = TextStyle(
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 11.sp,
+            ),
+        ),
+        guideline = rememberLineComponent(
+            fill = Fill(MaterialTheme.colorScheme.outlineVariant),
+            thickness = 1.dp,
+        ),
+        valueFormatter = DefaultCartesianMarker.ValueFormatter { _, targets ->
+            val target = targets.firstOrNull()
+            val date = xLabels.getOrNull(target?.x?.toInt() ?: 0).orEmpty()
+            val amounts = (target as? ColumnCartesianLayerMarkerTarget)
+                ?.columns
+                ?.joinToString("   ") { compactAmount(it.entry.y, arabic) }
+                .orEmpty()
+            if (amounts.isEmpty()) date else "$date   $amounts"
+        },
     )
 }
 
@@ -156,6 +225,7 @@ fun BarSparkline(
         LineComponent(fill = Fill(barColor), thickness = 4.dp)
     }
 
+    val arabic = rememberIsArabic()
     val labelStep = if (xLabels.size <= 1) 1 else maxOf(1, (xLabels.size - 1) / 4)
     val bottomAxis = if (xLabels.isNotEmpty()) {
         HorizontalAxis.rememberBottom(
@@ -180,9 +250,17 @@ fun BarSparkline(
             rememberColumnCartesianLayer(
                 columnProvider = ColumnCartesianLayer.ColumnProvider.series(column),
             ),
+            startAxis = rememberAmountAxis(arabic, count = 2),
             bottomAxis = bottomAxis,
+            marker = rememberColumnMarker(xLabels, arabic),
         ),
         modelProducer = producer,
+        // Fit the period into the card. Vico's default keeps its natural bar spacing and lets the
+        // chart scroll when the series is wider than the card, which put a scroll overrun at both
+        // ends of something the user has no reason to scroll: a dashboard chart is a whole picture
+        // of a period, and half of one invites a swipe that leads nowhere.
+        scrollState = rememberVicoScrollState(scrollEnabled = false),
+        zoomState = rememberVicoZoomState(zoomEnabled = false, initialZoom = Zoom.Content),
         modifier = modifier.height(heightDp),
     )
 }
@@ -215,6 +293,7 @@ fun GroupedBarChart(
         LineComponent(fill = Fill(expenseColor), thickness = 5.dp)
     }
 
+    val arabic = rememberIsArabic()
     val labelStep = if (xLabels.size <= 1) 1 else maxOf(1, (xLabels.size - 1) / 4)
     val bottomAxis = if (xLabels.isNotEmpty()) {
         HorizontalAxis.rememberBottom(
@@ -239,9 +318,18 @@ fun GroupedBarChart(
             rememberColumnCartesianLayer(
                 columnProvider = ColumnCartesianLayer.ColumnProvider.series(incomeCol, expenseCol),
             ),
+            startAxis = rememberAmountAxis(arabic, count = 3),
             bottomAxis = bottomAxis,
+            // Both series at that bucket, income first — the legend above says which is which.
+            marker = rememberColumnMarker(xLabels, arabic),
         ),
         modelProducer = producer,
+        // Fit the period into the card. Vico's default keeps its natural bar spacing and lets the
+        // chart scroll when the series is wider than the card, which put a scroll overrun at both
+        // ends of something the user has no reason to scroll: a dashboard chart is a whole picture
+        // of a period, and half of one invites a swipe that leads nowhere.
+        scrollState = rememberVicoScrollState(scrollEnabled = false),
+        zoomState = rememberVicoZoomState(zoomEnabled = false, initialZoom = Zoom.Content),
         modifier = modifier.height(heightDp),
     )
 }

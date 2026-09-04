@@ -39,10 +39,11 @@ val categoryModule = module {
         )
     }
 
-    viewModel { (categoryId: CategoryId?, prefill: CategoryEditPrefill?) ->
+    viewModel { (categoryId: CategoryId?, prefill: CategoryEditPrefill?, proposedLimitMinor: Long?) ->
         CategoryEditViewModel(
             categoryId = categoryId,
             prefill = prefill,
+            proposedLimitMinor = proposedLimitMinor,
             categoryRepository = get(),
             createCategory = get(),
             deleteCategory = get(),

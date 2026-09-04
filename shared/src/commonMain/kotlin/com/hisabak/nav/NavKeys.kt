@@ -4,10 +4,21 @@ import androidx.navigation3.runtime.NavKey
 
 // Top-level destinations — one per bottom-nav tab. Each owns its own back stack.
 data object DashboardKey : NavKey
+
+// The ledger: the transaction list and the SMS inbox as two sub-tabs of one destination. They are
+// one subject — what was spent, and the messages it was captured from — and merging them freed the
+// fifth tab for the review.
 data object TransactionsKey : NavKey
-data object SmsKey : NavKey
+
+// The review: findings, the AI explanation, and Ask. Promoted from a child of the dashboard when
+// the SMS tab merged into Transactions.
+data object InsightsKey : NavKey
+
 data object ManageKey : NavKey
 data object SettingsKey : NavKey
+
+/** Which sub-tab of [TransactionsKey] is showing. */
+enum class LedgerTab { Transactions, Sms }
 
 // Child destinations. IDs are carried as raw strings so the keys stay plain data
 // classes; the value-class wrappers are rebuilt at the entry call site.
@@ -18,7 +29,8 @@ data class TransactionEditKey(val id: String?) : NavKey
 data class BrandEditKey(val id: String?, val forPick: Boolean = false) : NavKey
 // forPick: opened from the brand editor's "+ New category" chip — the created category is
 // published to CategoryCreatedBus so the brand editor underneath selects it on return.
-// The prefill fields carry an accepted AI "new category" suggestion into the editor.
+// The prefill fields carry an accepted AI "new category" suggestion into the editor;
+// prefillLimitMinor carries an accepted narrative "set a limit" suggestion for an existing one.
 data class CategoryEditKey(
     val id: String?,
     val forPick: Boolean = false,
@@ -26,13 +38,22 @@ data class CategoryEditKey(
     val prefillType: String? = null,
     val prefillColor: String? = null,
     val prefillIcon: String? = null,
+    val prefillLimitMinor: Long? = null,
 ) : NavKey
 
 // Full-screen child opened from the top-bar bell.
 data object NotificationsKey : NavKey
 
+// Full-screen child of the Insights tab: the conversation. [question] is the suggestion that was
+// tapped to get here — it is sent on arrival, since that tap was the send. A conversation is not a
+// sheet: it needs the keyboard, room to scroll, and its own back.
+data class InsightsAskKey(val period: String, val question: String?) : NavKey
+
 // Full-screen child opened from Settings → Data.
 data object BackupKey : NavKey
+
+// Full-screen child of Settings: the parsing options (formats, the online model, auto-confirm).
+data object SmsParsingKey : NavKey
 
 // Full-screen children for SMS parse templates: the manager (from Settings) and the
 // define-by-sample editor (from the manager, or from an unparsed inbox message).

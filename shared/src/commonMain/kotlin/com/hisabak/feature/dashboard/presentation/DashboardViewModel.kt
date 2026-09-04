@@ -6,6 +6,8 @@ import com.hisabak.core.domain.analytics.Analytics
 import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.core.presentation.BaseViewModel
 import com.hisabak.feature.dashboard.domain.usecase.GetDashboardMetricsUseCase
+import com.hisabak.feature.insights.domain.InsightsSummary
+import com.hisabak.feature.insights.domain.deriveInsights
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -21,7 +23,11 @@ class DashboardViewModel(
 
     init {
         getMetrics(period)
-            .onEach { snapshot -> setState { copy(snapshot = snapshot, isLoading = false) } }
+            .onEach { snapshot ->
+                // Derived here, in the same emission, so the card can never lag the numbers.
+                val review = deriveInsights(InsightsSummary.from(snapshot, period.value))
+                setState { copy(snapshot = snapshot, review = review, isLoading = false) }
+            }
             .launchIn(viewModelScope)
     }
 

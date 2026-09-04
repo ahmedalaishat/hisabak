@@ -205,6 +205,52 @@ sealed class AnalyticsEvent(
         params = mapOf("period" to period),
     )
 
+    /** The insights screen opened; [count] is how many deterministic findings it listed — a small
+     *  integer, not an amount. */
+    class InsightsOpened(count: Int) : AnalyticsEvent(
+        name = "insights_opened",
+        params = mapOf("count" to count),
+    )
+
+    /** The user tapped "Explain with AI": consent is per request, so each tap is one send. */
+    data object InsightsNarrativeRequested : AnalyticsEvent("insights_narrative_requested")
+
+    /**
+     * One `/v1/insights` call produced a narrative. [dropped] is how many items `sanitizeNarrative`
+     * refused — a rising count means the prompt is drifting, never the user's figures.
+     */
+    class InsightsNarrativeGenerated(count: Int, dropped: Int) : AnalyticsEvent(
+        name = "insights_narrative_generated",
+        params = mapOf("count" to count, "dropped" to dropped),
+    )
+
+    /**
+     * One question sent. [source] is "chip" or "free" — the split that says whether the free-text
+     * box earns its cost; [onTopic] is the model's own flag. Never the question, never the answer.
+     */
+    class InsightsAsk(source: String, onTopic: Boolean) : AnalyticsEvent(
+        name = "insights_ask",
+        params = mapOf("source" to source, "on_topic" to onTopic),
+    )
+
+    /** The phone refused a question locally because today's allowance is spent. */
+    class InsightsQuotaHit(scope: String) : AnalyticsEvent(
+        name = "insights_quota_hit",
+        params = mapOf("scope" to scope),
+    )
+
+    /** A narrative's suggestion chip was accepted; [type] names the suggestion kind ("set_limit"). */
+    class InsightsSuggestionAccepted(type: String) : AnalyticsEvent(
+        name = "insights_suggestion_accepted",
+        params = mapOf("type" to type),
+    )
+
+    /** An insight card was tapped through to its transactions. [type] is the lower-cased InsightType. */
+    class InsightTapped(type: String) : AnalyticsEvent(
+        name = "insight_tapped",
+        params = mapOf("type" to type),
+    )
+
     /** A Google account was connected for backup (no identifier — boolean signal only). */
     data object BackupAccountConnected : AnalyticsEvent("backup_account_connected")
 

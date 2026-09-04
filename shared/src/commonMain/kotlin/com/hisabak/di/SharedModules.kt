@@ -3,6 +3,7 @@ package com.hisabak.di
 import com.hisabak.feature.brand.brandModule
 import com.hisabak.feature.category.categoryModule
 import com.hisabak.feature.dashboard.dashboardModule
+import com.hisabak.feature.insights.insightsModule
 import com.hisabak.feature.notification.notificationModule
 import com.hisabak.feature.onboarding.onboardingModule
 import com.hisabak.feature.settings.settingsModule
@@ -25,6 +26,7 @@ val sharedModules: List<Module> = listOf(
     brandModule,
     transactionModule,
     dashboardModule,
+    insightsModule,
     smsModule,
     notificationModule,
     manageModule,

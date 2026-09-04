@@ -106,7 +106,8 @@ fun CategoryListScreen(
         contentPadding = PaddingValues(
             start = Spacing.pageMargin,
             end = Spacing.pageMargin,
-            top = Spacing.s5,
+            // Under the Manage selector, which owns the page's top margin.
+            top = Spacing.s3,
             bottom = Spacing.s10 + Spacing.s7, // clear the Manage FAB
         ),
         horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),

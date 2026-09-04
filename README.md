@@ -91,7 +91,14 @@ Everything below is built and shipping today:
   the dashboard with that category expanded.
 - [x] 📊 **Dashboard** — net worth with cash / savings / investment breakdown, income & expense
   trends, category and brand breakdowns, and period filters (this/last month, this/last year, all
-  time) across Summary, Trends, and Categories tabs.
+  time) across Summary, Trends, and Categories tabs — plus a **Review** card that points out what
+  changed and what needs attention (a category over or near its limit, a sharp rise or fall, your
+  largest expense, savings rate, uncategorized spend), worked out on the phone with nothing sent
+  anywhere, each finding one tap from its transactions. On request, an **AI explanation** of that
+  review: tap "Explain with AI" and only the period's totals by category are sent — nothing is sent
+  otherwise — "See what's shared" shows exactly what, and a suggested spending cap is a tap away,
+  confirm-first. You can also **ask** about the period — suggested questions or your own, ten a day,
+  answered from those same totals.
 - [x] 🧾 **Transactions** — searchable, filterable list (by brand, category, date range), with
   uncategorized spending surfaced for quick cleanup. Add, edit, or delete an entry (deletion is
   confirmed first, and hands any bank message that created it back to the SMS inbox).
@@ -149,8 +156,6 @@ What's next, roughly in order:
   the SMS permission (works in the Play build).
 - [ ] 💱 **Multi-currency** — track transactions and balances across more than one currency.
 - [ ] 🤖 **Auto-categorization** — automatic brand → category suggestions.
-- [ ] 💡 **AI insights assistant** — ask questions about your spending and get clear, on-point
-  answers.
 - [ ] ↩️ **Refunds** — record a refund against a transaction so returned money is reflected in
   balances and category spend.
 
@@ -171,7 +176,8 @@ What's next, roughly in order:
 - **AI parsing:** Gemini Nano via the ML Kit GenAI Prompt API (Android) / Apple Foundation Models
   (iOS) — on-device, nothing transmitted; plus an optional self-hosted parse service (`server/`,
   FastAPI + Docker) for the majority of phones that have no on-device model — opt-in, and it stores
-  nothing
+  nothing. The same service narrates the dashboard review on request (`/v1/insights`, one send per
+  tap, aggregates only)
 - **Crash reporting & analytics:** Firebase Crashlytics + Analytics (release builds only;
   disabled in debug; analytics events carry no personal or financial data)
 

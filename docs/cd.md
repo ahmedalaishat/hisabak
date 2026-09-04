@@ -61,17 +61,19 @@ the APK to a GitHub Release** (`hisabak-<tag>.apk`) for direct download. Promoti
 **internal → production** stays a manual step in the Play Console.
 
 **Play "What's new":** generated at release time from the latest `CHANGELOG.md` version
-section by `scripts/changelog-to-whatsnew.sh` (flattened to plain bullets, capped at Play's
-500-char limit) into `distribution/whatsnew/whatsnew-en-US`, which the upload step pushes via
-`whatsNewDirectory`. So the storefront notes always track the CHANGELOG — keep that section
-user-facing and concise. (The generated file is git-ignored.)
+section by `scripts/changelog-to-whatsnew.sh` into `distribution/whatsnew/whatsnew-en-US`,
+which the upload step pushes via `whatsNewDirectory`. So the storefront notes always track the
+CHANGELOG — keep that section user-facing. (The generated file is git-ignored.)
 
-**Bullets are whole or absent.** A bullet that would take the note past 500 chars is skipped
-and the next one tried, so only entries that fit appear — order the CHANGELOG section by
-significance, because the leading entries are the ones that reach the storefront. Hisabak's
-entries run 250–700 chars each, so in practice **one** of them makes it; if every bullet
-exceeds the limit alone the generator falls back to a truncated first bullet, so the note is
-never empty (it silently was, before that fallback existed).
+**Each bullet contributes its headline, not its paragraph.** The generator takes a bullet's
+bold lead phrase (`- **Parsing that works on every phone** — …` → "Parsing that works on every
+phone"), or its first sentence when there is no bold lead, and drops a trailing dash, colon, or
+period. Hisabak's full entries run 250–700 chars, so under Play's 500-char cap whole bullets
+meant **one** ever shipped (2.2.0 carried a single note); headlines fit about ten. **Write the
+bold lead as the storefront line** — a complete, user-facing phrase — because that is exactly
+what Play shows. A headline that would still take the note past 500 chars is skipped and the
+next one tried, so order the section by significance; if every headline exceeds the limit alone
+the generator falls back to a truncated first one, so the note is never empty.
 
 Distribution channels: **demo** = staging via Firebase (sample data); **direct APK** = the
 GitHub Release here; **live** = Play.

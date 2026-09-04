@@ -30,6 +30,7 @@ class SettingsViewModel(
     /** Whether a verified suggestion may be saved without a tap. Distinct from the consent above. */
     val autoConfirmEnabled: Flow<Boolean> = preferences.autoConfirmEnabled
 
+
     /** Show the "do you still remember your backup passphrase?" card once it's been a while. */
     val passphraseReminderVisible: Flow<Boolean> = combine(
         preferences.backupEnabled,

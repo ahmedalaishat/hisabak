@@ -110,7 +110,13 @@ fun SmsInboxScreen(
     Box(modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = Spacing.pageMargin, vertical = Spacing.s5),
+            // Under the ledger selector, which owns the page's top margin.
+            contentPadding = PaddingValues(
+                start = Spacing.pageMargin,
+                end = Spacing.pageMargin,
+                top = Spacing.s3,
+                bottom = Spacing.s5,
+            ),
             verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
         ) {
             if (autoImportAvailable) {

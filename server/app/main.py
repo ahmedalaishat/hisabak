@@ -1,27 +1,31 @@
 """Hisabak parse service.
 
-One endpoint: text in, structured transaction fields out. It exists so devices without an
-on-device model (most Android phones, every pre-A17 iPhone) get the same confirm-first parsing
-the flagships get — and so the app can learn a regex template from the result and stop calling
-this service for that bank format entirely.
+Two endpoints. `/v1/parse`: text in, structured transaction fields out. It exists so devices
+without an on-device model (most Android phones, every pre-A17 iPhone) get the same confirm-first
+parsing the flagships get — and so the app can learn a regex template from the result and stop
+calling this service for that bank format entirely. `/v1/insights`: an aggregate summary of a
+period in, a handful of plain-language review items out — the opt-in narrative layer over the
+app's deterministic review.
 
-**Message text is never logged or persisted.** The app's privacy policy promises SMS content is
-only sent when the user opts in and is not retained; that promise is kept here, in code: request
-bodies are excluded from access logs and no handler writes `text` anywhere.
+**Message text and figures are never logged or persisted.** The app's privacy policy promises
+SMS content and financial figures are only sent when the user opts in and are not retained; that
+promise is kept here, in code: request bodies are excluded from access logs and no handler
+writes `text`, a category name, or an amount anywhere.
 """
 
 import logging
 import os
+import re
 import secrets
 import time
 
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.providers.anthropic_provider import AnthropicProvider
-from app.limits import Limiter, RateLimitExceeded
-from app.providers.base import ParseProvider
-from app.schema import ParseRequest, ParseResponse
+from app.limits import InstallQuota, Limiter, RateLimitExceeded
+from app.providers.base import InsightsProvider, ParseProvider
+from app.schema import AskRequest, AskResponse, InsightsRequest, InsightsResponse, ParseRequest, ParseResponse
 
 # uvicorn configures its own loggers and leaves everything else silent, so without this the
 # operational lines below are dropped. Kept to a single stream handler: no file, no rotation,
@@ -40,15 +44,25 @@ RATE_LIMIT_PER_MINUTE = int(os.getenv("HISABAK_RATE_LIMIT_PER_MINUTE", "30"))
 DAILY_BUDGET = int(os.getenv("HISABAK_DAILY_BUDGET", "2000"))
 # Stops a slow drip that never trips the per-minute window.
 DAILY_PER_IP = int(os.getenv("HISABAK_DAILY_PER_IP", "200"))
+# The visible, fair allowance for questions. Size against model pricing: at ~$0.003 a question,
+# ten a day is three cents per heavy user — and the client shows "n of 10 left".
+ASK_PER_INSTALL_DAILY = int(os.getenv("HISABAK_ASK_PER_INSTALL_DAILY", "10"))
+# Defeats install-id rotation from one host: an honest phone presents exactly one id.
+ASK_NEW_IDS_PER_IP = int(os.getenv("HISABAK_ASK_NEW_IDS_PER_IP", "5"))
 
 app = FastAPI(title="Hisabak parse service", docs_url=None, redoc_url=None)
 _bearer = HTTPBearer(auto_error=False)
 _provider: ParseProvider = AnthropicProvider()
+# The same object today; two names so either side can be swapped for a different host alone.
+_insights_provider: InsightsProvider = _provider
 _limiter = Limiter(
     per_minute=RATE_LIMIT_PER_MINUTE,
     per_ip_daily=DAILY_PER_IP,
     global_daily=DAILY_BUDGET,
 )
+_quota = InstallQuota(per_install_daily=ASK_PER_INSTALL_DAILY, new_ids_per_ip_daily=ASK_NEW_IDS_PER_IP)
+
+_INSTALL_ID = re.compile(r"^[A-Za-z0-9-]{8,64}$")
 
 
 def _authorize(
@@ -128,3 +142,88 @@ async def parse(request: ParseRequest, caller: str = Depends(_authorize)) -> Par
         parsed.amount_minor is not None,
     )
     return ParseResponse(**parsed.model_dump(), model=getattr(_provider, "model", _provider.name))
+
+
+@app.post("/v1/insights", response_model=InsightsResponse)
+async def insights(request: InsightsRequest, caller: str = Depends(_authorize)) -> InsightsResponse:
+    """Narrates a period from aggregates. Shares the parse limiter: one budget bounds the bill.
+
+    Cost stays bounded because the client sends only on the user's tap and answers a repeat tap
+    for unchanged figures from its own cache.
+    """
+    _rate_limit(caller)
+    try:
+        narrative = await _insights_provider.narrate(request)
+    except Exception as exc:
+        # Same broad catch as parse, same reasoning: the client falls back to its deterministic
+        # review, and a traceback could carry the prompt - which carries the user's figures.
+        detail = getattr(exc, "message", None) or str(exc)
+        log.error(
+            "insights failed: provider=%s type=%s status=%s detail=%s",
+            _insights_provider.name,
+            type(exc).__name__,
+            getattr(exc, "status_code", "-"),
+            detail[:300],
+        )
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Upstream narration failed") from exc
+
+    # Counts only: a category name or an amount in the log would be the user's finances at rest.
+    log.info(
+        "insights ok period=%s lang=%s categories=%d items=%d",
+        request.period,
+        request.language,
+        len(request.categories),
+        len(narrative.items),
+    )
+    return InsightsResponse(
+        items=narrative.items,
+        model=getattr(_insights_provider, "model", _insights_provider.name),
+    )
+
+
+@app.post("/v1/insights/ask", response_model=AskResponse)
+async def ask(
+    request: AskRequest,
+    caller: str = Depends(_authorize),
+    x_install_id: str | None = Header(default=None),
+) -> AskResponse:
+    """One question about the summary. Shares the parse limiter, plus a per-install allowance.
+
+    The install id is fairness, not enforcement (see InstallQuota); the IP tiers and the global
+    budget are what bound the bill. A malformed id is treated as absent, not rejected: the request
+    then counts against the address, which is the stricter key.
+    """
+    _rate_limit(caller)
+    install_id = x_install_id if x_install_id and _INSTALL_ID.match(x_install_id) else None
+    try:
+        remaining = _quota.check(install_id, caller)
+    except RateLimitExceeded as exceeded:
+        log.warning("ask quota scope=%s", exceeded.scope)
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Rate limit exceeded") from exceeded
+    try:
+        answer = await _insights_provider.ask(request)
+    except Exception as exc:
+        detail = getattr(exc, "message", None) or str(exc)
+        log.error(
+            "ask failed: provider=%s type=%s status=%s detail=%s",
+            _insights_provider.name,
+            type(exc).__name__,
+            getattr(exc, "status_code", "-"),
+            detail[:300],
+        )
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Upstream answer failed") from exc
+
+    # Lengths and flags only: the question is the user's own words and the answer is their finances.
+    log.info(
+        "ask ok lang=%s question_len=%d history=%d on_topic=%s remaining=%d",
+        request.summary.language,
+        len(request.question),
+        len(request.history),
+        answer.on_topic,
+        remaining,
+    )
+    return AskResponse(
+        answer=answer.answer,
+        on_topic=answer.on_topic,
+        model=getattr(_insights_provider, "model", _insights_provider.name),
+    )

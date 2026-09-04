@@ -5,11 +5,14 @@ import com.hisabak.core.presentation.ViewEffect
 import com.hisabak.core.presentation.ViewIntent
 import com.hisabak.core.presentation.ViewState
 import com.hisabak.feature.dashboard.domain.DashboardSnapshot
+import com.hisabak.feature.insights.domain.Insight
 
 data class DashboardUiState(
     val snapshot: DashboardSnapshot? = null,
     val isLoading: Boolean = true,
     val period: SummaryPeriod = SummaryPeriod.CURRENT_MONTH,
+    /** The deterministic review of [snapshot] for [period]; empty hides the Review card. */
+    val review: List<Insight> = emptyList(),
 ) : ViewState
 
 sealed interface DashboardIntent : ViewIntent {

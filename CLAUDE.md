@@ -163,6 +163,66 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   after `sanitize` canonicalizes, it is gone. Aliases **do** ride in the backup envelope (unlike
   the AI provenance flags): they are knowledge other devices need. `SCHEMA_VERSION` 8→9, additive
   auto-migration.
+- **Insights review (deterministic, layer 1 of `docs/features/ai-insights.md`):** the dashboard's
+  Summary tab shows a **Review** card — top three findings for the selected period, **See all** →
+  `InsightsKey(period)` full-screen list, tap → the transaction list filtered by category (or the
+  uncategorized filter) via `TransactionListFilterBus`. Everything is pure and on-device:
+  `InsightsSummary.from(DashboardSnapshot, period)` (`feature/insights/domain/`) selects what the
+  rules need from the snapshot the dashboard already computed — so the review can never disagree
+  with the numbers above it — and `deriveInsights(summary)` applies six rules (over/near limit,
+  spend up/down/new vs prior, largest category, savings rate, uncategorized), each degrading to
+  *absent* when its inputs are missing. Thresholds are constants in `DeriveInsights.kt`
+  (`NEAR_LIMIT_RATIO` 0.8, `CHANGE_THRESHOLD_PCT` 25, `MATERIAL_SHARE` 0.05). `Insight` carries
+  figures, never copy — `InsightRow` renders text from `type` + fields via `insights_*` strings, so
+  the rules test without resources and Arabic gets the same treatment. `InsightsSummary` is also
+  the exact payload the opt-in AI layer sends: its shape *is* the privacy boundary (no rows, no
+  notes). Both the dashboard and `InsightsViewModel` recompute it — one pure pass beats a bus or a
+  fat nav key.
+- **Insights narrative (AI, opt-in, layer 2):** the insights screen adds the model's explanation
+  **above** the deterministic findings, never instead of them. `AiInsights` port
+  (`feature/insights/domain/ai/`) → `RemoteAiInsights` over `/v1/insights` (same service, same
+  token, same `Limiter`; `InsightsProvider` beside `ParseProvider` server-side). **Consent is per
+  request, not a setting:** there is no `insightsEnabled` switch — the send *is* the tap on
+  "Explain with AI", which sits next to "See what's shared" on the insights screen; the ViewModel
+  never fetches on its own (it only looks the cache up), so a picture of the user's finances leaves
+  the phone only when they just asked. `sanitizeNarrative` owns
+  acceptance (an unknown category **drops the item**, text is bounded, a suggested cap must be within
+  3× of what the category has done and differ from the current limit; one item per category, five
+  max). **The cache key is a digest of exactly what was sent:** `narrativeKey` is an FNV-1a digest of
+  the period's **concrete date window** (not its enum name — "this month" and "this year" coincide
+  when every transaction is in the current month, and a custom range later needs no new rule) +
+  language + every figure in the request (totals, priors, uncategorized, each category's id/name/
+  spend/prior/limit). Any change asks again — a rounded "material change" key was tried and
+  rejected by the user, since it kept yesterday's explanation on screen after today's spending; cost
+  is bounded by the tap instead. The digest is the primary key
+  of the `insight_narratives` Room table (`SCHEMA_VERSION` 9→10 additive, 10→11 manual rebuild of
+  the cache table; not in the backup envelope — a restored ledger misses and regenerates; rows are
+  pruned by age only, and an empty reply is cached too). An answer already saved for exactly these figures is **shown straight away — no send**;
+  otherwise the screen asks, and the answer gives way to the ask again as soon as any figure
+  changes. The ask card (Explain with AI / **See what's shared**, which renders the exact
+  payload) appears only when the build has a service (`AppConfig.hasParseService`). Suggestions are **confirm-first chips**: "Set a X
+  limit" opens the category editor with `CategoryEditKey.prefillLimitMinor` in the field and Save is
+  the confirmation. `server/evals/run_insights.py` checks properties (over-limit leads, no invented
+  category, a hostile category name is not obeyed, Arabic in Arabic) against the shipped prompt.
+- **Ask (AI, layer 3):** a question about the same summary, `/v1/insights/ask` →
+  `AskInsightUseCase` (`feature/insights/domain/ai/`). **The entry point is a finding, never a blank
+  box:** `suggestedQuestions(insights)` derives up to four chips from the review (one per category,
+  the general "what should I focus on" always last), and the capped free-text field (500 chars,
+  `MAX_QUESTION_LENGTH`) lives in the sheet behind them. Consent is the tap, like the narrative.
+  **Limits are layered:** a visible per-install allowance (`ASK_DAILY_ALLOWANCE` 10/day, counted on
+  the phone in `AppPreferences.askTally` so the sheet can say "n of 10 left" and refuse before a
+  round trip) over the server's `InstallQuota` (same allowance keyed on the anonymous `installId`
+  UUID sent as `X-Install-Id`, plus a **new-IDs-per-IP** guard that throttles id rotation from one
+  address), over the existing IP tiers and the global daily budget — the id is *fairness*, the tiers
+  and budget are what bound the bill. The conversation is in-memory for the sheet's life only; the
+  last `ASK_HISTORY_TURNS` (6) ride with each question, and the model returns an `on_topic` flag it
+  sets false when it refuses. `insights_ask(source=chip|free, on_topic)` is the measurement behind
+  whether the free-text box earns its cost. **Ask is its own full screen** (`InsightsAskKey(period,
+  question)`, `feature/insights/presentation/ask/`), not a sheet: a conversation needs the keyboard,
+  room to scroll, and its own back. The insights screen keeps the entry card; tapping a suggestion
+  pushes the screen with that question, which `AskViewModel` sends on arrival (the tap *was* the
+  send). The screen rebuilds the summary from the metrics for its period, like the review does, so a
+  question is answered against figures current at the moment it is asked.
 - **Learn-once template synthesis:** a confirmed AI parse also **teaches the regex engine**, so
   the next message of that bank format parses offline on any device — including the majority
   that have no on-device model at all. No extra model call: `deriveAiSpans`
@@ -196,10 +256,12 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   that have one. Nothing is transmitted until the opt-in, and the fallback runs both ways, so a
   phone with a local model still parses when the service is unreachable (offline, an outage, a
   spent daily budget). Transport
-  follows the `BackupRemote` pattern rather than adding an HTTP dependency —
-  `RemoteParseClient` in commonMain, `HttpRemoteParseClient` (androidApp, `HttpURLConnection`) and
-  `IosRemoteParseClient` (iosMain, `NSURLSession`); every failure is `null`, so an outage degrades
-  to the regex templates. **Strictly opt-in:** the `remoteParseEnabled` pref gates it, is re-checked
+  follows the `BackupRemote` pattern rather than adding an HTTP dependency — **one seam per
+  platform**, `ServiceTransport` (`core/domain/remote/`, a JSON POST to a path), implemented by
+  `HttpServiceTransport` (androidApp, `HttpURLConnection`) and `IosServiceTransport` (iosMain,
+  `NSURLSession`); every endpoint client (`ServiceRemoteParseClient`, `ServiceRemoteInsightsClient`)
+  is common code over it, so the wire contract cannot drift between platforms. Every failure is
+  `null`, so an outage degrades to the regex templates. **Strictly opt-in:** the `remoteParseEnabled` pref gates it, is re-checked
   per call so revocation is immediate, and the Settings row only appears when the build actually has
   a service configured (`AppConfig.parseServiceUrl`/`parseServiceToken` — Android BuildConfig from
   gradle properties, iOS Info.plist). The service never logs or stores message text, and
@@ -335,7 +397,8 @@ progress — see `docs/kmp-migration.md`):
   `FirebaseAnalyticsClient`, `BiometricAuthenticator`, `AppLocale`,
   `AndroidLocalizedDateFormatter`), the Koin platform bindings (`di/PlatformModule.kt`),
   and the **thin Routes** that need launchers/Intents (`SmsInboxRoute`, `OnboardingRoute`,
-  `SettingsRoute`, `BackupRoute`, `RestoreRoute`). Everything else is in `shared`.
+  `SettingsRoute`, `BackupRoute`, `RestoreRoute`). The nested **SMS parsing** screen is *not* among
+  them: it is switches only, so `SmsParsingRoute` lives in `shared` and needs no platform Route. Everything else is in `shared`.
 - **`shared/`** — the KMP library (`org.jetbrains.kotlin.multiplatform` +
   `com.android.kotlin.multiplatform.library`; android + iosArm64 + iosSimulatorArm64,
   static `Shared` framework). `commonMain` holds the whole app minus the platform glue:
@@ -386,12 +449,17 @@ com.hisabak
 **Navigation 3, multiplatform** (`com.hisabak.nav`, `shared/commonMain` — androidx
 `navigation3-runtime` (multiplatform upstream) + JetBrains `navigation3-ui` + JB
 `lifecycle-viewmodel-navigation3`; the JB artifacts keep `androidx.*` package names).
-5-tab bottom navigation, each tab a top-level destination with its own back stack. State is
+5-tab bottom navigation — Dashboard, Insights, Transactions, Manage, Settings, ordered by what a
+tab is *for* (the two you read, then the two you act in) rather than by frequency — each a
+top-level destination with its own back stack. State is
 retained per tab when switching; the user always exits the app through the **Dashboard**
 (home) tab.
 
-- `NavKeys.kt` — destination keys: `DashboardKey`, `TransactionsKey`, `SmsKey`,
+- `NavKeys.kt` — destination keys: `DashboardKey`, `TransactionsKey`, `InsightsKey`,
   `ManageKey`, `SettingsKey` (top-level) + `TransactionEditKey/BrandEditKey/CategoryEditKey(id)` (children).
+  SMS is **not** a top-level key: it is `LedgerTab.Sms`, a sub-tab of `TransactionsKey`. That merge
+  is what freed the fifth slot for the review, and the two belong together — what was spent, and the
+  messages it was captured from.
 - `NavigationState.kt` — `NavigationState` (one back stack per tab), `Navigator`
   (`navigate`/`goBack`: back from a tab → home; back from home → exit), and `toEntries()`
   which wires the saveable-state + **ViewModel-store** entry decorators plus an
@@ -416,11 +484,11 @@ retained per tab when switching; the user always exits the app through the **Das
 
 | Tab | Top-level key | Internal screens |
 |-----|---------------|-----------------|
-| Dashboard | DashboardKey | Single screen |
-| Transactions | TransactionsKey | List → Edit (bottom sheet; the "New brand" chip and the uncategorized-brand note detour to the brand editor — the sheet closes/reopens around it with its typed input parked in `TransactionDraftBus`, and a created brand auto-selects via `BrandCreatedBus`) |
-| SMS | SmsKey | Inbox → template editor (full screen) / transaction sheet (review of an AI-parsed entry) |
-| Manage | ManageKey | Brands/Categories list → Edit (full screen; the brand editor's "+ New category" chip pushes the category editor and auto-selects the result via `CategoryCreatedBus`) |
-| Settings | SettingsKey | Theme + language + app lock → Backup & restore / SMS parsing → template editor (full screen) |
+| Dashboard | DashboardKey | Summary/Trends/Categories tabs; the Review card opens the Insights tab (parking its period in `InsightsPeriodBus`) |
+| Insights | InsightsKey | **Two tabs** (`InsightsTab`): **Findings** (deterministic) and **AI assistant** (the explanation + the Ask entry card → Ask, full screen). The AI tab is hidden when the build has no service, so the review reads as one list. Own period chips under the tabs, seeded once from `InsightsPeriodBus` |
+| Transactions | TransactionsKey | **Two sub-tabs** (`LedgerTab`, selector hoisted in `HisabakRoot`): **Transactions** — list → Edit (bottom sheet; the "New brand" chip and the uncategorized-brand note detour to the brand editor — the sheet closes/reopens around it with its typed input parked in `TransactionDraftBus`, and a created brand auto-selects via `BrandCreatedBus`) — and **SMS** — inbox → template editor (full screen) / transaction sheet (review of an AI-parsed entry). The FAB and the top-bar title follow the sub-tab; `InboxOpenBus` selects the SMS half. |
+| Manage | ManageKey | **Two sub-tabs** (segmented, count in the label): Brands/Categories list → Edit (full screen; the brand editor's "+ New category" chip pushes the category editor and auto-selects the result via `CategoryCreatedBus`) |
+| Settings | SettingsKey | Theme + language + app lock → Backup & restore / **SMS parsing** (nested screen: templates, the online model, auto-confirm) → template editor |
 
 Pattern: `List` → tap row or FAB → push `Edit(id?)` destination → Save/Cancel calls
 `navigator.goBack()` → back to `List`.
@@ -491,7 +559,10 @@ Use the HTML/CSS kit only for throwaway visual mockups.
   (DM Sans 400/500/600/700, Geist Mono 400/500/600, Tajawal 400/500/700) loaded through CMP
   resources — the downloadable-fonts (Google Fonts provider) setup was removed.
 - **Spacing:** 8dp grid. 16dp page margin, 16dp card padding, 12dp between cards.
-  Touch targets ≥ 44dp.
+  Touch targets ≥ 44dp. **Every screen's first content starts at `Spacing.pageMargin` (16dp)
+  below the top bar** — the page margin is all four sides — so tabs line up when switching. The one
+  exception is content under an in-screen control row (the ledger's sub-tab selector, the
+  dashboard's header): the row carries the 16dp and the content sits closer beneath it.
 - **Shape:** 12dp default card radius, 16dp hero/sheet, pill for buttons/chips/badges,
   14dp category icon tiles.
 - **Depth:** prefer surface contrast over shadows. Flat cards use a 1dp outline; reserve

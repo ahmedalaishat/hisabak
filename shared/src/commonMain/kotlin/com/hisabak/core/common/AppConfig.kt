@@ -8,8 +8,11 @@ data class AppConfig(
     val versionCode: Int,
     /** Product flavor ("prod" | "staging") — scopes the Drive backup file per flavor. */
     val flavor: String,
-    /** Parse-service base URL; blank disables the remote parser. */
+    /** Service base URL; blank disables every remote AI feature (parsing, insights). */
     val parseServiceUrl: String = "",
-    /** Shared secret for the parse service; blank disables the remote parser. */
+    /** Shared secret for the service; blank disables every remote AI feature. */
     val parseServiceToken: String = "",
-)
+) {
+    /** Whether this build can reach the service at all — the gate for showing any opt-in for it. */
+    val hasParseService: Boolean get() = parseServiceUrl.isNotBlank() && parseServiceToken.isNotBlank()
+}

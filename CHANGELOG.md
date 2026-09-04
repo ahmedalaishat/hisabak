@@ -6,6 +6,35 @@ All notable changes to Hisabak are documented here. Format based on
 
 ## [Unreleased]
 
+## [2.3.0] — 2026-09-04
+
+### Added
+- **A review on the dashboard.** Under the cash, savings and investment figures, Hisabak now points out what changed
+  and what needs attention for the period you're viewing: a category over or near its limit, a
+  category up or down sharply on last time, your largest expense, your savings rate and how it
+  moved, and anything still uncategorized. It's all worked out on your phone from numbers the
+  dashboard already has — nothing is sent anywhere. Tap **See all** for the full list, switch the
+  period right there, and tap a finding to jump to those transactions.
+- **An AI explanation of the review, when you ask for one.** On the insights screen Hisabak can
+  now explain what changed and suggest what to do — "Dining is over its limit by 300; a 1,600 cap
+  would hold next month" — with a tap to set that limit, which opens the category editor prefilled
+  so you still confirm it. Nothing is sent until you tap **Explain with AI**: that one tap sends only
+  your totals by category for the period — never transactions, notes, brands, or messages — and
+  **See what's shared** beside it shows the exact figures first. There is no switch to leave on; the
+  answer is kept on your phone for as long as those exact figures stand, and if the service can't
+  answer the review below is complete on its own.
+- **Ask about a period.** Under the review you can now put a question to the AI — tap one of the
+  suggested questions ("Why is Dining up?", "What should I focus on?") or type your own on a screen
+  of its own. It sends
+  the same totals as the explanation plus your question, never your transactions, and the service
+  stores nothing. You get ten questions a day and the screen shows how many are left.
+- **Insights has its own tab, and SMS moved in with Transactions.** The review is no longer buried
+  behind the dashboard: it is a tab of its own. The SMS inbox sits beside the transaction list as
+  the second half of the Transactions tab, which is where the messages you capture from belong.
+- **Settings is shorter.** The message-parsing options — formats, the online model, automatic
+  confirmation — now live on their own screen under Settings → SMS parsing, instead of three
+  switches inline.
+
 ## [2.2.0] — 2026-09-03
 
 ### Added

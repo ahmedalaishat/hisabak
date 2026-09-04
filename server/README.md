@@ -134,6 +134,51 @@ regex templates; a parse failure never costs a capture.
 
 `GET /health` needs no token and doubles as an uptime check.
 
+### Insights
+
+```
+POST /v1/insights       Authorization: Bearer <HISABAK_API_TOKEN>
+{ "period": "CURRENT_MONTH", "currency": "AED", "language": "en",
+  "income_minor": 1250000, "expense_minor": 824010,
+  "prior_income_minor": 1250000, "prior_expense_minor": 690000,
+  "categories": [ { "id": "…", "name": "Dining", "spent_minor": 180000, "prior_minor": 120000, "limit_minor": 150000 } ],
+  "uncategorized_minor": 34000, "uncategorized_count": 3 }
+→ { "items": [ { "category_id": "…", "headline": "Dining is over its limit by 300",
+                 "detail": "…", "suggested_limit_minor": 160000 } ], "model": "…" }
+```
+
+The on-request narrative over the app's deterministic review — the client sends only when the
+user taps "Explain with AI"; there is no stored opt-in. **The request schema is the privacy
+boundary:** it has no field for a transaction, a note, a brand, or a message, so a client cannot
+send one even by mistake (unknown fields are dropped, not forwarded). Category names are the only
+user text in the prompt and the prompt treats them as data. Every reply is validated on the
+client (`sanitizeNarrative`): an item naming a category not in the summary is dropped, and a
+suggested cap must be within reach of the figures.
+
+It shares the parse limiter and budget. Cost per call is ~$0.002 (≈600 tokens in, ≈300 out) and
+the client sends only on a tap, and a tap for figures it has already explained is answered from
+its cache (keyed on the exact input), so the bill is bounded by how often the user asks. Property evals: `python -m evals.run_insights`.
+
+### Ask
+
+```
+POST /v1/insights/ask   Authorization: Bearer <token>   X-Install-Id: <uuid>
+{ "summary": { …the same object as /v1/insights… }, "question": "Why is dining up?",
+  "history": [ {"role": "user", "text": "…"}, {"role": "assistant", "text": "…"} ] }
+→ { "answer": "…", "on_topic": true, "model": "…" }
+```
+
+One question about the summary, which **is** the whole context — there is no field for a
+transaction, a note, or a message, so nothing else can be asked about. The question is capped at
+500 characters and the history at 6 turns; the model is told to stay on this person's figures and
+returns `on_topic: false` with a one-line refusal otherwise.
+
+On top of the shared tiers, each install gets a fair daily allowance (`HISABAK_ASK_PER_INSTALL_DAILY`,
+default 10) keyed on the client-asserted `X-Install-Id`. That id is **fairness, not enforcement** —
+anyone with the token can mint one per call — so `HISABAK_ASK_NEW_IDS_PER_IP` (default 5) throttles
+an address that keeps presenting never-seen ids, while an honest phone presents exactly one. A
+missing or malformed id counts against the address instead, which is stricter. ~$0.003 a question.
+
 ## Abuse and spend control
 
 **The bearer token is not a secret.** It is compiled into a distributed app, so anyone with the
@@ -196,7 +241,7 @@ Exit code is non-zero when a decided case fails, so this can gate a deploy.
 
 ## Privacy
 
-**Message text is never logged or persisted.** Access logging is off (`--no-access-log`), no handler
+**Message text and financial figures are never logged or persisted.** Access logging is off (`--no-access-log`), no handler
 writes `text` anywhere, and the error path logs only the provider name — a traceback could carry
 the prompt. Verify after any change:
 

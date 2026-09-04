@@ -17,7 +17,7 @@ fun hisabakDatabaseBuilder(
         context = context,
         name = HisabakDatabase.NAME,
     )
-        .addMigrations(MIGRATION_1_2)
+        .addMigrations(MIGRATION_1_2, MIGRATION_10_11)
         // Destructive fallback only in debug builds, for fast schema iteration. Release
         // builds must ship a real migration — a missing one fails loudly rather than
         // silently wiping the user's on-device financial history.

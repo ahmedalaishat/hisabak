@@ -72,6 +72,7 @@ interface AppPreferences {
 
     suspend fun setAutoConfirmEnabled(value: Boolean)
 
+
     /**
      * "Don't ask again" for the SMS-inbox offers, one flag per offer.
      *
@@ -81,4 +82,23 @@ interface AppPreferences {
     val suppressedInboxPrompts: Flow<Set<String>>
 
     suspend fun suppressInboxPrompt(name: String)
+
+    /**
+     * The anonymous install id sent with a question so the service can give each install a fair
+     * daily allowance. A random UUID minted on first use, tied to nothing, reset by a reinstall.
+     */
+    val installId: Flow<String?>
+
+    suspend fun setInstallId(value: String)
+
+    /** Questions asked so far on [AskTally.day] (ISO date) — the visible "n of 10 left" counter. */
+    val askTally: Flow<AskTally>
+
+    suspend fun setAskTally(value: AskTally)
+}
+
+data class AskTally(val day: String, val count: Int) {
+    companion object {
+        val NONE = AskTally(day = "", count = 0)
+    }
 }

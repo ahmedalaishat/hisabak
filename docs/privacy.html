@@ -83,8 +83,10 @@
     <p>
       <strong>None of your financial data.</strong> Hisabak does not collect or transmit your
       transactions, brands, categories, budgets, or any personal information — those stay on your
-      device. The only exceptions are anonymous, technical crash diagnostics and anonymous usage
-      analytics; see <strong>Crash reporting</strong> and <strong>Usage analytics</strong> below.
+      device. The only exceptions are anonymous, technical crash diagnostics, anonymous usage
+      analytics, and two optional features that send data only at your request &mdash; one you turn
+      on, one you tap each time; see <strong>Crash reporting</strong>, <strong>Usage analytics</strong>,
+      <strong>Online parsing</strong>, and <strong>AI review</strong> below.
     </p>
 
     <h2>Crash reporting</h2>
@@ -156,14 +158,47 @@
         is handled entirely on your device and never transmitted.</li>
       <li><strong>Nothing is stored.</strong> The service does not log or retain message text; it
         reads the message, returns the fields, and keeps nothing.</li>
-      <li><strong>Your transactions, brands, categories, budgets, and balances are never sent</strong>
-        &mdash; only the text of the message being parsed, plus the names of your existing brands so
-        the merchant can be matched to one.</li>
+      <li><strong>Parsing sends nothing else</strong> &mdash; only the text of the message being
+        parsed, plus the names of your existing brands so the merchant can be matched to one. Your
+        transactions, categories, budgets, and balances are not part of it.</li>
       <li>The message text is processed by <a href="https://www.anthropic.com/">Anthropic</a> to
         perform the parsing, and is not used to train models.</li>
       <li>Once a message is parsed, Hisabak learns a template from it, so future messages in that
         format are read on your device and are not sent.</li>
       <li>Turning the setting off stops all sending immediately.</li>
+    </ul>
+
+    <h2>AI review (optional, only when you ask)</h2>
+    <p>
+      The insights screen shows a review of your period worked out on your phone. Beneath it you
+      can tap <em>Explain with AI</em> to have a <strong>summary of the period</strong> sent to
+      Hisabak's service so a model can explain what changed and suggest what to do, and you can ask
+      it a question about that period. There is no setting to leave on: <strong>nothing is sent
+      unless you tap</strong>, and each tap sends once. This is separate from online parsing.
+    </p>
+    <ul>
+      <li><strong>Only totals are sent:</strong> your income and spending for the period and the
+        one before it, your spending per category with its name and monthly limit, and the total
+        and count of uncategorized spending, plus the currency and your app language.</li>
+      <li><strong>Never sent:</strong> individual transactions, notes, brand or shop names, bank
+        messages, account details, or anything that identifies you. The request has no field for
+        them.</li>
+      <li><strong>See what&rsquo;s shared</strong>, next to the button, shows you the exact figures
+        a tap would send.</li>
+      <li><strong>Nothing is stored.</strong> The service does not log or retain the figures; it
+        returns the explanation and keeps nothing. The figures are processed by
+        <a href="https://www.anthropic.com/">Anthropic</a> and are not used to train models.</li>
+      <li>The explanation is kept on your phone and shown again while your figures are exactly
+        unchanged; nothing is sent for that. Any change to the figures asks you again.</li>
+      <li>Suggestions never change anything by themselves: tapping one opens the editor for you to
+        confirm.</li>
+      <li><strong>Asking a question</strong> sends the same figures plus the question you typed or
+        picked, and the last few messages of that conversation so a follow-up makes sense. The
+        conversation is not saved anywhere: it is gone when you close the sheet, and the service
+        keeps nothing.</li>
+      <li>So the allowance can be shared fairly, a question also carries a random identifier created
+        on your phone the first time you ask. It is not linked to you, your account, or your
+        device, and reinstalling the app replaces it.</li>
     </ul>
 
     <p>

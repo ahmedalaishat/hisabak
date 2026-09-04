@@ -63,6 +63,9 @@ They are plain Kotlin — no JUnit — so they compile for every target.
   over a mocking framework; build the real use case around a fake repo.
 - **`TestData.kt`** — terse builders (`brand()`, `category()`, `transaction()`, …) with
   sensible defaults.
+- **Service fakes** — `FakeServiceTransport` (records every POST, answers by path),
+  `FakeRemoteParseClient`, `FakeRemoteInsightsClient`, and `FakeNarrativeCache`, so the
+  remote-AI use cases test the consent gate, the payload shape, and the cache without HTTP.
 - **`FakeBackupCrypto`** — a pure-Kotlin stand-in for the JVM-only `AesGcmBackupCrypto`
   with the same observable contract (`HSBK` magic, round-trip, wrong-passphrase error),
   so the backup/restore ViewModel tests run in `commonTest`.

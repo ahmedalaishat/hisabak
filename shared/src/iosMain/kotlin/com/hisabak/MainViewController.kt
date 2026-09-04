@@ -29,10 +29,10 @@ fun MainViewController(): UIViewController {
                             modifier = modifier,
                         )
                     },
-                    settings = { onOpenBackup, onOpenSmsTemplates, modifier ->
+                    settings = { onOpenBackup, onOpenSmsParsing, modifier ->
                         IosSettingsRoute(
                             onOpenBackup = onOpenBackup,
-                            onOpenSmsTemplates = onOpenSmsTemplates,
+                            onOpenSmsParsing = onOpenSmsParsing,
                             modifier = modifier,
                         )
                     },

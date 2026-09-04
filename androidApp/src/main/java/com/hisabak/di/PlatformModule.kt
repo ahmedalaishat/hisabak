@@ -1,8 +1,8 @@
 package com.hisabak.di
 
-import com.hisabak.feature.sms.domain.ai.RemoteParseClient
-import com.hisabak.feature.sms.domain.ai.ParseServiceConfig
-import com.hisabak.feature.sms.platform.HttpRemoteParseClient
+import com.hisabak.core.domain.remote.ServiceConfig
+import com.hisabak.core.domain.remote.ServiceTransport
+import com.hisabak.core.platform.remote.HttpServiceTransport
 import com.hisabak.BuildConfig
 import com.hisabak.core.common.AppConfig
 import com.hisabak.core.data.backup.AesGcmBackupCrypto
@@ -57,11 +57,9 @@ val platformModule = module {
         )
     }
 
-    single<RemoteParseClient> {
+    single<ServiceTransport> {
         val config: AppConfig = get()
-        HttpRemoteParseClient(
-            ParseServiceConfig(config.parseServiceUrl, config.parseServiceToken),
-        )
+        HttpServiceTransport(ServiceConfig(config.parseServiceUrl, config.parseServiceToken))
     }
 
     single {

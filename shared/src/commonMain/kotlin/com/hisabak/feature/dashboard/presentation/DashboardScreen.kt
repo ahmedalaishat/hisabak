@@ -66,6 +66,7 @@ import com.hisabak.feature.dashboard.domain.BrandShare
 import com.hisabak.feature.dashboard.domain.CategoryOption
 import com.hisabak.feature.dashboard.domain.CategoryShare
 import com.hisabak.feature.dashboard.domain.DashboardSnapshot
+import com.hisabak.feature.dashboard.domain.periodLimit
 import com.hisabak.feature.dashboard.domain.DayPoint
 import com.hisabak.feature.dashboard.domain.MonthPoint
 import com.hisabak.feature.dashboard.presentation.components.AreaLineChart
@@ -96,6 +97,11 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.yearMonth
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import com.hisabak.ui.components.labelRes
+import com.hisabak.feature.insights.domain.Insight
+import com.hisabak.feature.insights.presentation.InsightRow
+import com.hisabak.shared.resources.insights_review_title
+import com.hisabak.shared.resources.insights_see_all
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,6 +109,7 @@ fun DashboardScreen(
     state: DashboardUiState,
     onPeriodChange: (SummaryPeriod) -> Unit,
     onShowUncategorized: () -> Unit,
+    onOpenInsights: (SummaryPeriod) -> Unit,
     focusCategoryId: String? = null,
     onFocusConsumed: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -151,8 +158,10 @@ fun DashboardScreen(
                 .padding(top = Spacing.s5),
             verticalArrangement = Arrangement.spacedBy(Spacing.s3),
         ) {
-            PeriodChipRow(selected = state.period, onSelect = onPeriodChange)
+            // Tabs pick the view, the period scopes the data inside it: the broader control sits
+            // on top, and the chip row reads as filtering the content directly beneath it.
             DashboardTabs(selected = tab, onSelect = { tab = it })
+            PeriodChipRow(selected = state.period, onSelect = onPeriodChange)
         }
         AnimatedContent(
             targetState = tab,
@@ -171,6 +180,8 @@ fun DashboardScreen(
                     period = state.period,
                     listState = summaryListState,
                     onShowUncategorized = onShowUncategorized,
+                    review = state.review,
+                    onOpenInsights = onOpenInsights,
                     modifier = Modifier.fillMaxSize(),
                 )
                 DashboardTab.TRENDS -> TrendsTab(
@@ -223,6 +234,8 @@ private fun SummaryTab(
     period: SummaryPeriod,
     listState: LazyListState,
     onShowUncategorized: () -> Unit,
+    review: List<Insight>,
+    onOpenInsights: (SummaryPeriod) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val c = HisabakTheme.colors
@@ -284,6 +297,18 @@ private fun SummaryTab(
                     bgColor = c.investmentSoft,
                     fgColor = c.investment,
                     modifier = Modifier.weight(1f),
+                )
+            }
+        }
+
+        // ── Review: what changed, and what needs attention — after the position, before the flow ─────────────────
+        if (review.isNotEmpty()) {
+            item {
+                ReviewCard(
+                    period = period,
+                    insights = review,
+                    onSeeAll = { onOpenInsights(period) },
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
@@ -885,17 +910,6 @@ private fun buildCategoryChart(
     return CategoryChart(values, overlay)
 }
 
-/** The limit budget for the selected period: the month's limit for a single-month window, or the
- *  sum of each month's applicable limit for a multi-month window. Null if no limit applies. */
-private fun periodLimit(limitSeries: List<Long?>, period: SummaryPeriod): Long? {
-    val singleMonth = period == SummaryPeriod.CURRENT_MONTH || period == SummaryPeriod.LAST_MONTH
-    return if (singleMonth) {
-        limitSeries.firstOrNull { it != null }
-    } else {
-        limitSeries.filterNotNull().takeIf { it.isNotEmpty() }?.sum()
-    }
-}
-
 @Composable
 private fun UncategorizedBanner(count: Int, total: Money, onClick: () -> Unit) {
     DashCard(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
@@ -1079,4 +1093,49 @@ private fun monthlyPairs(
         expense = months.map { expenseByMonth[it] ?: 0.0 },
         labels = months.map { if (multiYear) formatter.monthYear(it) else formatter.month(it) },
     )
+}
+
+// ── Review card ───────────────────────────────────────────────────────────────
+
+/** Top findings only: the card is a summary of the summary, and "See all" is where the rest live. */
+private const val REVIEW_CARD_MAX = 3
+
+@Composable
+private fun ReviewCard(
+    period: SummaryPeriod,
+    insights: List<Insight>,
+    onSeeAll: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // The whole card opens the review: it is a teaser, and the per-insight deep links live on the
+    // screen it opens. Individually clickable rows inside a clickable card would nest two targets
+    // and send a tap on "Dining over limit" somewhere other than dining.
+    // Same padding as the hero, and a flat label row like the hero's: a TextButton here brought
+    // its own 40dp minimum height and inset padding, which made the title row taller than the
+    // hero's and floated "See all" in from the card edge.
+    SurfaceCard(modifier = modifier, contentPadding = Spacing.cardGap, onClick = onSeeAll) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Same title treatment as the net-worth hero's label, so the card reads as a peer of
+            // the cards around it rather than a heading over them.
+            Text(
+                text = stringResource(Res.string.insights_review_title, stringResource(period.labelRes())),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = stringResource(Res.string.insights_see_all),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable(onClick = onSeeAll),
+            )
+        }
+        Spacer(Modifier.height(Spacing.s2))
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
+            insights.take(REVIEW_CARD_MAX).forEach { insight -> InsightRow(insight) }
+        }
+    }
 }
