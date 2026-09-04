@@ -27,6 +27,10 @@ jobs:
         uses: android-actions/setup-android@v4
 
       - name: Build staging release APK
+        # See release.yml: blank parse-service config hides every online-AI affordance.
+        env:
+          HISABAK_PARSE_URL: ${{ secrets.HISABAK_PARSE_URL }}
+          HISABAK_PARSE_TOKEN: ${{ secrets.HISABAK_PARSE_TOKEN }}
         run: ./gradlew assembleStagingRelease --no-daemon
 
       # Firebase caps release notes and rejects an over-long body with a 400 *after* the binary

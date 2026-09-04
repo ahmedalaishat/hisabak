@@ -99,6 +99,13 @@ diagnostics and usage analytics, the Play **Data safety** form must declare both
 - `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD` — keystore credentials.
 - `PLAY_SERVICE_ACCOUNT_JSON` — a Google Cloud service account JSON with Play access (granted in
   the Play Console under *Users & permissions*).
+- `HISABAK_PARSE_URL`, `HISABAK_PARSE_TOKEN` — the parse-service endpoint, passed as env to the
+  build step in **both** `release.yml` and `distribute.yml`. **Not optional in practice:** blank
+  makes `AppConfig.hasParseService` false, which hides the insights **AI assistant** tab and the
+  **parse with the online model** setting, so a build without them silently ships without every
+  online-AI affordance (this is what happened to v2.3.0). A local build reads the same values from
+  the `parseServiceUrl`/`parseServiceToken` properties in `~/.gradle/gradle.properties`, which is
+  why the gap didn't show up before a CI build was installed.
 
 **One-time Play Console setup**
 1. Create the app in the Play Console and enable **Play App Signing**.

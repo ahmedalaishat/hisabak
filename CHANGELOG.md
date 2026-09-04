@@ -6,6 +6,15 @@ All notable changes to Hisabak are documented here. Format based on
 
 ## [Unreleased]
 
+## [2.3.1] — 2026-09-04
+
+### Fixed
+- **The AI features from 2.3.0 are now actually in the build.** The insights **AI assistant** tab
+  and the **parse with the online model** option in SMS parsing settings were missing from the
+  2.3.0 release: the app hides both when it ships without an online-parsing endpoint, and the
+  build that went out was assembled without one. Nothing about the features themselves changed —
+  they're simply present now. Online parsing stays off until you turn it on.
+
 ## [2.3.0] — 2026-09-04
 
 ### Added
