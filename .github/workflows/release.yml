@@ -39,6 +39,11 @@ jobs:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          # Without these the built app has AppConfig.hasParseService == false, which hides the
+          # insights AI tab and the "parse with the online model" setting. They live only in the
+          # local ~/.gradle/gradle.properties, so CI builds shipped without them (v2.3.0).
+          HISABAK_PARSE_URL: ${{ secrets.HISABAK_PARSE_URL }}
+          HISABAK_PARSE_TOKEN: ${{ secrets.HISABAK_PARSE_TOKEN }}
         run: |
           ./gradlew bundleProdRelease assembleProdRelease --no-daemon -PrequireReleaseSigning
           cp androidApp/build/outputs/apk/prod/release/androidApp-prod-release.apk "hisabak-${{ github.ref_name }}.apk"
