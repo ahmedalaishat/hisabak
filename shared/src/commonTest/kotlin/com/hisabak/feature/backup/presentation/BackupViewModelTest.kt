@@ -1,5 +1,12 @@
 package com.hisabak.feature.backup.presentation
 
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.launch
+import com.hisabak.core.domain.backup.RestoreResult
+import com.hisabak.core.domain.backup.RestoreFromBytesUseCase
+import com.hisabak.core.domain.backup.BuildBackupBytesUseCase
+import com.hisabak.core.domain.backup.BackupData
+import com.hisabak.core.domain.backup.BackupBytesResult
 import app.cash.turbine.test
 import com.hisabak.testutil.FakeBackupCrypto
 import com.hisabak.core.data.backup.AuthorizeOutcome
@@ -43,8 +50,230 @@ class BackupViewModelTest : MainDispatcherTest() {
         scheduler: FakeAutoBackupScheduler = FakeAutoBackupScheduler(),
         analytics: FakeAnalytics = FakeAnalytics(),
     ): BackupViewModel {
-        val runBackup = RunBackupUseCase(repo, codec, crypto, remote, TestClock(), prefs, 8, 2)
-        return BackupViewModel(prefs, passphrase, account, authorizer, runBackup, remote, scheduler, TestClock(), analytics)
+        val buildBytes = BuildBackupBytesUseCase(repo, codec, crypto, TestClock(), 8, 2)
+        val runBackup = RunBackupUseCase(buildBytes, remote, TestClock(), prefs)
+        val restoreBytes = RestoreFromBytesUseCase(repo, codec, crypto, schemaVersion = 2)
+        return BackupViewModel(
+            prefs, passphrase, account, authorizer, runBackup, buildBytes, restoreBytes, remote, scheduler,
+            TestClock(), flavor = "prod", analytics = analytics,
+        )
+    }
+
+    /** Keeps the WhileSubscribed state hot so tests can read `state.value` after acting. */
+    private fun TestScope.observe(vm: BackupViewModel): BackupViewModel {
+        backgroundScope.launch { vm.state.collect {} }
+        return vm
+    }
+
+    /** Runs an export through to the platform saver, capturing what it was handed. */
+    private fun TestScope.export(vm: BackupViewModel, outcome: (ByteArray) -> Boolean = { true }): ByteArray? {
+        var handed: ByteArray? = null
+        vm.exportFile()
+        advanceUntilIdle()
+        vm.saveExport { bytes -> handed = bytes; outcome(bytes) }
+        advanceUntilIdle()
+        return handed
+    }
+
+    private suspend fun fileBytes(passphrase: String?, schema: Int = 2): ByteArray {
+        val built = BuildBackupBytesUseCase(FakeBackupRepository(sampleBackupData()), codec, crypto, TestClock(), 8, schema)
+            .invoke(passphrase)
+        return (built as BackupBytesResult.Success).bytes
+    }
+
+    private fun TestScope.pick(vm: BackupViewModel, bytes: ByteArray) {
+        vm.onImportFilePicked { bytes }
+        advanceUntilIdle()
+    }
+
+    @Test
+    fun `export asks the platform to save a dated file`() = runTest {
+        val vm = observe(viewModel())
+        vm.exportFile()
+        advanceUntilIdle()
+
+        assertEquals(BackupEffect.SaveFile("hisabak-backup-2026-06-17.bak"), vm.effect.value)
+        assertTrue(vm.state.value.exporting)
+    }
+
+    @Test
+    fun `export works with backup off and no account and writes a plain file`() = runTest {
+        val analytics = FakeAnalytics()
+        val vm = observe(viewModel(analytics = analytics)) // backup disabled, nothing connected
+
+        val handed = export(vm)
+
+        assertTrue(handed != null && !crypto.isEncrypted(handed))
+        assertEquals(SyncKind.Export, vm.state.value.syncKind)
+        assertEquals(SyncPhase.Done(), vm.state.value.sync)
+        assertEquals(false, vm.state.value.exporting)
+        val event = analytics.logged.single { it.name == "backup_file_exported" }
+        assertEquals(mapOf("success" to true, "encrypted" to false, "error" to null), event.params)
+    }
+
+    @Test
+    fun `export encrypts with the stored passphrase when encryption is on`() = runTest {
+        val prefs = FakeAppPreferences().apply { setBackupEnabled(true); setBackupEncryptionEnabled(true) }
+        val passphrase = FakeBackupPassphraseStore().apply { set("secret123") }
+        val vm = observe(viewModel(prefs = prefs, passphrase = passphrase))
+
+        val handed = export(vm)!!
+
+        assertTrue(crypto.isEncrypted(handed))
+        val target = FakeBackupRepository()
+        assertEquals(
+            RestoreResult.Success(sampleBackupData().totalRecords),
+            RestoreFromBytesUseCase(target, codec, crypto, 2).invoke(handed, "secret123"),
+        )
+    }
+
+    @Test
+    fun `export never stamps the last Drive backup`() = runTest {
+        val prefs = FakeAppPreferences()
+        val vm = observe(viewModel(prefs = prefs))
+
+        export(vm)
+
+        assertEquals(0L, prefs.lastBackupAt.first())
+    }
+
+    @Test
+    fun `a cancelled save goes quietly back to the settings`() = runTest {
+        val analytics = FakeAnalytics()
+        val vm = observe(viewModel(analytics = analytics))
+
+        export(vm) { false }
+
+        assertEquals(null, vm.state.value.sync)
+        assertEquals(false, vm.state.value.exporting)
+        assertTrue("backup_file_exported" !in analytics.names())
+    }
+
+    @Test
+    fun `a failed write reports a file error`() = runTest {
+        val analytics = FakeAnalytics()
+        val vm = observe(viewModel(analytics = analytics))
+
+        export(vm) { error("disk full") }
+
+        assertEquals(SyncPhase.Failed(BackupError.FileAccess), vm.state.value.sync)
+        assertEquals(SyncKind.Export, vm.state.value.syncKind)
+        assertEquals("file_access", analytics.logged.single { it.name == "backup_file_exported" }.params["error"])
+    }
+
+    @Test
+    fun `exporting with no data shows the empty error and saves nothing`() = runTest {
+        val vm = observe(viewModel(repo = FakeBackupRepository(BackupData())))
+        vm.exportFile()
+        advanceUntilIdle()
+
+        assertEquals(BackupError.Empty, vm.state.value.error)
+        assertEquals(null, vm.effect.value)
+        assertEquals(false, vm.state.value.exporting)
+    }
+
+    @Test
+    fun `a picked file asks for confirmation before replacing anything`() = runTest {
+        val repo = FakeBackupRepository()
+        val vm = observe(viewModel(repo = repo))
+
+        pick(vm, fileBytes(null))
+
+        assertEquals(ImportStep.Confirm, vm.state.value.importStep)
+        assertEquals(null, repo.replacedWith)
+    }
+
+    @Test
+    fun `confirming a plain file restores it and reports the count`() = runTest {
+        val repo = FakeBackupRepository()
+        val analytics = FakeAnalytics()
+        val vm = observe(viewModel(repo = repo, analytics = analytics))
+
+        pick(vm, fileBytes(null))
+        vm.confirmImport()
+        advanceUntilIdle()
+
+        assertEquals(sampleBackupData(), repo.replacedWith)
+        assertEquals(SyncKind.Import, vm.state.value.syncKind)
+        assertEquals(SyncPhase.Done(sampleBackupData().totalRecords), vm.state.value.sync)
+        assertEquals(null, vm.state.value.importStep)
+        assertEquals(mapOf("success" to true, "error" to null), analytics.logged.single { it.name == "backup_file_imported" }.params)
+    }
+
+    @Test
+    fun `cancelling the confirmation keeps the data`() = runTest {
+        val repo = FakeBackupRepository()
+        val vm = observe(viewModel(repo = repo))
+
+        pick(vm, fileBytes(null))
+        vm.cancelImport()
+        advanceUntilIdle()
+        vm.confirmImport() // the file was dropped with the cancel
+        advanceUntilIdle()
+
+        assertEquals(null, vm.state.value.importStep)
+        assertEquals(null, repo.replacedWith)
+    }
+
+    @Test
+    fun `an encrypted file asks for the passphrase then retries a wrong one`() = runTest {
+        val repo = FakeBackupRepository()
+        val vm = observe(viewModel(repo = repo))
+
+        pick(vm, fileBytes("right-one"))
+        vm.confirmImport()
+        advanceUntilIdle()
+        assertEquals(ImportStep.Passphrase(), vm.state.value.importStep)
+        assertEquals(null, vm.state.value.sync)
+
+        vm.submitImportPassphrase("wrong-one")
+        advanceUntilIdle()
+        assertEquals(ImportStep.Passphrase(BackupError.WrongPassphrase), vm.state.value.importStep)
+        assertEquals(null, repo.replacedWith)
+
+        vm.submitImportPassphrase("right-one")
+        advanceUntilIdle()
+        assertEquals(SyncPhase.Done(sampleBackupData().totalRecords), vm.state.value.sync)
+        assertEquals(sampleBackupData(), repo.replacedWith)
+    }
+
+    @Test
+    fun `a file that is not a backup fails as corrupt`() = runTest {
+        val repo = FakeBackupRepository()
+        val analytics = FakeAnalytics()
+        val vm = observe(viewModel(repo = repo, analytics = analytics))
+
+        pick(vm, "hello".encodeToByteArray())
+        vm.confirmImport()
+        advanceUntilIdle()
+
+        assertEquals(SyncPhase.Failed(BackupError.Corrupt), vm.state.value.sync)
+        assertEquals(null, repo.replacedWith)
+        assertEquals("corrupt", analytics.logged.single { it.name == "backup_file_imported" }.params["error"])
+    }
+
+    @Test
+    fun `a file from a newer app is rejected`() = runTest {
+        val repo = FakeBackupRepository()
+        val vm = observe(viewModel(repo = repo))
+
+        pick(vm, fileBytes(null, schema = 3))
+        vm.confirmImport()
+        advanceUntilIdle()
+
+        assertEquals(SyncPhase.Failed(BackupError.UnsupportedVersion(3, 2)), vm.state.value.sync)
+        assertEquals(null, repo.replacedWith)
+    }
+
+    @Test
+    fun `an unreadable file shows a file error without asking to confirm`() = runTest {
+        val vm = observe(viewModel())
+
+        vm.onImportFilePicked { error("permission revoked") }
+        advanceUntilIdle()
+
+        assertEquals(BackupError.FileAccess, vm.state.value.error)
+        assertEquals(null, vm.state.value.importStep)
     }
 
     @Test

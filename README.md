@@ -141,6 +141,9 @@ Everything below is built and shipping today:
   private, app-only space in your Drive, optionally encrypted with a passphrase (AES-256-GCM), with
   optional **automatic backups** (daily / weekly / monthly). A new install offers to restore from
   Drive right after onboarding. (Requires the app's Drive access to be configured.)
+- [x] 💾 **Backup file export / import** — save the same backup to a file you keep (encrypted with
+  your passphrase when encryption is on), and import one to replace the data on this phone. No
+  Google account or internet needed; files move between Android and iOS.
 - [x] 📴 **Offline-first** — all data is stored locally on-device (Room). Light & dark themes,
   polished motion, edge-to-edge.
 

@@ -33,6 +33,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,7 +46,8 @@ import com.hisabak.ui.components.HisabakButton
 import com.hisabak.ui.theme.LocalReducedMotion
 import com.hisabak.ui.theme.Spacing
 
-enum class SyncKind { BackUp, Restore }
+/** What a [SyncScreen] reports on: Drive backup/restore, or a backup file the user exports/imports. */
+enum class SyncKind { BackUp, Restore, Export, Import }
 
 sealed interface SyncPhase {
     data object Running : SyncPhase
@@ -172,7 +174,7 @@ private fun SyncHalo(kind: SyncKind, phase: SyncPhase) {
                 }
                 CenterDisc(primary.copy(alpha = 0.12f)) {
                     Icon(
-                        if (kind == SyncKind.BackUp) HugeIcons.CloudUpload else HugeIcons.CloudDownload,
+                        kind.icon,
                         contentDescription = null, tint = primary, modifier = Modifier.size(44.dp),
                     )
                 }
@@ -208,19 +210,46 @@ private fun CenterDisc(color: androidx.compose.ui.graphics.Color, content: @Comp
     ) { content() }
 }
 
+private val SyncKind.icon: ImageVector
+    get() = when (this) {
+        SyncKind.BackUp -> HugeIcons.CloudUpload
+        SyncKind.Restore -> HugeIcons.CloudDownload
+        SyncKind.Export -> HugeIcons.Download
+        SyncKind.Import -> HugeIcons.Inbox
+    }
+
 private fun titleRes(kind: SyncKind, phase: SyncPhase): StringResource = when (phase) {
-    SyncPhase.Running -> if (kind == SyncKind.BackUp) Res.string.sync_backup_running_title else Res.string.sync_restore_running_title
-    is SyncPhase.Done -> if (kind == SyncKind.BackUp) Res.string.sync_backup_done_title else Res.string.sync_restore_done_title
-    is SyncPhase.Failed -> if (kind == SyncKind.BackUp) Res.string.sync_backup_failed_title else Res.string.sync_restore_failed_title
+    // An export never shows Running: the system save sheet is its progress.
+    SyncPhase.Running -> when (kind) {
+        SyncKind.BackUp, SyncKind.Export -> Res.string.sync_backup_running_title
+        SyncKind.Restore, SyncKind.Import -> Res.string.sync_restore_running_title
+    }
+    is SyncPhase.Done -> when (kind) {
+        SyncKind.BackUp -> Res.string.sync_backup_done_title
+        SyncKind.Export -> Res.string.sync_export_done_title
+        SyncKind.Restore, SyncKind.Import -> Res.string.sync_restore_done_title
+    }
+    is SyncPhase.Failed -> when (kind) {
+        SyncKind.BackUp -> Res.string.sync_backup_failed_title
+        SyncKind.Export -> Res.string.sync_export_failed_title
+        SyncKind.Restore, SyncKind.Import -> Res.string.sync_restore_failed_title
+    }
 }
 
 @Composable
 private fun subtitle(kind: SyncKind, phase: SyncPhase): String = when (phase) {
     SyncPhase.Running -> stringResource(
-        if (kind == SyncKind.BackUp) Res.string.sync_backup_running_sub else Res.string.sync_restore_running_sub,
+        when (kind) {
+            SyncKind.BackUp, SyncKind.Export -> Res.string.sync_backup_running_sub
+            SyncKind.Restore -> Res.string.sync_restore_running_sub
+            SyncKind.Import -> Res.string.sync_import_running_sub
+        },
     )
-    is SyncPhase.Done ->
-        if (phase.restoredCount != null) stringResource(Res.string.sync_restore_done_sub, localizedFormatArg(phase.restoredCount))
-        else stringResource(Res.string.sync_backup_done_sub)
+    is SyncPhase.Done -> when {
+        phase.restoredCount != null ->
+            stringResource(Res.string.sync_restore_done_sub, localizedFormatArg(phase.restoredCount))
+        kind == SyncKind.Export -> stringResource(Res.string.sync_export_done_sub)
+        else -> stringResource(Res.string.sync_backup_done_sub)
+    }
     is SyncPhase.Failed -> stringResource(phase.error.messageRes())
 }
