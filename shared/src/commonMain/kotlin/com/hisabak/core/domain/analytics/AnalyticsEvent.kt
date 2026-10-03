@@ -265,6 +265,21 @@ sealed class AnalyticsEvent(
         name = "backup_restore_completed",
         params = mapOf("success" to success),
     )
+
+    /**
+     * A backup file export finished. [encrypted] says which kind of file was written; [error] is a
+     * `BackupError` kind on failure. Never the file name, its size, or a record count.
+     */
+    class BackupFileExported(success: Boolean, encrypted: Boolean, error: String? = null) : AnalyticsEvent(
+        name = "backup_file_exported",
+        params = mapOf("success" to success, "encrypted" to encrypted, "error" to error),
+    )
+
+    /** A restore from a picked backup file finished; [error] is a `BackupError` kind on failure. */
+    class BackupFileImported(success: Boolean, error: String? = null) : AnalyticsEvent(
+        name = "backup_file_imported",
+        params = mapOf("success" to success, "error" to error),
+    )
 }
 
 /** Coarse, non-reversible magnitude bucket of a money value — never the raw amount. */

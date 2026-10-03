@@ -30,10 +30,11 @@ class CatchUpAutoBackupUseCaseTest {
         passphraseStore: FakeBackupPassphraseStore = FakeBackupPassphraseStore(),
         analytics: FakeAnalytics = FakeAnalytics(),
     ): CatchUpAutoBackupUseCase {
-        val runBackup = RunBackupUseCase(
-            FakeBackupRepository(sampleBackupData()), JsonBackupCodec(), crypto, remote, clock, prefs,
+        val buildBytes = BuildBackupBytesUseCase(
+            FakeBackupRepository(sampleBackupData()), JsonBackupCodec(), crypto, clock,
             appVersionCode = 8, schemaVersion = 2,
         )
+        val runBackup = RunBackupUseCase(buildBytes, remote, clock, prefs)
         return CatchUpAutoBackupUseCase(prefs, passphraseStore, runBackup, clock, analytics)
     }
 

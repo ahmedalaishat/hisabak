@@ -6,6 +6,8 @@ import org.koin.compose.koinInject
 import com.hisabak.core.common.AppConfig
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -20,6 +22,8 @@ import com.hisabak.feature.settings.presentation.LANGUAGE_ARABIC
 import platform.Foundation.NSURL
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationOpenSettingsURLString
+import com.hisabak.feature.backup.platform.IosBackupFiles
+import com.hisabak.feature.backup.presentation.BackupEffect
 import com.hisabak.feature.backup.presentation.BackupScreen
 import com.hisabak.feature.backup.presentation.BackupViewModel
 import com.hisabak.feature.onboarding.presentation.OnboardingScreen
@@ -171,12 +175,25 @@ internal fun IosSettingsRoute(
     )
 }
 
+/** Backup files go through the system document picker ([IosBackupFiles]) — Files, iCloud Drive,
+ *  or any provider app — where Android uses the Storage Access Framework. */
 @Composable
 internal fun IosBackupRoute(
     modifier: Modifier = Modifier,
     viewModel: BackupViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+
+    LaunchedViewEffectHandler(
+        effectFlow = viewModel.effect,
+        onConsumeEffect = viewModel::consumeEffect,
+        onEffect = { effect ->
+            when (effect) {
+                is BackupEffect.SaveFile -> viewModel.saveExport { bytes -> IosBackupFiles.export(effect.fileName, bytes) }
+            }
+        },
+    )
 
     BackupScreen(
         state = state,
@@ -188,6 +205,16 @@ internal fun IosBackupRoute(
         onBackupNow = viewModel::backupNow,
         onClearError = viewModel::clearError,
         onDismissSync = viewModel::dismissSync,
+        onExportFile = viewModel::exportFile,
+        onPickImportFile = {
+            scope.launch {
+                val url = IosBackupFiles.pick() ?: return@launch
+                viewModel.onImportFilePicked { IosBackupFiles.read(url) }
+            }
+        },
+        onConfirmImport = viewModel::confirmImport,
+        onSubmitImportPassphrase = viewModel::submitImportPassphrase,
+        onCancelImport = viewModel::cancelImport,
         modifier = modifier,
     )
 }

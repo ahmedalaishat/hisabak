@@ -18,11 +18,17 @@ class BackupUseCasesTest {
     private val codec = JsonBackupCodec()
     private val crypto = AesGcmBackupCrypto()
 
+    private fun buildBytes(repo: FakeBackupRepository, schema: Int = 2) =
+        BuildBackupBytesUseCase(repo, codec, crypto, TestClock(), appVersionCode = 8, schemaVersion = schema)
+
+    private fun restoreBytes(repo: FakeBackupRepository, schema: Int = 2) =
+        RestoreFromBytesUseCase(repo, codec, crypto, schemaVersion = schema)
+
     private fun runBackup(repo: FakeBackupRepository, remote: FakeBackupRemote, schema: Int = 2) =
-        RunBackupUseCase(repo, codec, crypto, remote, TestClock(), FakeAppPreferences(), appVersionCode = 8, schemaVersion = schema)
+        RunBackupUseCase(buildBytes(repo, schema), remote, TestClock(), FakeAppPreferences())
 
     private fun restore(repo: FakeBackupRepository, remote: FakeBackupRemote, schema: Int = 2) =
-        RestoreFromRemoteUseCase(repo, codec, crypto, remote, schemaVersion = schema)
+        RestoreFromRemoteUseCase(remote, restoreBytes(repo, schema))
 
     @Test
     fun `encrypted backup round-trips through the remote`() = runTest {
@@ -87,6 +93,29 @@ class BackupUseCasesTest {
             restore(target, remote, schema = 2).invoke(null),
         )
         assertNull(target.replacedWith)
+    }
+
+    @Test
+    fun `an exported file restores with the real cipher, encrypted or not`() = runTest {
+        for (passphrase in listOf("pass1234", null)) {
+            val built = buildBytes(FakeBackupRepository(sampleBackupData())).invoke(passphrase)
+            val bytes = (built as BackupBytesResult.Success).bytes
+            assertEquals(passphrase != null, crypto.isEncrypted(bytes))
+
+            val target = FakeBackupRepository()
+            assertEquals(RestoreResult.Success(sampleBackupData().totalRecords), restoreBytes(target).invoke(bytes, passphrase))
+            assertEquals(sampleBackupData(), target.replacedWith)
+        }
+    }
+
+    @Test
+    fun `a Drive upload and a file export are the same format`() = runTest {
+        val remote = FakeBackupRemote()
+        runBackup(FakeBackupRepository(sampleBackupData()), remote).invoke("pass1234")
+
+        // The uploaded blob goes through the bytes path unchanged, so a file saved from Drive restores.
+        val target = FakeBackupRepository()
+        assertEquals(RestoreResult.Success(sampleBackupData().totalRecords), restoreBytes(target).invoke(remote.stored!!, "pass1234"))
     }
 
     @Test

@@ -6,7 +6,9 @@ import com.hisabak.core.data.backup.RoomBackupRepository
 import com.hisabak.core.data.local.HisabakDatabase
 import com.hisabak.core.domain.backup.BackupCodec
 import com.hisabak.core.domain.backup.BackupRepository
+import com.hisabak.core.domain.backup.BuildBackupBytesUseCase
 import com.hisabak.core.domain.backup.CatchUpAutoBackupUseCase
+import com.hisabak.core.domain.backup.RestoreFromBytesUseCase
 import com.hisabak.core.domain.backup.RestoreFromRemoteUseCase
 import com.hisabak.core.domain.backup.RunBackupUseCase
 import com.hisabak.feature.backup.presentation.BackupViewModel
@@ -32,15 +34,29 @@ val backupModule = module {
     single<BackupCodec> { JsonBackupCodec() }
 
     factory {
-        RunBackupUseCase(
+        BuildBackupBytesUseCase(
             repository = get(),
             codec = get(),
             crypto = get(),
+            clock = get(),
+            appVersionCode = get<AppConfig>().versionCode,
+            schemaVersion = HisabakDatabase.SCHEMA_VERSION,
+        )
+    }
+    factory {
+        RestoreFromBytesUseCase(
+            repository = get(),
+            codec = get(),
+            crypto = get(),
+            schemaVersion = HisabakDatabase.SCHEMA_VERSION,
+        )
+    }
+    factory {
+        RunBackupUseCase(
+            buildBytes = get(),
             remote = get(),
             clock = get(),
             preferences = get(),
-            appVersionCode = get<AppConfig>().versionCode,
-            schemaVersion = HisabakDatabase.SCHEMA_VERSION,
         )
     }
     // single: the in-flight guard must be shared across every trigger (launch, foreground, BG task).
@@ -55,11 +71,8 @@ val backupModule = module {
     }
     factory {
         RestoreFromRemoteUseCase(
-            repository = get(),
-            codec = get(),
-            crypto = get(),
             remote = get(),
-            schemaVersion = HisabakDatabase.SCHEMA_VERSION,
+            restoreFromBytes = get(),
         )
     }
 
@@ -70,9 +83,12 @@ val backupModule = module {
             accountStore = get(),
             authorizer = get(),
             runBackup = get(),
+            buildBackupBytes = get(),
+            restoreFromBytes = get(),
             remote = get(),
             scheduler = get(),
             clock = get(),
+            flavor = get<AppConfig>().flavor,
             analytics = get(),
         )
     }

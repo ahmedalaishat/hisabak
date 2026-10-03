@@ -1,5 +1,7 @@
 package com.hisabak.core.domain.backup
 
+import kotlinx.datetime.LocalDate
+
 /**
  * The Drive file name for a build flavor. Drive's App Data Folder is scoped to the Google Cloud
  * *project*, so every flavor (and platform) of the app shares one folder — prod↔staging would
@@ -9,3 +11,10 @@ package com.hisabak.core.domain.backup
  */
 fun backupFileName(flavor: String): String =
     if (flavor == "prod") "hisabak-backup.bak" else "hisabak-backup-$flavor.bak"
+
+/**
+ * The suggested name for a backup file the user exports, dated so several copies can sit side by
+ * side. Non-prod flavors carry their name, the same way [backupFileName] keeps staging apart.
+ */
+fun exportFileName(flavor: String, date: LocalDate): String =
+    if (flavor == "prod") "hisabak-backup-$date.bak" else "hisabak-backup-$flavor-$date.bak"

@@ -354,8 +354,11 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
     immediate write transaction), `JsonBackupCodec` (kotlinx.serialization), `AesGcmBackupCrypto`
     (passphrase→PBKDF2→AES-256-GCM; `isEncrypted` sniffs the `HSBK` magic so unencrypted backups
     restore without a passphrase), `GoogleDriveBackupRemote` (`BackupRemote` over Drive v3 REST via
-    `HttpURLConnection`). `RunBackupUseCase` / `RestoreFromRemoteUseCase` orchestrate; encryption is
-    optional (caller passes the passphrase or null). `HisabakDatabase.SCHEMA_VERSION` is stamped into
+    `HttpURLConnection`). The bytes half is `BuildBackupBytesUseCase` (snapshot → envelope → encode →
+    optional encrypt) and `RestoreFromBytesUseCase` (decrypt → decode → schema gate → replace);
+    `RunBackupUseCase` / `RestoreFromRemoteUseCase` wrap them with the Drive upload/download, so a
+    file export and a Drive backup are byte-identical. Encryption is optional (caller passes the
+    passphrase or null). `HisabakDatabase.SCHEMA_VERSION` is stamped into
     the envelope and gated on import. The Drive file name is **flavor-scoped**
     (`backupFileName(flavor)` off `AppConfig.flavor`: prod keeps `hisabak-backup.bak`, staging
     writes `hisabak-backup-staging.bak`, and `findLatest` filters by name) — the App Data Folder
@@ -372,6 +375,18 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
     called from `HisabakApp.onCreate`, `startIosApp`, iOS scene-active (`onIosAppForeground`),
     and the iOS BG task. `RunBackupUseCase` stamps the `lastBackupAt` pref on every successful
     upload (manual or scheduled).
+  - **Backup file (export / import):** Settings → Backup's "Backup file" section sits **outside**
+    the Drive enable gate — no account, no network. `BackupViewModel.exportFile()` builds the bytes
+    (encrypted iff `backupEncryptionEnabled`, with the stored passphrase) and emits
+    `BackupEffect.SaveFile(exportFileName(flavor, today))` (`hisabak-backup[-staging]-YYYY-MM-DD.bak`);
+    the platform answers via `saveExport { bytes -> saved? }` (false = cancelled, throw = failed).
+    Import: `onImportFilePicked { read }` → `ImportStep.Confirm` → `RestoreFromBytesUseCase` →
+    `ImportStep.Passphrase` on an encrypted file. The bytes stay in the ViewModel, never in UI state.
+    **A file export never stamps `lastBackupAt`** — the catch-up must keep measuring Drive's age.
+    File I/O is per platform: Android `BackupRoute` uses SAF (`CreateDocument` / `OpenDocument`
+    through `contentResolver`); iOS `IosBackupFiles` (iosMain, pure K/N) uses
+    `UIDocumentPickerViewController` in `asCopy` mode for both directions. Analytics:
+    `backup_file_exported` / `backup_file_imported` carry booleans + a `BackupError` kind only.
 - **CMP migration:** the app is **Kotlin Multiplatform + Compose Multiplatform** — plan and PR
   sequence in `docs/kmp-migration.md`. **Phase A is complete**: all common code (domain, data,
   ViewModels, Compose UI) lives in `shared/commonMain`, the iOS targets compile against stub

@@ -6,6 +6,18 @@ All notable changes to Hisabak are documented here. Format based on
 
 ## [Unreleased]
 
+### Added
+- **Keep your own backup file.** Settings → Backup now has **Export backup file** and **Import
+  from file**, alongside the Google Drive backup. An export is the same backup Drive gets —
+  encrypted with your passphrase when backup encryption is on, and clearly marked when it isn't —
+  saved wherever you pick. Importing a file asks before it replaces everything, then for the
+  passphrase if the file is encrypted. Neither needs a Google account or a connection, and a file
+  exported on Android imports on iPhone and the other way round.
+
+### Fixed
+- The first-launch restore page said you could restore later from Settings, which wasn't true.
+  It now points to importing a backup file from Settings → Backup.
+
 ## [2.3.1] — 2026-09-04
 
 ### Fixed

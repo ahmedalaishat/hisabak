@@ -1,5 +1,7 @@
 package com.hisabak.feature.restore.presentation
 
+import com.hisabak.core.domain.backup.RestoreFromBytesUseCase
+import com.hisabak.core.domain.backup.BuildBackupBytesUseCase
 import com.hisabak.testutil.FakeBackupCrypto
 import com.hisabak.core.data.backup.AuthorizeOutcome
 import com.hisabak.core.data.backup.JsonBackupCodec
@@ -37,13 +39,13 @@ class RestoreViewModelTest : MainDispatcherTest() {
         passphraseStore: FakeBackupPassphraseStore = FakeBackupPassphraseStore(),
         analytics: FakeAnalytics = FakeAnalytics(),
     ): RestoreViewModel {
-        val restore = RestoreFromRemoteUseCase(target, codec, crypto, remote, schemaVersion = 2)
+        val restore = RestoreFromRemoteUseCase(remote, RestoreFromBytesUseCase(target, codec, crypto, schemaVersion = 2))
         return RestoreViewModel(restore, FakeDriveAuthorizer(), FakeBackupAccountStore(), passphraseStore, prefs, analytics)
     }
 
     private suspend fun seedEncryptedBackup(remote: FakeBackupRemote, passphrase: String) {
-        RunBackupUseCase(FakeBackupRepository(sampleBackupData()), codec, crypto, remote, TestClock(), FakeAppPreferences(), 8, 2)
-            .invoke(passphrase)
+        val buildBytes = BuildBackupBytesUseCase(FakeBackupRepository(sampleBackupData()), codec, crypto, TestClock(), 8, 2)
+        RunBackupUseCase(buildBytes, remote, TestClock(), FakeAppPreferences()).invoke(passphrase)
     }
 
     @Test

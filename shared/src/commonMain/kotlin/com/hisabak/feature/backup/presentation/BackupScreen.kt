@@ -49,10 +49,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.hisabak.ui.format.LocalDateFormatter
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.hisabak.shared.resources.*
 import org.jetbrains.compose.resources.StringResource
 import com.hisabak.core.domain.backup.AutoBackupPeriod
@@ -80,6 +82,11 @@ fun BackupScreen(
     onBackupNow: () -> Unit,
     onClearError: () -> Unit,
     onDismissSync: () -> Unit,
+    onExportFile: () -> Unit,
+    onPickImportFile: () -> Unit,
+    onConfirmImport: () -> Unit,
+    onSubmitImportPassphrase: (String) -> Unit,
+    onCancelImport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AnimatedContent(
@@ -97,10 +104,20 @@ fun BackupScreen(
     ) { sync ->
         if (sync != null) {
             SyncScreen(
-                kind = SyncKind.BackUp,
+                kind = state.syncKind,
                 phase = sync,
                 onContinue = onDismissSync,
-                onRetry = onBackupNow,
+                onRetry = {
+                    // A failed import is spent (its bytes are dropped), so retrying means a new file.
+                    when (state.syncKind) {
+                        SyncKind.Export -> onExportFile()
+                        SyncKind.Import -> {
+                            onDismissSync()
+                            onPickImportFile()
+                        }
+                        else -> onBackupNow()
+                    }
+                },
                 onClose = onDismissSync,
             )
         } else {
@@ -113,8 +130,20 @@ fun BackupScreen(
                 onConnectAccount = onConnectAccount,
                 onBackupNow = onBackupNow,
                 onClearError = onClearError,
+                onExportFile = onExportFile,
+                onPickImportFile = onPickImportFile,
             )
         }
+    }
+
+    when (val step = state.importStep) {
+        ImportStep.Confirm -> ImportConfirmDialog(onConfirm = onConfirmImport, onDismiss = onCancelImport)
+        is ImportStep.Passphrase -> ImportPassphraseDialog(
+            wrong = step.error == BackupError.WrongPassphrase,
+            onSubmit = onSubmitImportPassphrase,
+            onDismiss = onCancelImport,
+        )
+        null -> Unit
     }
 }
 
@@ -128,6 +157,8 @@ private fun BackupSettings(
     onConnectAccount: () -> Unit,
     onBackupNow: () -> Unit,
     onClearError: () -> Unit,
+    onExportFile: () -> Unit,
+    onPickImportFile: () -> Unit,
 ) {
     var showPassphraseSheet by rememberSaveable { mutableStateOf(false) }
     var showPeriodSheet by rememberSaveable { mutableStateOf(false) }
@@ -255,6 +286,11 @@ private fun BackupSettings(
                 }
             }
         }
+
+        // Outside the Drive gate: a file needs no account, no network, and no backup switch.
+        if (state.ready) {
+            BackupFileSection(state = state, onExportFile = onExportFile, onPickImportFile = onPickImportFile)
+        }
     }
 
     if (showTurnOff) {
@@ -332,6 +368,87 @@ private fun BackupSettings(
             onDismiss = { showPeriodSheet = false },
         )
     }
+}
+
+@Composable
+private fun BackupFileSection(
+    state: BackupUiState,
+    onExportFile: () -> Unit,
+    onPickImportFile: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
+        Text(
+            text = stringResource(Res.string.backup_file_title).uppercase(),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.5.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = Spacing.s1),
+        )
+        SurfaceCard(modifier = Modifier.fillMaxWidth(), contentPadding = 0.dp) {
+            SettingsRow(
+                icon = HugeIcons.Download,
+                title = stringResource(Res.string.backup_file_export),
+                // Says which file they'll get: a plain one is readable by whoever holds it.
+                subtitle = stringResource(
+                    if (state.encryptionEnabled) Res.string.backup_file_export_encrypted else Res.string.backup_file_export_plain,
+                ),
+                onClick = if (state.exporting) null else onExportFile,
+            )
+            RowDivider()
+            SettingsRow(
+                icon = HugeIcons.Inbox,
+                title = stringResource(Res.string.backup_file_import),
+                subtitle = stringResource(Res.string.backup_file_import_hint),
+                onClick = onPickImportFile,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ImportConfirmDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.backup_file_import_confirm_title)) },
+        text = { Text(stringResource(Res.string.backup_file_import_confirm_message)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(Res.string.backup_file_import_confirm_action), color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) }
+        },
+    )
+}
+
+@Composable
+private fun ImportPassphraseDialog(wrong: Boolean, onSubmit: (String) -> Unit, onDismiss: () -> Unit) {
+    var passphrase by rememberSaveable { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.restore_passphrase_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.s4)) {
+                Text(stringResource(Res.string.backup_file_import_passphrase_message))
+                PassphraseField(
+                    value = passphrase,
+                    onChange = { passphrase = it },
+                    label = stringResource(Res.string.backup_passphrase),
+                    error = if (wrong) stringResource(Res.string.backup_err_wrong_passphrase) else null,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSubmit(passphrase) }, enabled = passphrase.isNotEmpty()) {
+                Text(stringResource(Res.string.restore_action))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) }
+        },
+    )
 }
 
 @Composable
@@ -645,5 +762,6 @@ internal fun BackupError.messageRes(): StringResource = when (this) {
     BackupError.AuthRequired -> Res.string.backup_err_auth
     BackupError.Network -> Res.string.backup_err_network
     BackupError.PassphraseRequired -> Res.string.backup_err_no_passphrase
+    BackupError.FileAccess -> Res.string.backup_err_file_access
     is BackupError.UnsupportedVersion -> Res.string.backup_err_unsupported
 }
