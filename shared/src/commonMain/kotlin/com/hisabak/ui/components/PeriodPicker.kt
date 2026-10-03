@@ -4,11 +4,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -352,7 +352,7 @@ private fun YearPane(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CustomPane(
     period: SummaryPeriod,
@@ -371,7 +371,7 @@ private fun CustomPane(
             }
         },
     )
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
         listOf(
             Res.string.date_last_7 to SummaryPeriod.lastDays(today, 7),
             Res.string.date_last_30 to SummaryPeriod.lastDays(today, 30),
@@ -414,7 +414,6 @@ private fun CustomPane(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun QuickPicks(period: SummaryPeriod, today: LocalDate, onSelect: (SummaryPeriod) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
@@ -423,7 +422,8 @@ private fun QuickPicks(period: SummaryPeriod, today: LocalDate, onSelect: (Summa
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s2), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+        // One scrolling row: the presets are a shortcut, not worth a second line of the sheet.
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
             listOf(
                 Res.string.period_this_month to SummaryPeriod.thisMonth(today),
                 Res.string.period_last_month to SummaryPeriod.lastMonth(today),
@@ -522,7 +522,7 @@ private fun PickChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .height(40.dp)
+            .height(36.dp)
             .clip(CircleShape)
             .then(
                 if (selected) {
@@ -538,8 +538,9 @@ private fun PickChip(label: String, selected: Boolean, onClick: () -> Unit) {
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.labelLarge,
+            style = MaterialTheme.typography.labelMedium,
             color = if (selected) scheme.surface else scheme.onSurface,
+            maxLines = 1,
         )
     }
 }
