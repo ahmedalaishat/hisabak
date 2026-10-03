@@ -55,7 +55,7 @@ import com.hisabak.feature.category.presentation.CategoryCreatedBus
 import com.hisabak.feature.category.presentation.edit.CategoryEditPrefill
 import com.hisabak.feature.category.presentation.edit.CategoryEditRoute
 import com.hisabak.feature.dashboard.presentation.CategoryFocusBus
-import com.hisabak.feature.insights.presentation.InsightsPeriodBus
+import com.hisabak.core.presentation.PeriodSelection
 import com.hisabak.feature.insights.presentation.InsightsRoute
 import com.hisabak.feature.settings.presentation.SmsParsingRoute
 import com.hisabak.feature.insights.presentation.ask.AskRoute
@@ -245,7 +245,7 @@ private fun HisabakNav(slots: PlatformSlots) {
     val categoryCreatedBus = koinInject<CategoryCreatedBus>()
     val brandCreatedBus = koinInject<BrandCreatedBus>()
     val notificationRepository = koinInject<NotificationRepository>()
-    val insightsPeriodBus = koinInject<InsightsPeriodBus>()
+    val periodSelection = koinInject<PeriodSelection>()
 
     val unreadCount by notificationRepository.observeUnreadCount().collectAsStateWithLifecycle(initialValue = 0)
     val pendingFocus by categoryFocusBus.pending.collectAsStateWithLifecycle()
@@ -398,10 +398,8 @@ private fun HisabakNav(slots: PlatformSlots) {
                         filterBus.request(TransactionListFilterRequest.Uncategorized)
                         navigator.navigate(TransactionsKey)
                     },
-                    onOpenInsights = { period ->
-                        insightsPeriodBus.request(period)
-                        navigator.navigate(InsightsKey)
-                    },
+                    // The period is shared, so the Insights tab already shows the one the card was for.
+                    onOpenInsights = { navigator.navigate(InsightsKey) },
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -434,14 +432,14 @@ private fun HisabakNav(slots: PlatformSlots) {
                         navigator.navigate(CategoryEditKey(id = id.value, prefillLimitMinor = amountMinor))
                     },
                     onOpenAsk = { period, question ->
-                        navigator.navigate(InsightsAskKey(period = period.name, question = question))
+                        navigator.navigate(InsightsAskKey(period = period.encode(), question = question))
                     },
                     modifier = Modifier.fillMaxSize(),
                 )
             }
             entry<InsightsAskKey>(metadata = fullScreenTransition()) { key ->
                 AskRoute(
-                    period = SummaryPeriod.valueOf(key.period),
+                    period = SummaryPeriod.decode(key.period) ?: SummaryPeriod.All,
                     initialQuestion = key.question,
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -484,12 +482,16 @@ private fun HisabakNav(slots: PlatformSlots) {
                     onEditBrand = { id -> navigator.navigate(BrandEditKey(id = id.value)) },
                     onAddCategory = { navigator.navigate(CategoryEditKey(id = null)) },
                     onEditCategory = { id -> navigator.navigate(CategoryEditKey(id = id.value)) },
-                    // Same shape as the dashboard's uncategorized card: park the filter, then go.
+                    // Same shape as the dashboard's uncategorized card: park the filter, then go. A
+                    // brand or category's transactions mean its whole history, not whichever
+                    // period the other tabs happen to be on — so these widen the shared period.
                     onViewBrandTransactions = { id ->
+                        periodSelection.select(SummaryPeriod.All)
                         filterBus.request(TransactionListFilterRequest.ByBrand(id))
                         navigator.navigate(TransactionsKey)
                     },
                     onViewCategoryTransactions = { id ->
+                        periodSelection.select(SummaryPeriod.All)
                         filterBus.request(TransactionListFilterRequest.ByCategory(id))
                         navigator.navigate(TransactionsKey)
                     },

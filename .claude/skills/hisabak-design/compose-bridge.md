@@ -64,7 +64,7 @@ figure in place for a few seconds — so render money through `MoneyText` / `Amo
 | Design system | Compose |
 |---|---|
 | `Button` | `HisabakButton`, `PrimaryPillButton`, `CreateActionButton` (FAB/primary) |
-| `Chip` / `SegmentedControl` | `FilterPill`, `ColoredFilterChip`, `LeadingIconChip`, `PeriodChipRow` |
+| `Chip` / `SegmentedControl` | `FilterPill`, `ColoredFilterChip`, `LeadingIconChip`, `PeriodBar` (‹ period › + picker sheet, `PeriodPicker.kt`) |
 | _(chip row layout)_ | `ChipLaneGrid` — wraps long chip rows into lanes, still scrolling sideways |
 | `Badge` / `StatusChip` | `Badge` / `StatusChip` |
 | `Avatar` | `Avatar` |

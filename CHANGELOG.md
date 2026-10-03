@@ -14,6 +14,24 @@ All notable changes to Hisabak are documented here. Format based on
   passphrase if the file is encrypted. Neither needs a Google account or a connection, and a file
   exported on Android imports on iPhone and the other way round.
 
+- **Look back at any month, year, or date range.** The dashboard, insights, and transactions now
+  share one period bar: **‹ September 2026 ›** steps a month (or a year, or a range) at a time,
+  and tapping the title opens a picker for any month, any year, a custom range — with last 7, 30,
+  and 90 days as one-tap presets — or all time. Under the title it says what the percentages
+  compare against. Choosing a period on one tab changes it on all three, so their numbers always
+  describe the same stretch of time.
+
+### Changed
+- **Charts pick their detail from the length of the period** — by day up to two months, by week up
+  to six, by month up to three years, and by year beyond that — so all time over a long history
+  stays readable.
+- **Transactions follow the selected period.** The list and its totals now cover the same dates;
+  the separate "last 7/30/90 days" filter is gone (those are presets in the period picker). Each
+  day's header shows its net total. Opening a brand's or category's transactions from Manage shows
+  their whole history.
+- Category limits over a range that isn't a whole month count each month's limit for the days the
+  range covers, instead of whole months.
+
 ### Fixed
 - The first-launch restore page said you could restore later from Settings, which wasn't true.
   It now points to importing a backup file from Settings → Backup.

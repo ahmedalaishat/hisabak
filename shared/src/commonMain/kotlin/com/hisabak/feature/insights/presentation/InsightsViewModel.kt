@@ -2,7 +2,7 @@ package com.hisabak.feature.insights.presentation
 
 import androidx.lifecycle.viewModelScope
 import com.hisabak.core.common.AppConfig
-import com.hisabak.core.common.SummaryPeriod
+import com.hisabak.core.presentation.PeriodSelection
 import com.hisabak.core.domain.analytics.Analytics
 import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.core.presentation.BaseViewModel
@@ -16,7 +16,6 @@ import com.hisabak.feature.insights.domain.ai.narrativeKey
 import com.hisabak.feature.insights.domain.deriveInsights
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
@@ -27,8 +26,8 @@ import kotlinx.coroutines.launch
 /**
  * Re-derives the review from the metrics rather than receiving it from the dashboard: the
  * computation is one pure pass, and the alternative — a bus, or a nav key carrying a list — buys
- * nothing for it. [period] arrives from the key, so the screen opens on what the dashboard showed,
- * and the period chips on the screen re-scope it from there.
+ * nothing for it. The period is the shared [PeriodSelection], so the screen shows what the
+ * dashboard showed, and its own period bar re-scopes both.
  *
  * The narrative (layer 2) is **never fetched on its own**. A snapshot only looks the cache up: an
  * answer already on the phone for exactly these figures is shown straight away — nothing is sent
@@ -43,21 +42,20 @@ class InsightsViewModel(
     private val askInsight: AskInsightUseCase,
     private val appConfig: AppConfig,
     private val analytics: Analytics,
-    private val period: SummaryPeriod,
+    private val periodSelection: PeriodSelection,
     private val language: String,
 ) : BaseViewModel<InsightsIntent, InsightsUiState, InsightsEffect>() {
 
-    private val periodFlow = MutableStateFlow(period)
     private var opened = false
     private var request: Job? = null
 
     /** The key of the request in flight, so a snapshot for the same figures keeps its Loading state. */
     private var requestKey: String? = null
 
-    override fun initialState() = InsightsUiState(period = period)
+    override fun initialState() = InsightsUiState(period = periodSelection.period.value)
 
     init {
-        periodFlow
+        periodSelection.period
             .flatMapLatest { p -> getMetrics(flowOf(p)).map { p to it } }
             .onEach { (period, snapshot) ->
                 val summary = InsightsSummary.from(snapshot, period)
@@ -77,6 +75,8 @@ class InsightsViewModel(
                     }
                     copy(
                         period = period,
+                        today = snapshot.asOf,
+                        earliest = snapshot.earliestActivity,
                         insights = insights,
                         summary = summary,
                         isLoading = false,
@@ -105,7 +105,7 @@ class InsightsViewModel(
                 analytics.log(AnalyticsEvent.InsightTapped(type = "narrative"))
             is InsightsIntent.SuggestionAccepted ->
                 analytics.log(AnalyticsEvent.InsightsSuggestionAccepted(type = "set_limit"))
-            is InsightsIntent.PeriodChanged -> periodFlow.value = intent.period
+            is InsightsIntent.PeriodChanged -> periodSelection.select(intent.period)
             InsightsIntent.RequestNarrative -> requestNarrative()
             InsightsIntent.ShowShared -> setState { copy(showShared = true) }
             InsightsIntent.HideShared -> setState { copy(showShared = false) }

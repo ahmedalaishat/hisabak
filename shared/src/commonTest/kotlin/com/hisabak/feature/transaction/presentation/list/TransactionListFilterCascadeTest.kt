@@ -1,5 +1,6 @@
 package com.hisabak.feature.transaction.presentation.list
 
+import com.hisabak.core.presentation.PeriodSelection
 import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.brand.domain.usecase.ObserveBrandsUseCase
 import com.hisabak.feature.category.domain.usecase.ObserveCategoriesUseCase
@@ -46,6 +47,7 @@ class TransactionListFilterCascadeTest : MainDispatcherTest() {
             observeCategories = ObserveCategoriesUseCase(categories),
             clock = TestClock(),
             filterBus = bus,
+            periodSelection = PeriodSelection(TestClock()),
         )
     }
 
@@ -159,6 +161,7 @@ class TransactionListFilterRequestTest : MainDispatcherTest() {
             observeCategories = ObserveCategoriesUseCase(categories),
             clock = TestClock(),
             filterBus = bus,
+            periodSelection = PeriodSelection(TestClock()),
         )
     }
 

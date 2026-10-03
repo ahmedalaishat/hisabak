@@ -67,7 +67,7 @@ class InsightsSummaryTest {
     private suspend fun summaryFor(
         transactions: FakeTransactionRepository,
         limits: FakeCategoryLimitRepository = FakeCategoryLimitRepository(),
-        period: SummaryPeriod = SummaryPeriod.CURRENT_MONTH,
+        period: SummaryPeriod = SummaryPeriod.Month(YearMonth(2026, 6)),
     ): InsightsSummary = InsightsSummary.from(useCase(transactions, limits)(flowOf(period)).first(), period)
 
     @Test
@@ -124,7 +124,7 @@ class InsightsSummaryTest {
         val summary = summaryFor(
             FakeTransactionRepository(listOf(transaction(id = "d1", amountMinor = 50_00, brandId = "cafe", occurredAt = june))),
             limits,
-            period = SummaryPeriod.CURRENT_YEAR,
+            period = SummaryPeriod.Year(2026),
         )
         // The year's buckets run to today (June): Jan–Mar at 500, Apr–Jun at 800 — the budget so
         // far, which is what the spend so far is measured against.
@@ -166,7 +166,7 @@ class InsightsSummaryTest {
     fun `all time has no prior period`() = runTest {
         val summary = summaryFor(
             FakeTransactionRepository(listOf(transaction(id = "d1", amountMinor = 300_00, brandId = "cafe", occurredAt = june))),
-            period = SummaryPeriod.ALL,
+            period = SummaryPeriod.All,
         )
         assertNull(summary.priorExpenseMinor)
         assertNull(summary.categories.single { it.id == CategoryId("dining") }.priorMinor)

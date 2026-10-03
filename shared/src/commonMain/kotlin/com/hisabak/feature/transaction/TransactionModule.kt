@@ -35,6 +35,7 @@ val transactionModule = module {
             observeCategories = get(),
             clock = get(),
             filterBus = get(),
+            periodSelection = get(),
         )
     }
 

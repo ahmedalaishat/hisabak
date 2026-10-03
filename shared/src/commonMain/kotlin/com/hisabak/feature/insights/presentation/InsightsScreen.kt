@@ -88,15 +88,11 @@ import com.hisabak.shared.resources.insights_shared_prior
 import com.hisabak.shared.resources.insights_shared_title
 import com.hisabak.shared.resources.insights_suggest_limit
 import com.hisabak.shared.resources.common_done
-import com.hisabak.shared.resources.period_all_time
-import com.hisabak.shared.resources.period_last_month
-import com.hisabak.shared.resources.period_last_year
-import com.hisabak.shared.resources.period_this_month
-import com.hisabak.shared.resources.period_this_year
 import com.hisabak.ui.components.LeadingIconChip
 import com.hisabak.ui.components.NoticeCard
 import com.hisabak.ui.components.NoticeTone
-import com.hisabak.ui.components.PeriodChipRow
+import com.hisabak.ui.components.PeriodBar
+import com.hisabak.ui.components.periodLabel
 import com.hisabak.ui.components.PrimaryPillButton
 import com.hisabak.ui.components.SkeletonBox
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -152,10 +148,14 @@ fun InsightsScreen(
             if (state.showAiTab) {
                 InsightsTabs(selected = tab, onSelect = { tab = it })
             }
-            PeriodChipRow(
-                selected = state.period,
-                onSelect = { onIntent(InsightsIntent.PeriodChanged(it)) },
-            )
+            if (state.today != null) {
+                PeriodBar(
+                    period = state.period,
+                    today = state.today,
+                    earliest = state.earliest,
+                    onSelect = { onIntent(InsightsIntent.PeriodChanged(it)) },
+                )
+            }
         }
         val showing = if (state.showAiTab) tab else InsightsTab.Findings
         LazyColumn(
@@ -489,15 +489,7 @@ private fun AskEntryCard(
 private fun SharedSummaryDialog(summary: InsightsSummary, onDismiss: () -> Unit) {
     val arabic = rememberIsArabic()
     fun money(minor: Long?) = if (minor == null) "—" else exactAmount(minor / 100.0, arabic)
-    val periodLabel = stringResource(
-        when (summary.period) {
-            SummaryPeriod.CURRENT_MONTH -> Res.string.period_this_month
-            SummaryPeriod.LAST_MONTH -> Res.string.period_last_month
-            SummaryPeriod.CURRENT_YEAR -> Res.string.period_this_year
-            SummaryPeriod.LAST_YEAR -> Res.string.period_last_year
-            SummaryPeriod.ALL -> Res.string.period_all_time
-        },
-    )
+    val periodLabel = periodLabel(summary.period)
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.common_done)) } },

@@ -77,7 +77,7 @@ class SanitizeNarrativeTest {
 
     @Test
     fun `a suggestion is a monthly cap so a yearly review drops it`() {
-        val yearly = summary(period = com.hisabak.core.common.SummaryPeriod.CURRENT_YEAR)
+        val yearly = summary(period = com.hisabak.core.common.SummaryPeriod.Year(2026))
 
         val out = sanitizeNarrative(listOf(raw(categoryId = "dining", suggestedLimitMinor = 1_600_00)), yearly)
 

@@ -1,7 +1,5 @@
 package com.hisabak.feature.transaction.presentation.list
 
-import com.hisabak.shared.resources.*
-import org.jetbrains.compose.resources.StringResource
 import com.hisabak.core.common.Money
 import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.core.presentation.ViewEffect
@@ -12,6 +10,7 @@ import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.transaction.domain.TransactionId
 import kotlin.time.Instant
+import kotlinx.datetime.LocalDate
 
 data class TransactionRow(
     val id: TransactionId,
@@ -43,32 +42,26 @@ data class CategoryFilterOption(
 /** Sentinel category id meaning "transactions whose brand has no category". */
 val UncategorizedCategoryId = CategoryId("__uncategorized__")
 
-/** Quick rolling date windows for the transaction list (separate from the summary period). */
-enum class DateRangeFilter(val labelRes: StringResource, val days: Long?) {
-    ALL(Res.string.date_all, null),
-    LAST_7(Res.string.date_last_7, 7),
-    LAST_30(Res.string.date_last_30, 30),
-    LAST_90(Res.string.date_last_90, 90),
-}
-
 data class TransactionListUiState(
     val rows: List<TransactionRow> = emptyList(),
     val search: String = "",
-    val period: SummaryPeriod = SummaryPeriod.CURRENT_MONTH,
+    val period: SummaryPeriod = SummaryPeriod.All,
+    /** What the period bar's arrows need; null until the first load. */
+    val today: LocalDate? = null,
+    val earliest: LocalDate? = null,
     val summaryIncome: Long = 0L,
     val summaryExpenses: Long = 0L,
-    /** Every transaction, before the list filters — the "of 175" in "12 of 175". */
+    /** The period's transactions, before the list filters — the "of 175" in "12 of 175". */
     val totalCount: Int = 0,
     val brandFilter: BrandId? = null,
     val categoryFilter: CategoryId? = null,
-    val dateRange: DateRangeFilter = DateRangeFilter.ALL,
     val brandOptions: List<BrandFilterOption> = emptyList(),
     val categoryOptions: List<CategoryFilterOption> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null,
 ) : ViewState {
     val hasActiveFilters: Boolean
-        get() = brandFilter != null || categoryFilter != null || dateRange != DateRangeFilter.ALL
+        get() = brandFilter != null || categoryFilter != null
     val selectedBrandName: String? get() = brandOptions.firstOrNull { it.id == brandFilter }?.name
     val selectedCategoryName: String? get() = categoryOptions.firstOrNull { it.id == categoryFilter }?.name
 }
@@ -78,7 +71,6 @@ sealed interface TransactionListIntent : ViewIntent {
     data class PeriodChanged(val period: SummaryPeriod) : TransactionListIntent
     data class BrandFilterChanged(val id: BrandId?) : TransactionListIntent
     data class CategoryFilterChanged(val id: CategoryId?) : TransactionListIntent
-    data class DateRangeChanged(val range: DateRangeFilter) : TransactionListIntent
     data object ClearFilters : TransactionListIntent
     data object ConsumeEffect : TransactionListIntent
 }

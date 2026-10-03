@@ -99,7 +99,8 @@ Everything below is built and shipping today:
   otherwise — "See what's shared" shows exactly what, and a suggested spending cap is a tap away,
   confirm-first. You can also **ask** about the period — suggested questions or your own, ten a day,
   answered from those same totals.
-- [x] 🧾 **Transactions** — searchable, filterable list (by brand, category, date range), with
+- [x] 🧾 **Transactions** — searchable, filterable list (by brand and category) over any month, year, or custom range — the
+  same period the dashboard and insights show — with
   uncategorized spending surfaced for quick cleanup. Add, edit, or delete an entry (deletion is
   confirmed first, and hands any bank message that created it back to the SMS inbox).
 - [x] 🗂️ **Organize** — categories (income / expense / savings / investment) with **144 icons**

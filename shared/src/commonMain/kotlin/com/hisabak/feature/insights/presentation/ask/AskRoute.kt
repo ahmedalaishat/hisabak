@@ -15,7 +15,7 @@ fun AskRoute(
     initialQuestion: String?,
     modifier: Modifier = Modifier,
     viewModel: AskViewModel = koinViewModel(
-        key = "${period.name}:${initialQuestion.orEmpty()}",
+        key = "${period.encode()}:${initialQuestion.orEmpty()}",
         parameters = {
             parametersOf(period, if (Locale.current.language == "ar") "ar" else "en", initialQuestion)
         },

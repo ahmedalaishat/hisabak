@@ -1,22 +1,44 @@
 package com.hisabak.feature.dashboard.domain
 
 import com.hisabak.core.common.SummaryPeriod
+import com.hisabak.feature.category.domain.CategoryId
+import com.hisabak.feature.category.domain.CategoryLimit
+import com.hisabak.feature.category.domain.effectiveFor
+import kotlin.math.roundToLong
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.daysUntil
+import kotlinx.datetime.plus
+import kotlinx.datetime.yearMonth
 
-/** A limit is a monthly cap; these are the periods where the cap and the period coincide. */
+/** A limit is a monthly cap; a calendar month is the one period where the cap and the period coincide. */
 val SummaryPeriod.isSingleMonth: Boolean
-    get() = this == SummaryPeriod.CURRENT_MONTH || this == SummaryPeriod.LAST_MONTH
+    get() = this is SummaryPeriod.Month
 
 /**
- * The limit budget for [period] from a category's per-bucket limit series
- * (`DashboardSnapshot.limitByCategory`): the month's limit for a single-month window, or the sum of
- * each month's applicable limit for a multi-month one. Null if no limit applies.
- *
- * Shared by the Categories tab and the insights summary so the two can never disagree — a yearly
- * review that showed one month's cap against twelve months of spend read every category as over.
+ * The limit budget for [from, toExclusive): each month's cap, prorated by the share of its days the
+ * span covers. A whole month gets its cap, a whole year the twelve caps summed, and a 90-day window
+ * the pro-rata slice of each month it touches — so a window never carries one month's cap against
+ * three months of spend, nor a whole month's cap against a single week. Null if no cap applies.
  */
-fun periodLimit(limitSeries: List<Long?>, period: SummaryPeriod): Long? =
-    if (period.isSingleMonth) {
-        limitSeries.firstOrNull { it != null }
-    } else {
-        limitSeries.filterNotNull().takeIf { it.isNotEmpty() }?.sum()
+fun limitBetween(
+    limits: List<CategoryLimit>,
+    categoryId: CategoryId,
+    from: LocalDate,
+    toExclusive: LocalDate,
+): Long? {
+    var any = false
+    var total = 0.0
+    var month = from.yearMonth
+    while (month.firstDay < toExclusive) {
+        val cap = limits.effectiveFor(categoryId, month)?.amountMinor
+        val monthEnd = month.plus(1, DateTimeUnit.MONTH).firstDay
+        val days = maxOf(month.firstDay, from).daysUntil(minOf(monthEnd, toExclusive))
+        if (cap != null && days > 0) {
+            any = true
+            total += cap.toDouble() * days / month.numberOfDays
+        }
+        month = month.plus(1, DateTimeUnit.MONTH)
     }
+    return if (any) total.roundToLong() else null
+}

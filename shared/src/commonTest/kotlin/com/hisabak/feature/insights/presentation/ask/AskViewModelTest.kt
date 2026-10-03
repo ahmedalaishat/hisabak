@@ -2,6 +2,7 @@ package com.hisabak.feature.insights.presentation.ask
 
 import com.hisabak.core.common.Currency
 import com.hisabak.core.common.SummaryPeriod
+import kotlinx.datetime.YearMonth
 import com.hisabak.feature.brand.domain.usecase.ObserveBrandsUseCase
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.CategoryType
@@ -70,7 +71,7 @@ class AskViewModelTest : MainDispatcherTest() {
             clock = TestClock(),
         ),
         askInsight = AskInsightUseCase(client, prefs, Currency.AED, TestClock(), analytics),
-        period = SummaryPeriod.CURRENT_MONTH,
+        period = SummaryPeriod.Month(YearMonth(2026, 6)),
         language = "en",
         initialQuestion = initialQuestion,
     )

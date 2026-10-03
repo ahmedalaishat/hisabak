@@ -31,14 +31,14 @@ val insightsModule = module {
         )
     }
 
-    viewModel { (period: SummaryPeriod, language: String) ->
+    viewModel { (language: String) ->
         InsightsViewModel(
             getMetrics = get(),
             generateNarrative = get(),
             askInsight = get(),
             appConfig = get(),
             analytics = get(),
-            period = period,
+            periodSelection = get(),
             language = language,
         )
     }

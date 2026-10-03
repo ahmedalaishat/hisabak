@@ -18,5 +18,5 @@ val dashboardModule = module {
             clock = get(),
         )
     }
-    viewModel { DashboardViewModel(getMetrics = get(), analytics = get()) }
+    viewModel { DashboardViewModel(getMetrics = get(), analytics = get(), periodSelection = get()) }
 }
