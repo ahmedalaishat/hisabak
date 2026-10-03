@@ -321,7 +321,7 @@ private fun MonthPane(
             }
         }
     }
-    QuickPicks(today, onSelect)
+    QuickPicks(period, today, onSelect)
 }
 
 @Composable
@@ -416,7 +416,7 @@ private fun CustomPane(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun QuickPicks(today: LocalDate, onSelect: (SummaryPeriod) -> Unit) {
+private fun QuickPicks(period: SummaryPeriod, today: LocalDate, onSelect: (SummaryPeriod) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
         Text(
             stringResource(Res.string.period_quick_picks),
@@ -430,7 +430,7 @@ private fun QuickPicks(today: LocalDate, onSelect: (SummaryPeriod) -> Unit) {
                 Res.string.period_this_year to SummaryPeriod.thisYear(today),
                 Res.string.period_last_12_months to SummaryPeriod.last12Months(today),
             ).forEach { (label, pick) ->
-                PickChip(stringResource(label), selected = false, onClick = { onSelect(pick) })
+                PickChip(stringResource(label), selected = period == pick, onClick = { onSelect(pick) })
             }
         }
     }
@@ -512,24 +512,33 @@ private fun PickCell(
     }
 }
 
+/**
+ * A one-tap preset. Filled rather than outlined: on the sheet's tinted surface a hairline outline
+ * alone read as plain text, not as something to tap.
+ */
 @Composable
 private fun PickChip(label: String, selected: Boolean, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .height(36.dp)
+            .height(40.dp)
             .clip(CircleShape)
             .then(
-                if (selected) Modifier.background(scheme.onSurface, CircleShape)
-                else Modifier.border(1.dp, scheme.outlineVariant, CircleShape),
+                if (selected) {
+                    Modifier.background(scheme.onSurface, CircleShape)
+                } else {
+                    Modifier
+                        .background(scheme.surfaceContainerHighest, CircleShape)
+                        .border(1.dp, scheme.outline.copy(alpha = 0.5f), CircleShape)
+                },
             )
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = Spacing.s4),
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelLarge,
             color = if (selected) scheme.surface else scheme.onSurface,
         )
     }
