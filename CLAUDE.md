@@ -163,6 +163,25 @@ Domain model mirrors Hisabi so concepts transfer cleanly.
   after `sanitize` canonicalizes, it is gone. Aliases **do** ride in the backup envelope (unlike
   the AI provenance flags): they are knowledge other devices need. `SCHEMA_VERSION` 8→9, additive
   auto-migration.
+- **One reporting period, shared (`docs/features/period-picker.md`):** Dashboard, Insights, and the
+  Transactions list all read **one** `PeriodSelection` (`core/presentation/`, a Koin single — not
+  persisted, a cold start opens on this month), so stepping back to March 2024 on one tab shows
+  March 2024 on the others. `SummaryPeriod` (`core/common/`) is a sealed type of **absolute**
+  windows — `Month(YearMonth)`, `Year(Int)`, `Custom(start, endInclusive)`, `All` — with
+  `previous`/`next` (equal-length neighbours: the comparison base and the ‹ › steps), `encode`/
+  `decode` for nav keys, and `wireName(today)`, which keeps `CURRENT_MONTH`/`LAST_YEAR`/… for the
+  insights request where they apply (the server prompt phrases those; anything else goes as a
+  readable label the server passes through). The UI is `PeriodBar` + its sheet
+  (`ui/components/PeriodPicker.kt`: Month grid / Year grid / Custom presets + `DateRangePicker` /
+  All; selection is neutral ink, the custom range's Show button the one green action). **Chart
+  detail follows the window length, not its kind** — `granularityFor`: ≤62 days daily, ≤186
+  weekly (weeks run from the window start), ≤3 years monthly, then yearly; buckets stop at today.
+  All time spans the first transaction to today. **Limits are prorated**: `limitBetween` gives each
+  month's cap by the share of its days a span covers; a `Month` gets its cap, anything else the sum
+  of its buckets' budgets (so this year counts the months so far). The snapshot carries
+  `granularity`, `periodLimitByCategory`, `earliestActivity` (the ‹ bound), and `asOf`. The list's
+  old rolling 7/30/90-day filter is gone — those are now Custom presets — and opening a brand's or
+  category's transactions from Manage widens the shared period to All.
 - **Insights review (deterministic, layer 1 of `docs/features/ai-insights.md`):** the dashboard's
   Summary tab shows a **Review** card — top three findings for the selected period, **See all** →
   `InsightsKey(period)` full-screen list, tap → the transaction list filtered by category (or the
@@ -499,8 +518,8 @@ retained per tab when switching; the user always exits the app through the **Das
 
 | Tab | Top-level key | Internal screens |
 |-----|---------------|-----------------|
-| Dashboard | DashboardKey | Summary/Trends/Categories tabs; the Review card opens the Insights tab (parking its period in `InsightsPeriodBus`) |
-| Insights | InsightsKey | **Two tabs** (`InsightsTab`): **Findings** (deterministic) and **AI assistant** (the explanation + the Ask entry card → Ask, full screen). The AI tab is hidden when the build has no service, so the review reads as one list. Own period chips under the tabs, seeded once from `InsightsPeriodBus` |
+| Dashboard | DashboardKey | Summary/Trends/Categories tabs under the shared period bar; the Review card opens the Insights tab, which already shows the same period |
+| Insights | InsightsKey | **Two tabs** (`InsightsTab`): **Findings** (deterministic) and **AI assistant** (the explanation + the Ask entry card → Ask, full screen). The AI tab is hidden when the build has no service, so the review reads as one list. The shared period bar under the tabs |
 | Transactions | TransactionsKey | **Two sub-tabs** (`LedgerTab`, selector hoisted in `HisabakRoot`): **Transactions** — list → Edit (bottom sheet; the "New brand" chip and the uncategorized-brand note detour to the brand editor — the sheet closes/reopens around it with its typed input parked in `TransactionDraftBus`, and a created brand auto-selects via `BrandCreatedBus`) — and **SMS** — inbox → template editor (full screen) / transaction sheet (review of an AI-parsed entry). The FAB and the top-bar title follow the sub-tab; `InboxOpenBus` selects the SMS half. |
 | Manage | ManageKey | **Two sub-tabs** (segmented, count in the label): Brands/Categories list → Edit (full screen; the brand editor's "+ New category" chip pushes the category editor and auto-selects the result via `CategoryCreatedBus`) |
 | Settings | SettingsKey | Theme + language + app lock → Backup & restore / **SMS parsing** (nested screen: templates, the online model, auto-confirm) → template editor |

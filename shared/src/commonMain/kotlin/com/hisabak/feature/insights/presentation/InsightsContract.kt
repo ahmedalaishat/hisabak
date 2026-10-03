@@ -1,5 +1,6 @@
 package com.hisabak.feature.insights.presentation
 
+import kotlinx.datetime.LocalDate
 import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.core.presentation.ViewEffect
 import com.hisabak.core.presentation.ViewIntent
@@ -27,6 +28,9 @@ sealed interface NarrativeUi {
 
 data class InsightsUiState(
     val period: SummaryPeriod,
+    /** The snapshot's "today" and first activity — what the period bar's arrows need; null until loaded. */
+    val today: LocalDate? = null,
+    val earliest: LocalDate? = null,
     val insights: List<Insight> = emptyList(),
     val isLoading: Boolean = true,
     /** What "See what's shared" shows — the exact payload, so the promise is checkable on screen. */
@@ -42,7 +46,7 @@ data class InsightsUiState(
 ) : ViewState
 
 sealed interface InsightsIntent : ViewIntent {
-    /** The period chips live on this screen too, so the review can be re-scoped without going back. */
+    /** The period bar lives on this screen too, so the review can be re-scoped without going back. */
     data class PeriodChanged(val period: SummaryPeriod) : InsightsIntent
 
     /** Analytics only — navigation is the Route's job. */

@@ -28,6 +28,8 @@ class AndroidLocalizedDateFormatter(private val context: Context) : LocalizedDat
     override fun dayMonth(instant: Instant): String = formatInstant(instant, "d MMM")
     override fun month(date: LocalDate): String = formatLocalDate(date, "MMM")
     override fun monthYear(date: LocalDate): String = formatLocalDate(date, "MMM ''yy")
+    // Standalone month ("LLLL"): languages that inflect the month inside a date want the bare form here.
+    override fun monthYearLong(date: LocalDate): String = formatLocalDate(date, "LLLL yyyy")
 
     override fun relativeDateTime(epochMillis: Long): String =
         DateUtils.getRelativeDateTimeString(

@@ -2,6 +2,9 @@ package com.hisabak.feature.dashboard.presentation
 
 import com.hisabak.core.common.Currency
 import com.hisabak.core.common.SummaryPeriod
+import com.hisabak.core.domain.analytics.AnalyticsEvent
+import com.hisabak.core.presentation.PeriodSelection
+import kotlinx.datetime.YearMonth
 import com.hisabak.feature.brand.domain.usecase.ObserveBrandsUseCase
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.CategoryType
@@ -54,10 +57,12 @@ class DashboardViewModelTest : MainDispatcherTest() {
         clock = TestClock(),
     )
 
+    private val selection = PeriodSelection(TestClock())
+
     /** The card can never lag the numbers: both arrive in the same state emission. */
     @Test
     fun `the review is derived alongside the snapshot`() = runTest {
-        val vm = DashboardViewModel(getMetrics = metrics, analytics = FakeAnalytics())
+        val vm = DashboardViewModel(getMetrics = metrics, analytics = FakeAnalytics(), periodSelection = selection)
         advanceUntilIdle()
 
         val state = vm.state.value
@@ -68,16 +73,40 @@ class DashboardViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `changing the period re-derives the review for it`() = runTest {
-        val vm = DashboardViewModel(getMetrics = metrics, analytics = FakeAnalytics())
+        val vm = DashboardViewModel(getMetrics = metrics, analytics = FakeAnalytics(), periodSelection = selection)
         advanceUntilIdle()
 
-        vm.onIntent(DashboardIntent.PeriodChanged(SummaryPeriod.ALL))
+        vm.onIntent(DashboardIntent.PeriodChanged(SummaryPeriod.All))
         advanceUntilIdle()
 
         val state = vm.state.value
-        assertEquals(SummaryPeriod.ALL, state.period)
+        assertEquals(SummaryPeriod.All, state.period)
         // No prior period for ALL, so the change insight is gone but the review still stands.
         assertTrue(state.review.none { it.type == InsightType.SpendUp })
         assertTrue(state.review.any { it.type == InsightType.LargestCategory })
+    }
+
+    @Test
+    fun `a period chosen on another tab re-scopes the dashboard`() = runTest {
+        val vm = DashboardViewModel(getMetrics = metrics, analytics = FakeAnalytics(), periodSelection = selection)
+        advanceUntilIdle()
+
+        val may2026 = SummaryPeriod.Month(YearMonth(2026, 5))
+        selection.select(may2026)
+        advanceUntilIdle()
+
+        assertEquals(may2026, vm.state.value.period)
+        assertEquals(200_00, vm.state.value.snapshot?.expense?.amountMinor)
+    }
+
+    @Test
+    fun `changing the period logs its kind and never its dates`() = runTest {
+        val analytics = FakeAnalytics()
+        val vm = DashboardViewModel(getMetrics = metrics, analytics = analytics, periodSelection = selection)
+        advanceUntilIdle()
+
+        vm.onIntent(DashboardIntent.PeriodChanged(SummaryPeriod.Year(2025)))
+
+        assertEquals("year", analytics.logged.filterIsInstance<AnalyticsEvent.DashboardPeriodChanged>().single().params["period"])
     }
 }

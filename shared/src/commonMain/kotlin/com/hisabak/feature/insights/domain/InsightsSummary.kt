@@ -4,7 +4,6 @@ import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.dashboard.domain.DashboardSnapshot
-import com.hisabak.feature.dashboard.domain.periodLimit
 import kotlin.math.roundToLong
 import kotlinx.datetime.LocalDate
 
@@ -16,7 +15,7 @@ data class CategorySpend(
     val icon: String,
     val spentMinor: Long,
     val priorMinor: Long?,
-    /** The period's limit budget — monthly cap for a month, the months' caps summed otherwise. */
+    /** The period's limit budget — monthly cap for a month, each month's cap prorated over the window otherwise. */
     val limitMinor: Long?,
     val shareOfExpense: Double,
 )
@@ -32,6 +31,8 @@ data class CategorySpend(
  */
 data class InsightsSummary(
     val period: SummaryPeriod,
+    /** How the request names the period — see [SummaryPeriod.wireName]. */
+    val periodName: String = period.encode(),
     /** The period's concrete [start, end) window — what identifies "this period" over time; null for all time. */
     val windowStart: LocalDate? = null,
     val windowEnd: LocalDate? = null,
@@ -48,10 +49,10 @@ data class InsightsSummary(
             val expense = snapshot.expense.amountMinor
             val spentById = snapshot.expenseByCategory.associate { it.id to it.amount.amountMinor }
             // The snapshot reports a prior total of 0 for every category when there is no prior
-            // period at all (ALL is the one period without a predecessor — see
-            // SummaryPeriod.previousInstantRange). Passing that 0 through would make every
+            // period at all (All is the one period without a predecessor — see
+            // SummaryPeriod.previous). Passing that 0 through would make every
             // category "new spend"; null is the honest value.
-            val hasPriorPeriod = period != SummaryPeriod.ALL
+            val hasPriorPeriod = period.previous != null
             val categories = snapshot.categoryOptions
                 .filter { it.type == CategoryType.EXPENSES }
                 .sortedBy { it.id.value }
@@ -66,12 +67,13 @@ data class InsightsSummary(
                         priorMinor = if (hasPriorPeriod) snapshot.trendPrevTotalByCategory[option.id] else null,
                         // The same budget the Categories tab shows: one month's cap for a month,
                         // the months' caps summed for a year — never one month's cap against a year.
-                        limitMinor = periodLimit(snapshot.limitByCategory[option.id].orEmpty(), period),
+                        limitMinor = snapshot.periodLimitByCategory[option.id],
                         shareOfExpense = if (expense > 0) spent.toDouble() / expense else 0.0,
                     )
                 }
             return InsightsSummary(
                 period = period,
+                periodName = period.wireName(snapshot.asOf),
                 windowStart = snapshot.periodRange?.first,
                 windowEnd = snapshot.periodRange?.second,
                 incomeMinor = snapshot.income.amountMinor,

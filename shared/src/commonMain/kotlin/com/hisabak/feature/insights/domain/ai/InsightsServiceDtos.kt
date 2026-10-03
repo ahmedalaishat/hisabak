@@ -58,7 +58,7 @@ const val MAX_REQUEST_CATEGORIES = 60
 const val MAX_REQUEST_NAME_LENGTH = 60
 
 fun InsightsSummary.toRequestDto(language: String, currency: Currency) = InsightsRequestDto(
-    period = period.name,
+    period = periodName,
     currency = currency.code,
     language = language,
     incomeMinor = incomeMinor,

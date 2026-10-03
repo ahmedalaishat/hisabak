@@ -1,6 +1,7 @@
 package com.hisabak.feature.insights.domain.ai
 
 import com.hisabak.core.common.SummaryPeriod
+import kotlinx.datetime.YearMonth
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -41,9 +42,9 @@ class NarrativeKeyTest {
     @Test
     fun `the period's window is part of the key even when the figures coincide`() {
         // Every transaction in the current month: this month and this year read the same.
-        val month = summary(period = SummaryPeriod.CURRENT_MONTH)
-        val year = summary(period = SummaryPeriod.CURRENT_YEAR)
-        val all = summary(period = SummaryPeriod.ALL)
+        val month = summary(period = SummaryPeriod.Month(YearMonth(2026, 6)))
+        val year = summary(period = SummaryPeriod.Year(2026))
+        val all = summary(period = SummaryPeriod.All)
 
         assertNotEquals(narrativeKey(month, "en"), narrativeKey(year, "en"))
         assertNotEquals(narrativeKey(year, "en"), narrativeKey(all, "en"))

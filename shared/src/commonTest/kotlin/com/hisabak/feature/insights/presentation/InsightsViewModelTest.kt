@@ -2,6 +2,8 @@ package com.hisabak.feature.insights.presentation
 
 import com.hisabak.core.common.Currency
 import com.hisabak.core.common.SummaryPeriod
+import com.hisabak.core.presentation.PeriodSelection
+import kotlinx.datetime.YearMonth
 import com.hisabak.core.domain.analytics.AnalyticsEvent
 import com.hisabak.feature.brand.domain.usecase.ObserveBrandsUseCase
 import com.hisabak.feature.category.domain.CategoryId
@@ -43,13 +45,14 @@ class InsightsViewModelTest : MainDispatcherTest() {
 
     private val june = Instant.parse("2026-06-10T10:00:00Z")
     private val analytics = FakeAnalytics()
+    private val selection = PeriodSelection(TestClock())
     private class ScriptedAiInsights(var reply: List<RawNarrativeInsight>?) : AiInsights {
         var calls = 0
         override fun isAvailable() = true
         override suspend fun narrate(summary: InsightsSummary, language: String): List<RawNarrativeInsight>? {
             calls++
             // Stamp the period so a test can tell whose answer is on screen.
-            return reply?.map { it.copy(headline = "${it.headline} (${summary.period.name})") }
+            return reply?.map { it.copy(headline = "${it.headline} (${summary.periodName})") }
         }
     }
 
@@ -77,7 +80,7 @@ class InsightsViewModelTest : MainDispatcherTest() {
         askInsight = AskInsightUseCase(askClient, prefs, Currency.AED, TestClock(), analytics),
         appConfig = config(service),
         analytics = analytics,
-        period = SummaryPeriod.CURRENT_MONTH,
+        periodSelection = selection,
         language = "en",
     )
 
@@ -116,7 +119,7 @@ class InsightsViewModelTest : MainDispatcherTest() {
         advanceUntilIdle()
 
         val state = vm.state.value
-        assertEquals(SummaryPeriod.CURRENT_MONTH, state.period)
+        assertEquals(SummaryPeriod.Month(YearMonth(2026, 6)), state.period)
         assertFalse(state.isLoading)
         assertTrue(state.insights.any { it.type == InsightType.LargestCategory })
         assertTrue(state.insights.any { it.type == InsightType.SavingsRate })
@@ -156,10 +159,10 @@ class InsightsViewModelTest : MainDispatcherTest() {
         advanceUntilIdle()
         assertIs<NarrativeUi.Ready>(vm.state.value.narrative)
 
-        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.LAST_MONTH))
+        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.Month(YearMonth(2026, 5))))
         advanceUntilIdle()
 
-        assertEquals(SummaryPeriod.LAST_MONTH, vm.state.value.period)
+        assertEquals(SummaryPeriod.Month(YearMonth(2026, 5)), vm.state.value.period)
         assertTrue(vm.state.value.insights.isEmpty())           // the June ledger has nothing in May
         assertEquals(NarrativeUi.Ask, vm.state.value.narrative) // other figures: ask again, no send
         assertEquals(1, ai.calls)
@@ -175,7 +178,7 @@ class InsightsViewModelTest : MainDispatcherTest() {
         advanceUntilIdle()
         assertIs<NarrativeUi.Ready>(vm.state.value.narrative)
 
-        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.CURRENT_YEAR))
+        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.Year(2026)))
         advanceUntilIdle()
 
         assertEquals(NarrativeUi.Ask, vm.state.value.narrative)
@@ -189,17 +192,17 @@ class InsightsViewModelTest : MainDispatcherTest() {
         vm.onIntent(InsightsIntent.RequestNarrative)
         advanceUntilIdle()
 
-        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.CURRENT_YEAR))
+        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.Year(2026)))
         advanceUntilIdle()
         vm.onIntent(InsightsIntent.RequestNarrative)
         advanceUntilIdle()
         assertEquals("Dining leads (CURRENT_YEAR)", assertIs<NarrativeUi.Ready>(vm.state.value.narrative).items.single().headline)
 
-        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.CURRENT_MONTH))
+        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.Month(YearMonth(2026, 6))))
         advanceUntilIdle()
         assertEquals("Dining leads (CURRENT_MONTH)", assertIs<NarrativeUi.Ready>(vm.state.value.narrative).items.single().headline)
 
-        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.CURRENT_YEAR))
+        vm.onIntent(InsightsIntent.PeriodChanged(SummaryPeriod.Year(2026)))
         advanceUntilIdle()
         assertEquals("Dining leads (CURRENT_YEAR)", assertIs<NarrativeUi.Ready>(vm.state.value.narrative).items.single().headline)
         assertEquals(2, ai.calls)

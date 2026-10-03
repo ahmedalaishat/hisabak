@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.hisabak.core.common.Clock
 import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.core.presentation.BaseViewModel
+import com.hisabak.core.presentation.PeriodSelection
 import com.hisabak.feature.brand.domain.Brand
 import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.brand.domain.usecase.ObserveBrandsUseCase
@@ -22,7 +23,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlin.math.abs
-import kotlin.time.Duration.Companion.days
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -32,11 +33,15 @@ class TransactionListViewModel(
     private val observeCategories: ObserveCategoriesUseCase,
     private val clock: Clock,
     private val filterBus: TransactionListFilterBus,
+    private val periodSelection: PeriodSelection,
 ) : BaseViewModel<TransactionListIntent, TransactionListUiState, TransactionListEffect>() {
 
-    override fun initialState() = TransactionListUiState()
+    override fun initialState() = TransactionListUiState(period = periodSelection.period.value)
 
     init {
+        periodSelection.period
+            .onEach { setState { copy(period = it) } }
+            .launchIn(viewModelScope)
         observeRows()
         // Apply filter requests routed from elsewhere (e.g. the dashboard uncategorized card).
         filterBus.pending
@@ -54,17 +59,16 @@ class TransactionListViewModel(
                 copy(
                     categoryFilter = UncategorizedCategoryId,
                     brandFilter = null,
-                    dateRange = DateRangeFilter.ALL,
                     search = "",
                 )
             }
             // Arriving from a brand or category row: clear every other filter, or the list could
             // land empty for reasons the user set on a different screen and can no longer see.
+            // The period is the sender's call — it is shared, so it is set where the tap happens.
             is TransactionListFilterRequest.ByBrand -> setState {
                 copy(
                     brandFilter = request.id,
                     categoryFilter = null,
-                    dateRange = DateRangeFilter.ALL,
                     search = "",
                 )
             }
@@ -72,7 +76,6 @@ class TransactionListViewModel(
                 copy(
                     categoryFilter = request.id,
                     brandFilter = null,
-                    dateRange = DateRangeFilter.ALL,
                     search = "",
                 )
             }
@@ -83,8 +86,7 @@ class TransactionListViewModel(
         when (intent) {
             is TransactionListIntent.SearchChanged ->
                 setState { copy(search = intent.query) }
-            is TransactionListIntent.PeriodChanged ->
-                setState { copy(period = intent.period) }
+            is TransactionListIntent.PeriodChanged -> periodSelection.select(intent.period)
             is TransactionListIntent.BrandFilterChanged ->
                 setState { copy(brandFilter = intent.id) }
             is TransactionListIntent.CategoryFilterChanged ->
@@ -98,10 +100,8 @@ class TransactionListViewModel(
                         brandFilter = if (intent.id == null) brandFilter else null,
                     )
                 }
-            is TransactionListIntent.DateRangeChanged ->
-                setState { copy(dateRange = intent.range) }
             TransactionListIntent.ClearFilters ->
-                setState { copy(brandFilter = null, categoryFilter = null, dateRange = DateRangeFilter.ALL) }
+                setState { copy(brandFilter = null, categoryFilter = null) }
             TransactionListIntent.ConsumeEffect -> clearEffect()
         }
     }
@@ -110,7 +110,6 @@ class TransactionListViewModel(
         val period: SummaryPeriod,
         val brandFilter: BrandId?,
         val categoryFilter: CategoryId?,
-        val dateRange: DateRangeFilter,
     )
 
     private data class Filters(val search: String, val list: ListFilters)
@@ -120,6 +119,8 @@ class TransactionListViewModel(
         val summaryIncome: Long,
         val summaryExpenses: Long,
         val totalCount: Int,
+        val today: LocalDate,
+        val earliest: LocalDate?,
         val brandOptions: List<BrandFilterOption>,
         val categoryOptions: List<CategoryFilterOption>,
     )
@@ -131,7 +132,7 @@ class TransactionListViewModel(
             .distinctUntilChanged()
             .debounce { if (it.isEmpty()) 0L else SEARCH_DEBOUNCE_MS }
         val listFiltersFlow = state
-            .map { ListFilters(it.period, it.brandFilter, it.categoryFilter, it.dateRange) }
+            .map { ListFilters(it.period, it.brandFilter, it.categoryFilter) }
             .distinctUntilChanged()
 
         val filtersFlow = combine(searchFlow, listFiltersFlow) { search, list -> Filters(search, list) }
@@ -151,6 +152,8 @@ class TransactionListViewModel(
                         summaryIncome = derived.summaryIncome,
                         summaryExpenses = derived.summaryExpenses,
                         totalCount = derived.totalCount,
+                        today = derived.today,
+                        earliest = derived.earliest,
                         brandOptions = derived.brandOptions,
                         categoryOptions = derived.categoryOptions,
                         isLoading = false,
@@ -167,38 +170,37 @@ class TransactionListViewModel(
         filters: Filters,
     ): Derived {
         val zone = TimeZone.currentSystemDefault()
-        val now = clock.now()
-        val today = now.toLocalDateTime(zone).date
+        val today = clock.now().toLocalDateTime(zone).date
         val brandsById = brands.associateBy { it.id }
         val categoriesById = categories.associateBy { it.id }
         fun categoryOf(tx: Transaction): Category? =
             brandsById[tx.brandId]?.categoryId?.let { categoriesById[it] }
 
-        // Summary: scoped only by the period, over all transactions, by type.
-        val periodRange = filters.list.period.instantRange(today, zone)
+        // The period scopes everything on the screen: the totals and the list alike.
+        val periodRange = filters.list.period.instantRange(zone)
+        val periodTxs = if (periodRange == null) txs else txs.filter {
+            it.occurredAt >= periodRange.first && it.occurredAt < periodRange.second
+        }
+
+        // Summary: the period's transactions by type, before the list's own filters.
         var income = 0L
         var expenses = 0L
-        txs.forEach { tx ->
-            val inPeriod = periodRange == null ||
-                (tx.occurredAt >= periodRange.first && tx.occurredAt < periodRange.second)
-            if (inPeriod) when (categoryOf(tx)?.type) {
+        periodTxs.forEach { tx ->
+            when (categoryOf(tx)?.type) {
                 CategoryType.INCOME -> income += abs(tx.amount.amountMinor)
                 CategoryType.EXPENSES -> expenses += abs(tx.amount.amountMinor)
                 else -> Unit
             }
         }
 
-        // List: search + brand + category + rolling date range.
+        // List: the period's transactions, narrowed by search + brand + category.
         val list = filters.list
-
-        val from = list.dateRange.days?.let { now - it.days }
-        val listTxs = txs
+        val listTxs = periodTxs
             .filter { tx ->
                 val brand = brandsById[tx.brandId]
                 val matchesCategory = brand != null && brandMatchesCategory(brand, list.categoryFilter)
                 (list.brandFilter == null || tx.brandId == list.brandFilter) &&
                     matchesCategory &&
-                    (from == null || tx.occurredAt >= from) &&
                     (filters.search.isBlank() ||
                         brand?.name?.contains(filters.search, ignoreCase = true) == true ||
                         tx.note?.contains(filters.search, ignoreCase = true) == true)
@@ -217,7 +219,9 @@ class TransactionListViewModel(
             rows = buildRows(listTxs, brandsById, categoriesById),
             summaryIncome = income,
             summaryExpenses = expenses,
-            totalCount = txs.size,
+            totalCount = periodTxs.size,
+            today = today,
+            earliest = txs.minOfOrNull { it.occurredAt }?.toLocalDateTime(zone)?.date,
             // Cascade: with a category chosen, only its brands are offerable — every other brand
             // would filter to an empty list. Not the reverse (a brand has one category, so
             // scoping categories to it would collapse that list to a single row).

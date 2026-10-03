@@ -163,7 +163,7 @@ sealed class AnalyticsEvent(
 
     data object BrandMerged : AnalyticsEvent("brand_merged")
 
-    /** [period] is a [SummaryPeriod] name, lowercased. */
+    /** [period] is the kind of window — `month`, `year`, `custom`, or `all` (see [com.hisabak.core.common.SummaryPeriod.kind]). */
     class DashboardPeriodChanged(period: String) : AnalyticsEvent(
         name = "dashboard_period_changed",
         params = mapOf("period" to period),

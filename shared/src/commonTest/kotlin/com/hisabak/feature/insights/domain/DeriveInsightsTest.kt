@@ -1,6 +1,7 @@
 package com.hisabak.feature.insights.domain
 
 import com.hisabak.core.common.SummaryPeriod
+import kotlinx.datetime.YearMonth
 import com.hisabak.feature.category.domain.CategoryId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -33,7 +34,7 @@ class DeriveInsightsTest {
         priorExpense: Long? = null,
         uncategorized: Long = 0,
         uncategorizedCount: Int = 0,
-        period: SummaryPeriod = SummaryPeriod.CURRENT_MONTH,
+        period: SummaryPeriod = SummaryPeriod.Month(YearMonth(2026, 6)),
     ) = InsightsSummary(
         period = period,
         incomeMinor = income,
@@ -152,7 +153,7 @@ class DeriveInsightsTest {
     @Test
     fun `without a prior period there are no change insights but the review is not empty`() {
         val insights = deriveInsights(
-            summary(listOf(spend("c", spent = 300_00, prior = null, expenseTotal = 300_00)), period = SummaryPeriod.ALL),
+            summary(listOf(spend("c", spent = 300_00, prior = null, expenseTotal = 300_00)), period = SummaryPeriod.All),
         )
         assertTrue(insights.none { it.type in setOf(InsightType.SpendUp, InsightType.SpendDown, InsightType.NewSpend) })
         assertEquals(1, insights.of(InsightType.LargestCategory).size)

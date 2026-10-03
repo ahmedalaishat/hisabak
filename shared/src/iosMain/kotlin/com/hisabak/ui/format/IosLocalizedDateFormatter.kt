@@ -33,6 +33,7 @@ class IosLocalizedDateFormatter : LocalizedDateFormatter {
     private val dayMonth = template("dMMM")
     private val month = template("MMM")
     private val monthYear = template("MMMyy")
+    private val monthYearLong = template("MMMMy")
 
     private val relative = NSRelativeDateTimeFormatter().apply {
         locale = NSLocale.currentLocale
@@ -59,6 +60,7 @@ class IosLocalizedDateFormatter : LocalizedDateFormatter {
     override fun dayMonth(instant: Instant): String = dayMonth.stringFromDate(instant.toNSDate())
     override fun month(date: LocalDate): String = month.stringFromDate(date.toNSDate())
     override fun monthYear(date: LocalDate): String = monthYear.stringFromDate(date.toNSDate())
+    override fun monthYearLong(date: LocalDate): String = monthYearLong.stringFromDate(date.toNSDate())
 
     override fun relativeDateTime(epochMillis: Long): String =
         relative.localizedStringForDate(

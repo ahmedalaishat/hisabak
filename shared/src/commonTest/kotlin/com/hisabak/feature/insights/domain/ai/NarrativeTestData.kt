@@ -1,6 +1,7 @@
 package com.hisabak.feature.insights.domain.ai
 
 import com.hisabak.core.common.SummaryPeriod
+import kotlinx.datetime.YearMonth
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.insights.domain.CategorySpend
 import com.hisabak.feature.insights.domain.InsightsSummary
@@ -33,11 +34,12 @@ internal fun summary(
     priorExpense: Long? = 6_900_00,
     uncategorized: Long = 340_00,
     uncategorizedCount: Int = 3,
-    period: SummaryPeriod = SummaryPeriod.CURRENT_MONTH,
+    period: SummaryPeriod = SummaryPeriod.Month(YearMonth(2026, 6)),
 ) = InsightsSummary(
     period = period,
-    windowStart = period.dateRange(TODAY)?.first,
-    windowEnd = period.dateRange(TODAY)?.second,
+    periodName = period.wireName(TODAY),
+    windowStart = period.window?.first,
+    windowEnd = period.window?.second,
     incomeMinor = income,
     expenseMinor = categories.sumOf { it.spentMinor } + uncategorized,
     priorIncomeMinor = priorIncome,

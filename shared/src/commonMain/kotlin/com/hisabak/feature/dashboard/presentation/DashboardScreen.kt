@@ -59,6 +59,8 @@ import com.hisabak.shared.resources.*
 import com.hisabak.ui.components.localizedFormatArg
 import org.jetbrains.compose.resources.StringResource
 import com.hisabak.core.common.Money
+import com.hisabak.core.common.Granularity
+import com.hisabak.core.common.bucketStart
 import com.hisabak.core.common.SummaryPeriod
 import com.hisabak.feature.category.domain.CategoryType
 import com.hisabak.feature.category.presentation.CategoryStyle
@@ -66,7 +68,6 @@ import com.hisabak.feature.dashboard.domain.BrandShare
 import com.hisabak.feature.dashboard.domain.CategoryOption
 import com.hisabak.feature.dashboard.domain.CategoryShare
 import com.hisabak.feature.dashboard.domain.DashboardSnapshot
-import com.hisabak.feature.dashboard.domain.periodLimit
 import com.hisabak.feature.dashboard.domain.DayPoint
 import com.hisabak.feature.dashboard.domain.MonthPoint
 import com.hisabak.feature.dashboard.presentation.components.AreaLineChart
@@ -75,7 +76,8 @@ import com.hisabak.feature.dashboard.presentation.components.DonutChart
 import com.hisabak.feature.dashboard.presentation.components.DonutSlice
 import com.hisabak.feature.dashboard.presentation.components.GroupedBarChart
 import com.hisabak.ui.components.MoneyText
-import com.hisabak.ui.components.PeriodChipRow
+import com.hisabak.ui.components.PeriodBar
+import com.hisabak.ui.components.periodLabel
 import com.hisabak.ui.components.animatedAmountMinor
 import com.hisabak.ui.components.localizeDigits
 import com.hisabak.ui.components.rememberIsArabic
@@ -92,12 +94,10 @@ import com.hisabak.ui.theme.Sizing
 import com.hisabak.ui.theme.Spacing
 import com.hisabak.ui.theme.standardTween
 import com.hisabak.ui.format.LocalDateFormatter
-import com.hisabak.ui.format.LocalizedDateFormatter
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.yearMonth
 import kotlin.math.abs
 import kotlin.math.roundToInt
-import com.hisabak.ui.components.labelRes
 import com.hisabak.feature.insights.domain.Insight
 import com.hisabak.feature.insights.presentation.InsightRow
 import com.hisabak.shared.resources.insights_review_title
@@ -109,7 +109,7 @@ fun DashboardScreen(
     state: DashboardUiState,
     onPeriodChange: (SummaryPeriod) -> Unit,
     onShowUncategorized: () -> Unit,
-    onOpenInsights: (SummaryPeriod) -> Unit,
+    onOpenInsights: () -> Unit,
     focusCategoryId: String? = null,
     onFocusConsumed: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -159,9 +159,14 @@ fun DashboardScreen(
             verticalArrangement = Arrangement.spacedBy(Spacing.s3),
         ) {
             // Tabs pick the view, the period scopes the data inside it: the broader control sits
-            // on top, and the chip row reads as filtering the content directly beneath it.
+            // on top, and the period bar reads as scoping the content directly beneath it.
             DashboardTabs(selected = tab, onSelect = { tab = it })
-            PeriodChipRow(selected = state.period, onSelect = onPeriodChange)
+            PeriodBar(
+                period = state.period,
+                today = snap.asOf,
+                earliest = snap.earliestActivity,
+                onSelect = onPeriodChange,
+            )
         }
         AnimatedContent(
             targetState = tab,
@@ -191,7 +196,6 @@ fun DashboardScreen(
                 )
                 DashboardTab.CATEGORIES -> CategoriesTab(
                     snap = snap,
-                    period = state.period,
                     listState = categoriesListState,
                     expandedId = expandedCategoryId,
                     onToggleExpand = { id ->
@@ -235,7 +239,7 @@ private fun SummaryTab(
     listState: LazyListState,
     onShowUncategorized: () -> Unit,
     review: List<Insight>,
-    onOpenInsights: (SummaryPeriod) -> Unit,
+    onOpenInsights: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val c = HisabakTheme.colors
@@ -264,7 +268,7 @@ private fun SummaryTab(
                 trendPct = snap.netWorthTrendPct,
                 trendPositiveIsGood = true,
                 series = snap.netWorthSeries,
-                period = period,
+                granularity = snap.granularity,
                 lineColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.fillMaxWidth(),
                 animateValue = true,
@@ -307,7 +311,7 @@ private fun SummaryTab(
                 ReviewCard(
                     period = period,
                     insights = review,
-                    onSeeAll = { onOpenInsights(period) },
+                    onSeeAll = onOpenInsights,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -323,7 +327,7 @@ private fun SummaryTab(
                 amountColor = c.income,
                 sparklineValues = snap.incomeDaily.map { it.amountMinor / 100.0 },
                 sparklineColor = c.income,
-                sparklineLabels = dateLabels(snap.incomeDaily.map { it.day }, period),
+                sparklineLabels = dateLabels(snap.incomeDaily.map { it.day }, snap.granularity),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -336,7 +340,7 @@ private fun SummaryTab(
                 amountColor = c.expense,
                 sparklineValues = snap.expenseDaily.map { it.amountMinor / 100.0 },
                 sparklineColor = c.expense,
-                sparklineLabels = dateLabels(snap.expenseDaily.map { it.day }, period),
+                sparklineLabels = dateLabels(snap.expenseDaily.map { it.day }, snap.granularity),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -349,7 +353,7 @@ private fun SummaryTab(
                 trendPct = snap.incomeSeriesTrendPct,
                 trendPositiveIsGood = true,
                 series = snap.incomeSeries,
-                period = period,
+                granularity = snap.granularity,
                 lineColor = c.income,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -363,7 +367,7 @@ private fun SummaryTab(
                 trendPct = snap.expenseSeriesTrendPct,
                 trendPositiveIsGood = false,
                 series = snap.expenseSeries,
-                period = period,
+                granularity = snap.granularity,
                 lineColor = c.expense,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -389,7 +393,7 @@ private fun TrendsTab(
         // ── Income & spending grouped bars ──────────────────────────────────
         item { SectionHeader(title = stringResource(Res.string.dashboard_income_spending)) }
         item {
-            val bars = monthlyPairs(snap.incomeDaily, snap.expenseDaily)
+            val bars = barPairs(snap.incomeDaily, snap.expenseDaily, snap.granularity)
             if (bars.income.isNotEmpty()) {
                 DashCard(modifier = Modifier.fillMaxWidth()) {
                     Row(
@@ -451,7 +455,7 @@ private fun OverTimeCard(
     trendPct: Double?,
     trendPositiveIsGood: Boolean,
     series: List<MonthPoint>,
-    period: SummaryPeriod,
+    granularity: Granularity,
     lineColor: Color,
     modifier: Modifier = Modifier,
     animateValue: Boolean = false,
@@ -481,28 +485,28 @@ private fun OverTimeCard(
                 fillColor = lineColor.copy(alpha = 0.25f),
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.cardGap, bottom = Spacing.s2),
                 heightDp = 96.dp,
-                xLabels = chartLabels(series, period),
+                xLabels = chartLabels(series, granularity),
             )
         }
     }
 }
 
-/** Per-point x-axis labels: day-of-month for month windows, month (with year when
- *  the window spans years) otherwise. */
+/** Per-point x-axis labels: the bucket's first day for daily and weekly charts, its month (with
+ *  the year when the window spans years) for monthly ones, and the year for yearly ones. */
 @Composable
-private fun chartLabels(series: List<MonthPoint>, period: SummaryPeriod): List<String> =
-    dateLabels(series.map { it.monthStart }, period)
+private fun chartLabels(series: List<MonthPoint>, granularity: Granularity): List<String> =
+    dateLabels(series.map { it.monthStart }, granularity)
 
 @Composable
-private fun dateLabels(dates: List<LocalDate>, period: SummaryPeriod): List<String> {
-    val daily = period == SummaryPeriod.CURRENT_MONTH || period == SummaryPeriod.LAST_MONTH
+private fun dateLabels(dates: List<LocalDate>, granularity: Granularity): List<String> {
     val multiYear = dates.mapTo(HashSet()) { it.year }.size > 1
     val formatter = LocalDateFormatter.current
+    val arabic = rememberIsArabic()
     return dates.map {
-        when {
-            daily -> formatter.dayMonth(it)
-            multiYear -> formatter.monthYear(it)
-            else -> formatter.month(it)
+        when (granularity) {
+            Granularity.DAY, Granularity.WEEK -> formatter.dayMonth(it)
+            Granularity.MONTH -> if (multiYear) formatter.monthYear(it) else formatter.month(it)
+            Granularity.YEAR -> localizeDigits(it.year.toString(), arabic)
         }
     }
 }
@@ -728,7 +732,6 @@ private fun DonutLegendRow(color: Color, label: String, amount: Money, pct: Doub
 @Composable
 private fun CategoriesTab(
     snap: DashboardSnapshot,
-    period: SummaryPeriod,
     listState: LazyListState,
     expandedId: String?,
     onToggleExpand: (String) -> Unit,
@@ -741,13 +744,14 @@ private fun CategoriesTab(
                 option = option,
                 series = series,
                 limitSeries = snap.limitByCategory[option.id].orEmpty(),
+                limit = snap.periodLimitByCategory[option.id],
                 spent = series.sumOf { it.amountMinor },
                 prevTotal = snap.trendPrevTotalByCategory[option.id] ?: 0L,
             )
         }
         // Activity, not the net: a savings category whose withdrawals fully repay its deposits
         // nets to 0 but must still show — only truly inactive categories drop out.
-        .filter { row -> row.series.any { it.amountMinor != 0L } || periodLimit(row.limitSeries, period) != null }
+        .filter { row -> row.series.any { it.amountMinor != 0L } || row.limit != null }
         .sortedByDescending { abs(it.spent) }
 
     LazyColumn(
@@ -770,7 +774,7 @@ private fun CategoriesTab(
         items(rows, key = { it.option.id.value }) { row ->
             CategoryLimitCard(
                 row = row,
-                period = period,
+                granularity = snap.granularity,
                 expanded = expandedId == row.option.id.value,
                 onToggle = { onToggleExpand(row.option.id.value) },
             )
@@ -781,7 +785,7 @@ private fun CategoriesTab(
                     total = snap.uncategorizedTotal,
                     count = snap.uncategorizedCount,
                     series = snap.uncategorizedSeries,
-                    period = period,
+                    granularity = snap.granularity,
                     expanded = expandedId == UNCATEGORIZED_KEY,
                     onToggle = { onToggleExpand(UNCATEGORIZED_KEY) },
                 )
@@ -796,6 +800,7 @@ private data class CategoryRowData(
     val option: CategoryOption,
     val series: List<DayPoint>,
     val limitSeries: List<Long?>,
+    val limit: Long?,
     val spent: Long,
     val prevTotal: Long,
 )
@@ -803,12 +808,12 @@ private data class CategoryRowData(
 @Composable
 private fun CategoryLimitCard(
     row: CategoryRowData,
-    period: SummaryPeriod,
+    granularity: Granularity,
     expanded: Boolean,
     onToggle: () -> Unit,
 ) {
     val color = CategoryStyle.color(row.option.color)
-    val limit = periodLimit(row.limitSeries, period)
+    val limit = row.limit
     // Percent change is meaningless off a non-positive base (a savings period can net negative).
     val trendPct = row.prevTotal.takeIf { it > 0L }
         ?.let { (row.spent - it).toDouble() / it.toDouble() * 100.0 }
@@ -861,14 +866,14 @@ private fun CategoryLimitCard(
                     TrendBadge(pct = trendPct, positiveIsGood = risingIsGood)
                 }
                 if (row.series.any { it.amountMinor != 0L }) {
-                    val chart = buildCategoryChart(row.series, row.limitSeries, period)
+                    val chart = buildCategoryChart(row.series, row.limitSeries, limit, granularity)
                     AreaLineChart(
                         values = chart.values,
                         lineColor = color,
                         fillColor = color.copy(alpha = 0.25f),
                         modifier = Modifier.fillMaxWidth().padding(top = Spacing.s2, bottom = Spacing.s2),
                         heightDp = 96.dp,
-                        xLabels = dateLabels(row.series.map { it.day }, period),
+                        xLabels = dateLabels(row.series.map { it.day }, granularity),
                         overlayValues = chart.overlay,
                         overlayColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -887,24 +892,24 @@ private fun CategoryLimitCard(
 
 private data class CategoryChart(val values: List<Double>, val overlay: List<Double?>)
 
-/** A single-month window shows cumulative spend vs a flat limit ceiling; a multi-month window
- *  shows monthly spend vs the (stepped, gap-aware) monthly limit. */
+/** A daily chart shows cumulative spend vs a flat ceiling — the period's whole budget; a coarser
+ *  one shows each bucket's spend vs that bucket's (stepped, gap-aware) budget. */
 private fun buildCategoryChart(
     series: List<DayPoint>,
     limitSeries: List<Long?>,
-    period: SummaryPeriod,
+    periodLimit: Long?,
+    granularity: Granularity,
 ): CategoryChart {
-    val singleMonth = period == SummaryPeriod.CURRENT_MONTH || period == SummaryPeriod.LAST_MONTH
-    val values = if (singleMonth) {
+    val daily = granularity == Granularity.DAY
+    val values = if (daily) {
         var running = 0L
         series.map { running += it.amountMinor; running / 100.0 }
     } else {
         series.map { it.amountMinor / 100.0 }
     }
-    val ceiling = if (singleMonth) limitSeries.firstOrNull { it != null } else null
     val overlay = when {
-        singleMonth && ceiling != null -> List(series.size) { ceiling / 100.0 }
-        !singleMonth -> limitSeries.map { it?.let { v -> v / 100.0 } }
+        daily && periodLimit != null -> List(series.size) { periodLimit / 100.0 }
+        !daily -> limitSeries.map { it?.let { v -> v / 100.0 } }
         else -> emptyList()
     }
     return CategoryChart(values, overlay)
@@ -950,7 +955,7 @@ private fun UncategorizedCard(
     total: Money,
     count: Int,
     series: List<DayPoint>,
-    period: SummaryPeriod,
+    granularity: Granularity,
     expanded: Boolean,
     onToggle: () -> Unit,
 ) {
@@ -992,14 +997,14 @@ private fun UncategorizedCard(
             enter = expandVertically(standardTween()) + fadeIn(standardTween()),
             exit = shrinkVertically(standardTween()) + fadeOut(standardTween()),
         ) {
-            val chart = buildCategoryChart(series, emptyList(), period)
+            val chart = buildCategoryChart(series, emptyList(), null, granularity)
             AreaLineChart(
                 values = chart.values,
                 lineColor = color,
                 fillColor = color.copy(alpha = 0.25f),
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.s3, bottom = Spacing.s2),
                 heightDp = 96.dp,
-                xLabels = dateLabels(series.map { it.day }, period),
+                xLabels = dateLabels(series.map { it.day }, granularity),
             )
         }
     }
@@ -1072,26 +1077,30 @@ private data class MonthlyBars(
     val labels: List<String>,
 )
 
-/** Aggregate daily points into parallel monthly income/expense series across the period. */
+/**
+ * Parallel income/expense bars across the period, one pair per bucket. A daily window is regrouped
+ * into weeks (seven-day runs from its first day): thirty single-day pairs are too thin to compare,
+ * and one pair for the whole month says nothing the totals don't.
+ */
 @Composable
-private fun monthlyPairs(
+private fun barPairs(
     income: List<DayPoint>,
     expense: List<DayPoint>,
+    granularity: Granularity,
 ): MonthlyBars {
-    val incomeByMonth = income
-        .groupBy { it.day.yearMonth.firstDay }
+    if (income.isEmpty()) return MonthlyBars(emptyList(), emptyList(), emptyList())
+    val barGranularity = if (granularity == Granularity.DAY) Granularity.WEEK else granularity
+    val first = income.first().day
+    fun regroup(points: List<DayPoint>): Map<LocalDate, Double> = points
+        .groupBy { bucketStart(it.day, first, barGranularity) }
         .mapValues { (_, v) -> v.sumOf { it.amountMinor } / 100.0 }
-    val expenseByMonth = expense
-        .groupBy { it.day.yearMonth.firstDay }
-        .mapValues { (_, v) -> v.sumOf { it.amountMinor } / 100.0 }
-    val months = (incomeByMonth.keys + expenseByMonth.keys).sorted()
-    if (months.isEmpty()) return MonthlyBars(emptyList(), emptyList(), emptyList())
-    val multiYear = months.mapTo(HashSet()) { it.year }.size > 1
-    val formatter: LocalizedDateFormatter = LocalDateFormatter.current
+    val incomeBy = regroup(income)
+    val expenseBy = regroup(expense)
+    val buckets = (incomeBy.keys + expenseBy.keys).sorted()
     return MonthlyBars(
-        income = months.map { incomeByMonth[it] ?: 0.0 },
-        expense = months.map { expenseByMonth[it] ?: 0.0 },
-        labels = months.map { if (multiYear) formatter.monthYear(it) else formatter.month(it) },
+        income = buckets.map { incomeBy[it] ?: 0.0 },
+        expense = buckets.map { expenseBy[it] ?: 0.0 },
+        labels = dateLabels(buckets, barGranularity),
     )
 }
 
@@ -1121,7 +1130,7 @@ private fun ReviewCard(
             // Same title treatment as the net-worth hero's label, so the card reads as a peer of
             // the cards around it rather than a heading over them.
             Text(
-                text = stringResource(Res.string.insights_review_title, stringResource(period.labelRes())),
+                text = stringResource(Res.string.insights_review_title, periodLabel(period)),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),

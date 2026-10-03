@@ -52,7 +52,7 @@ Ships to every user. The parent spec is the source of truth; this PR's doc scope
      navigates to Transactions; the uncategorized insight requests `Uncategorized`.
   10. `InsightsSummary` contains no transaction rows and no notes — structurally: the type has no
       such fields (asserted by the summary test's shape, and it is what the AI layers will send).
-- **Edge cases:** `SummaryPeriod.ALL` has no prior period — change and savings-delta rules
+- **Edge cases:** `SummaryPeriod.All` has no prior period — change and savings-delta rules
   degrade to absent, the rest still fire. A limit that begins mid-period applies from its
   effective month (the snapshot's per-bucket limit list; the review takes the limit in force at
   the period's last bucket). Zero prior spend with current spend is "new spend", not an infinite

@@ -4,11 +4,18 @@ import com.hisabak.core.common.Money
 import com.hisabak.feature.brand.domain.BrandId
 import com.hisabak.feature.category.domain.CategoryId
 import com.hisabak.feature.category.domain.CategoryType
+import com.hisabak.core.common.Granularity
 import kotlinx.datetime.LocalDate
 
 data class DashboardSnapshot(
     /** The period's [start, end) dates, or null for all time. */
     val periodRange: Pair<LocalDate, LocalDate>?,
+    /** The day the snapshot was computed for — "today" for everything relative in it. */
+    val asOf: LocalDate,
+    /** How the period's series are bucketed — follows the window's length (see `granularityFor`). */
+    val granularity: Granularity = Granularity.DAY,
+    /** The first transaction's date, so the period bar knows whether ‹ has anything to show. */
+    val earliestActivity: LocalDate? = null,
     val netWorth: Money,
     val netWorthSeries: List<MonthPoint>,
     val netWorthTrendPct: Double?,
@@ -33,6 +40,8 @@ data class DashboardSnapshot(
     val trendByCategory: Map<CategoryId, List<DayPoint>>,
     val trendPrevTotalByCategory: Map<CategoryId, Long>,
     val limitByCategory: Map<CategoryId, List<Long?>>,
+    /** Each category's limit budget for the whole period; null where no cap applies. */
+    val periodLimitByCategory: Map<CategoryId, Long?> = emptyMap(),
     val uncategorizedTotal: Money,
     val uncategorizedCount: Int,
     val uncategorizedSeries: List<DayPoint>,

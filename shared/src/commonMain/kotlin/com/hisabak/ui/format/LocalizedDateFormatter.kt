@@ -43,6 +43,9 @@ interface LocalizedDateFormatter {
     /** Short month + 2-digit year — "Jul '26" (multi-year chart labels). */
     fun monthYear(date: LocalDate): String
 
+    /** Full month + year — "September 2026" (the period bar). */
+    fun monthYearLong(date: LocalDate): String
+
     /** Relative "5 minutes ago"-style timestamp for the last backup. */
     fun relativeDateTime(epochMillis: Long): String
 
@@ -76,6 +79,7 @@ class BasicLocalizedDateFormatter : LocalizedDateFormatter {
         day(Padding.NONE); char(' '); monthName(MonthNames.ENGLISH_ABBREVIATED)
     }
     private val month = LocalDate.Format { monthName(MonthNames.ENGLISH_ABBREVIATED) }
+    private val monthYearLong = LocalDate.Format { monthName(MonthNames.ENGLISH_FULL); char(' '); year() }
 
     private fun localDate(instant: Instant): LocalDate =
         instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -97,6 +101,7 @@ class BasicLocalizedDateFormatter : LocalizedDateFormatter {
     override fun month(date: LocalDate): String = date.format(month)
     override fun monthYear(date: LocalDate): String =
         "${month(date)} '${(date.year % 100).toString().padStart(2, '0')}"
+    override fun monthYearLong(date: LocalDate): String = date.format(monthYearLong)
 
     override fun relativeDateTime(epochMillis: Long): String =
         dateTime(Instant.fromEpochMilliseconds(epochMillis))

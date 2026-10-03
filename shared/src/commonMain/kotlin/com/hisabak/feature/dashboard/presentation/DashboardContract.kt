@@ -10,7 +10,7 @@ import com.hisabak.feature.insights.domain.Insight
 data class DashboardUiState(
     val snapshot: DashboardSnapshot? = null,
     val isLoading: Boolean = true,
-    val period: SummaryPeriod = SummaryPeriod.CURRENT_MONTH,
+    val period: SummaryPeriod = SummaryPeriod.All,
     /** The deterministic review of [snapshot] for [period]; empty hides the Review card. */
     val review: List<Insight> = emptyList(),
 ) : ViewState

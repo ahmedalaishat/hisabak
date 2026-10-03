@@ -56,7 +56,7 @@ import com.hisabak.feature.transaction.domain.TransactionId
 import com.hisabak.ui.components.AmountText
 import com.hisabak.ui.components.AmountTone
 import com.hisabak.ui.components.CircleIconTile
-import com.hisabak.ui.components.PeriodChipRow
+import com.hisabak.ui.components.PeriodBar
 import com.hisabak.ui.components.EmptyStatePanel
 import com.hisabak.ui.components.ExpensesStatCard
 import com.hisabak.ui.components.IncomeStatCard
@@ -91,7 +91,6 @@ fun TransactionListScreen(
     onPeriodChange: (SummaryPeriod) -> Unit,
     onBrandFilterChange: (BrandId?) -> Unit,
     onCategoryFilterChange: (CategoryId?) -> Unit,
-    onDateRangeChange: (DateRangeFilter) -> Unit,
     onClearFilters: () -> Unit,
     onAdd: () -> Unit,
     onEdit: (TransactionId) -> Unit,
@@ -112,7 +111,7 @@ fun TransactionListScreen(
         return
     }
 
-    // The period scopes the summary cards; brand / category / date-range scope the list.
+    // The period scopes the summary and the list alike; brand / category / search narrow the list.
     var openFilter by remember { mutableStateOf<FilterTarget?>(null) }
 
     // Rows arrive newest-first; group them by day for date-headed cards (LinkedHashMap keeps order).
@@ -131,14 +130,14 @@ fun TransactionListScreen(
         ),
         verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
     ) {
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.s3)) {
-                Text(
-                    text = stringResource(Res.string.transaction_summary),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
+        if (state.today != null) {
+            item {
+                PeriodBar(
+                    period = state.period,
+                    today = state.today,
+                    earliest = state.earliest,
+                    onSelect = onPeriodChange,
                 )
-                PeriodChipRow(selected = state.period, onSelect = onPeriodChange)
             }
         }
 
@@ -189,11 +188,6 @@ fun TransactionListScreen(
                     active = state.brandFilter != null,
                     onClick = { openFilter = FilterTarget.BRAND },
                 )
-                FilterPill(
-                    label = if (state.dateRange == DateRangeFilter.ALL) stringResource(Res.string.common_date) else stringResource(state.dateRange.labelRes),
-                    active = state.dateRange != DateRangeFilter.ALL,
-                    onClick = { openFilter = FilterTarget.DATE },
-                )
                 if (state.hasActiveFilters) {
                     Text(
                         text = stringResource(Res.string.action_clear),
@@ -207,8 +201,8 @@ fun TransactionListScreen(
             }
         }
 
-        // Sits above the list, not beside "Summary": the summary is period-scoped while the list
-        // has its own filters, so a count up there would contradict the rows underneath it.
+        // Sits above the rows, not beside the totals: the totals ignore the list's filters, so a
+        // count up there would contradict the rows underneath it.
         if (state.rows.isNotEmpty()) {
             item {
                 val filtered = state.hasActiveFilters || state.search.isNotBlank()
@@ -258,7 +252,7 @@ fun TransactionListScreen(
             dayGroups.forEach { (date, rows) ->
                 item(key = "day-$date") {
                     Column(Modifier.animateItem()) {
-                        DayHeader(date)
+                        DayHeader(date, rows)
                         Spacer(Modifier.height(Spacing.s2))
                         SurfaceCard(modifier = Modifier.fillMaxWidth(), contentPadding = 0.dp) {
                             rows.forEachIndexed { index, row ->
@@ -292,24 +286,11 @@ fun TransactionListScreen(
             onSelect = { id -> onBrandFilterChange(id?.let(::BrandId)); openFilter = null },
             onDismiss = { openFilter = null },
         )
-        FilterTarget.DATE -> FilterSelectSheet(
-            title = stringResource(Res.string.transaction_filter_date),
-            entries = DateRangeFilter.entries
-                .filter { it != DateRangeFilter.ALL }
-                .map { FilterEntry(it.name, stringResource(it.labelRes), null) },
-            selectedId = state.dateRange.takeIf { it != DateRangeFilter.ALL }?.name,
-            onSelect = { id ->
-                onDateRangeChange(id?.let { DateRangeFilter.valueOf(it) } ?: DateRangeFilter.ALL)
-                openFilter = null
-            },
-            onDismiss = { openFilter = null },
-            allLabel = stringResource(DateRangeFilter.ALL.labelRes),
-        )
         null -> Unit
     }
 }
 
-private enum class FilterTarget { CATEGORY, BRAND, DATE }
+private enum class FilterTarget { CATEGORY, BRAND }
 
 private data class FilterEntry(
     val id: String,
@@ -465,15 +446,28 @@ private fun SavingsRateBar(incomeMinor: Long, expensesMinor: Long) {
 }
 
 @Composable
-private fun DayHeader(date: LocalDate) {
-    Text(
-        text = dayLabel(date).uppercase(),
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.4.sp,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = Spacing.s1),
-    )
+private fun DayHeader(date: LocalDate, rows: List<TransactionRow>) {
+    // The day's net flow: income in, expenses out. Savings and investment moves aren't flow, and an
+    // uncategorized row has no direction, so neither counts — a day of only those shows no figure.
+    val flowRows = rows.filter { it.categoryType == CategoryType.INCOME || it.categoryType == CategoryType.EXPENSES }
+    val net = flowRows.sumOf { if (it.categoryType == CategoryType.INCOME) it.amount.amountMinor else -it.amount.amountMinor }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.s1),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = dayLabel(date).uppercase(),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.4.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        if (flowRows.isNotEmpty()) {
+            // Neutral: a header summarises the rows under it, which already carry the colour.
+            AmountText(value = net.toMajorDouble(), size = 12.sp, weight = FontWeight.Medium, tone = AmountTone.Neutral)
+        }
+    }
 }
 
 @Composable
